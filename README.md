@@ -83,7 +83,7 @@ A page is not complete until `dogfood_complete` accepts it; agents must call it 
 
 - `server.mjs` is a dependency-free Node server bound to `127.0.0.1`. It rejects cross-origin writes and serves the app and its API.
 - `lib/` holds everything the server and agents share: `schema.mjs` (the manifest vocabulary), `store.mjs` (every validated read and write), `completion.mjs` (when a page's QA is complete), `capture.mjs` (screenshot validity), `scans.mjs` (validating measured facts), `scanner.mjs`, `discover.mjs`, and `onboard.mjs` (the browser side of scanning and onboarding), `test-runs.mjs`, and `visual-review.mjs`.
-- `public/` is the interface: plain HTML, CSS, and JavaScript with light and dark themes.
+- `public/` is the interface: plain HTML, CSS, and ES modules under `public/js/` with light and dark themes.
 - `npm test` runs the store, server, and review tests; `npm run check` validates syntax and the demo manifest.
 
 ### When is a page's QA complete?
