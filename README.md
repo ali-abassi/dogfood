@@ -40,6 +40,8 @@ npm run onboard -- https://site.example
 
 Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registers them, and records a validated full-page desktop and mobile screenshot plus measured page facts. It can scan up to 50 pages. Install the browser once with `npm i -g agent-browser`. To scan signed-in pages, pass a Chrome profile such as `Default` with `npm run onboard -- https://site.example --profile Default` or the `browserProfile` field in the app or MCP tool. Add `--ai-review` (the Add project checkbox, or `confirmAiReviewUsage` in `dogfood_onboard_project`) to also run the AI review on every page so each arrives with suggested features; it costs about half a cent per page. Rescan every page with the overview's **Scan all pages** button, `npm run scan -- <project-id>`, or `dogfood_scan_project`; each reports which pages changed visually since the previous scan. A page counts as changed when its screenshot size changed or more than 0.5% of pixels differ (`changeThreshold` in `lib/diff.mjs`). Reviewed pages that changed are marked "Changed since review" so their verdicts get another look; list page IDs to scan only those pages.
 
+`npm run report -- <project-id> > report.md` writes a shareable Markdown summary: what needs attention first, each page's remaining gaps, open issues, and what the evidence does not prove.
+
 Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.
 
 `data/` is git-ignored, so your projects, screenshots, runs, and reviews stay on your machine. Set `DOGFOOD_DATA` to keep them elsewhere, and `DOGFOOD_PORT` to change the port.
@@ -59,6 +61,8 @@ Run `node mcp.mjs` as a dependency-free stdio MCP server so an agent can onboard
 Page-writing tools return that page's status, completion state, and remaining requirements, each naming the tool that resolves it; issue creation also returns the new issue ID. Project creation returns a compact project summary.
 
 - `dogfood_projects` — list projects and completed page counts.
+- `dogfood_report` — a Markdown QA report: what needs attention, every page's gaps, open issues, and what is not proven.
+- `dogfood_remove_page` — remove a page registered by mistake, with a reason kept on record.
 - `dogfood_onboard_project` — find and scan every same-site page from one URL.
 - `dogfood_scan_page` — rescan a registered page at desktop and mobile sizes.
 - `dogfood_scan_project` — rescan every page of a project and list which pages changed visually since the previous scan.
