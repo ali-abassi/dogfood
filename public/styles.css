@@ -1,4 +1,4 @@
-/* QA follows the macOS app grammar: a sidebar source list, an opaque toolbar with a
+/* dogfood follows the macOS app grammar: a sidebar source list, an opaque toolbar with a
    segmented control, and white 12px groups on a soft canvas. Blue is the action colour;
    green, orange, and red only ever mean state. */
 :root {

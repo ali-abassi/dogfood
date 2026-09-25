@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 import { latestVisualReview, runVisualReview } from './visual-review.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
-const dataDir = resolve(root, process.env.QA_DATA || 'data');
+const dataDir = resolve(root, process.env.DOGFOOD_DATA || 'data');
 const projectsDir = join(dataDir, 'projects');
 const publicDir = join(root, 'public');
 const captureDir = join(dataDir, 'captures');
@@ -31,7 +31,7 @@ const auditKeys = ['security', 'scraping', 'seo'];
 const connectionMethods = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 const provenanceValues = new Set(['source', 'observed', 'manual']);
 const caseStatuses = new Set(['passed', 'failed', 'skipped', 'pending', 'todo']);
-const port = Number(process.env.QA_PORT || 4321);
+const port = Number(process.env.DOGFOOD_PORT || 4321);
 const localHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 const localOrigins = new Set([...localHosts].map(host => `http://${host}`));
 
@@ -301,7 +301,7 @@ function testStatus(report, execution) {
 
 async function startQaRun(projectId, pageId) {
   const key = `${projectId}/${pageId}`;
-  if (runningPages.has(key)) throw validationError('QA is already running for this page.');
+  if (runningPages.has(key)) throw validationError('Tests are already running for this page.');
   const project = readProject(projectId);
   const page = pageById(project, pageId);
   const { checkout, tests } = configuredTests(project, page);
@@ -486,10 +486,10 @@ function handle(request, response) {
   handleRequest(request, response).catch(error => {
     const status = error.status || (error.code === 'ENOENT' ? 404 : 500);
     if (status === 500) console.error(error);
-    send(response, status, { error: status === 500 ? 'QA could not complete the request.' : error.message });
+    send(response, status, { error: status === 500 ? 'dogfood could not complete the request.' : error.message });
   });
 }
 
 createServer(handle).listen(port, '127.0.0.1', () => {
-  console.log(`QA: http://127.0.0.1:${port} · data: ${relative(root, dataDir) || '.'}`);
+  console.log(`dogfood: http://127.0.0.1:${port} · data: ${relative(root, dataDir) || '.'}`);
 });

@@ -113,7 +113,7 @@ async function callModel(body) {
   const key = await openRouterKey();
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST', signal: AbortSignal.timeout(90000),
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-Title': 'QA Visual Review' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-Title': 'dogfood visual review' },
     body: JSON.stringify(body),
   });
   const result = await response.json();

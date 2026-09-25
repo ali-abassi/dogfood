@@ -3,7 +3,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const dataDir = resolve(root, process.env.QA_DATA || 'data');
+const dataDir = resolve(root, process.env.DOGFOOD_DATA || 'data');
 const directory = join(dataDir, 'projects');
 const statuses = new Set(['untested', 'pass', 'needs_work']);
 const dimensions = ['functionality', 'optimization', 'design', 'excess', 'clarity'];
@@ -115,7 +115,7 @@ function checkPageTest(test, checkout, label) {
 function checkQaPlan(page, project) {
   const tests = page.qa?.tests;
   const label = `${project.id}/${page.id}`;
-  if (!Array.isArray(tests)) fail(`${label}: QA test plan missing`);
+  if (!Array.isArray(tests)) fail(`${label}: test plan missing`);
   if (typeof page.qa.note !== 'string' || page.qa.note.trim().length < 12) fail(`${label}: describe the untested page boundary`);
   if (new Set(tests.map(test => test.id)).size !== tests.length) fail(`${label}: duplicate test IDs`);
   for (const test of tests) checkPageTest(test, realpathSync(resolve(root, project.source.checkout)), label);
@@ -132,7 +132,7 @@ function checkPage(page, project) {
   checkQaPlan(page, project);
 }
 
-if (!existsSync(directory)) fail(`No projects folder at ${directory}. Run with QA_DATA=demo to check the demo.`);
+if (!existsSync(directory)) fail(`No projects folder at ${directory}. Run with DOGFOOD_DATA=demo to check the demo.`);
 const names = readdirSync(directory).filter(name => name.endsWith('.json'));
 if (!names.length) fail('No project manifests found');
 for (const name of names) {

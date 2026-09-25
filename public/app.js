@@ -127,7 +127,7 @@ function projectPickerMarkup() {
 function sidebarMarkup() {
   const pages = visiblePages();
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project pages">
-      <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>QA</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
+      <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
         ${projectPickerMarkup()}
         <h2 class="sr-only">Pages</h2>
         <label class="search-field"><span class="sr-only">Search pages or features</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or features" value="${escapeHtml(state.query)}"></label>
@@ -520,7 +520,7 @@ async function runQa() {
 }
 
 function showError(message) {
-  app.innerHTML = `<div class="boot error" role="alert"><h1>QA could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
+  app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
 async function readJson(url, options) {
