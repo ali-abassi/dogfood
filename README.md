@@ -14,7 +14,7 @@
 "Did we QA it?" usually means someone clicked around. dogfood makes the answer specific, page by page:
 
 - **Every page, one status.** Each page shows untested, in review, passed, needs work, or blocked, and exactly what it still needs before its QA is complete.
-- **Criteria, not vibes.** Each page carries its features with expected behavior, five quality questions, and security, scraping, search, and accessibility checklists. A verdict of Pass or Needs work requires a written evidence note.
+- **Criteria, not vibes.** Each page lists its features, meaning the things a person can do there ("Book a lesson for a child", not "the menu"), each with what success looks like. Every page answers five questions about them: are they **connected** (working end to end with their data), **highlighted**, **obvious**, **accurate**, and is the page **clear** overall. Security, scraping, search, and accessibility checklists sit alongside. A verdict of Pass or Needs work requires a written evidence note.
 - **Measured evidence.** Desktop and mobile screenshots, a scan of errors, failed requests, API calls, speed, search tags, security headers, and accessibility, focused test runs from your own repo, and an optional AI review that suggests each page's features.
 - **What changed.** Rescan after a deploy and dogfood shows which pages look different and which reviews are now out of date.
 - **Honest gaps.** Passing tests never become an overall score, an AI rating never changes a verdict, and the report says what the evidence does not prove.
@@ -45,6 +45,8 @@ Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registe
 
 `npm run report -- <project-id> > report.md` writes a shareable Markdown summary: what needs attention first, each page's remaining gaps, open issues, and what the evidence does not prove.
 
+Upgrading from an earlier dogfood? Run `npm run migrate` once. It moves projects to the five questions about features, keeps the old verdicts on record under `retiredChecks`, and leaves any outside-edit warning in place.
+
 Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.
 
 `data/` is git-ignored, so your projects, screenshots, runs, and reviews stay on your machine. Set `DOGFOOD_DATA` to keep them elsewhere, and `DOGFOOD_PORT` to change the port.
@@ -55,7 +57,7 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 ### AI screenshot review
 
-**See page → Ask AI to review image** sends the saved desktop and mobile screenshots to Gemini 3.8 Flash through OpenRouter and saves a page description, a provisional 1–10 clarity estimate, reasons, suggestions, and suggested features you can add to the page in one click. Set `OPENROUTER_API_KEY` in the server's environment. Each review costs a small amount of provider usage and is tied to both screenshots' hashes, so it is marked stale when either screenshot changes.
+**See page → Ask AI to review image** sends the saved desktop and mobile screenshots to Gemini 3.8 Flash through OpenRouter and saves a page description, provisional 1–10 scores for three of the five questions (highlighted, obvious, clear; connected and accurate need the working product), reasons, improvements, and the page's features as things a person can do, which you can add to the page. Set `OPENROUTER_API_KEY` in the server's environment. Each review costs a small amount of provider usage and is tied to both screenshots' hashes, so it is marked stale when either screenshot changes.
 
 ### Agents (MCP)
 
@@ -95,7 +97,7 @@ A page is not complete until `dogfood_complete` accepts it; agents must call it 
 
 ### When is a page's QA complete?
 
-A page is complete only when every applicable requirement has evidence: validated full-page desktop and mobile screenshots, a scan that matches them, a verdict for every listed feature, all five quality questions, the security, copying, search, and accessibility checklists, at least one mapped connection, passing focused tests (when the page has any), an AI review of the current desktop screenshot, and no open P0 or P1 issue. Problems a scan measures (uncaught errors, failed requests, sideways scrolling) mark the page as needing work. A page passes only when its QA is complete and every verdict is Pass.
+A page is complete only when every applicable requirement has evidence: validated full-page desktop and mobile screenshots, a scan that matches them, a verdict for every listed feature, all five questions about its features, the security, copying, search, and accessibility checklists, at least one mapped connection, passing focused tests (when the page has any), an AI review of the current desktop screenshot, and no open P0 or P1 issue. Problems a scan measures (uncaught errors, failed requests, sideways scrolling) mark the page as needing work. A page passes only when its QA is complete and every verdict is Pass.
 
 ## Development
 

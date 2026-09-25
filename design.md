@@ -78,7 +78,7 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 ### Brand
 
-- The app icon is a blue squircle with a white magnifying lens holding a check: inspect, then approve. Files: `public/logo.svg` (also the favicon).
+- The app icon is a blue squircle holding a white check mark drawn as a bone: "dogfood" and "checked" in one mark, legible at 16 px. Files: `public/logo.svg` and `public/favicon.svg` (identical). User-stated 2026-09-25: "make a sick logo for it"; chosen from six concepts on 2026-09-26.
 - Never recolour the icon or place it on another tile.
 
 ## Invariants
@@ -97,3 +97,4 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **Agent-selected working policy, 2026-09-25:** The AI review reads both screenshots and proposes the page's features, because onboarding leaves every feature list empty and judging both screens keeps the suggestions honest; adding them stays one explicit click so a person approves each feature before it becomes a QA requirement.
 - **Agent-selected working policy, 2026-09-25:** visual changes are orange and informational, because dynamic pages change a little on every scan; "Changed since review" prompts a recheck without failing the page.
 - **Agent-selected working policy, 2026-09-26:** project-level suggestions stay opt-in per item, checked by default, because a person still decides what the page is for.
+- **User-stated, 2026-09-26:** a feature is something a person can do on the page, not an interface element ("a feature isn't clicking the menu item"). Every page answers five questions about its features: connected (working end to end), highlighted, obvious, accurate, and clear overall. They replace functionality, optimization, design fit, excess, and clarity; old verdicts are kept in `retiredChecks`, and speed is measured by the scan.

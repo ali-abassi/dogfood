@@ -18,17 +18,16 @@ function check(name, body) {
 
 const suggestions = [
   { name: 'Pick a swimmer age group', expected: 'Choosing a class filters the times to that age group.' },
-  { name: 'class picker', expected: 'Duplicate of an existing feature and must not be offered.' },
+  { name: 'reserve a lesson for a swimmer', expected: 'Duplicate of an existing feature and must not be offered.' },
   { name: 'Reserve a time slot', expected: 'Choosing a time and pressing Reserve confirms the booking.' },
 ];
 const analysis = {
   pagePurpose: 'Book a swimming lesson.',
   primaryAction: 'Reserve lesson.',
   dimensions: {
-    purpose: { score: 8, reason: 'The heading names the task on both screens.' },
-    nextAction: { score: 7.5, reason: 'Reserve is visible on desktop; on mobile it sits below the fold.' },
-    hierarchy: { score: 7, reason: 'The slot grid dominates.' },
-    copy: { score: 9, reason: 'Labels are specific.' },
+    highlighted: { score: 8, reason: 'The main job is visible above the fold.' },
+    obvious: { score: 8, reason: 'Labels say what will happen.' },
+    clear: { score: 8, reason: 'One clear hierarchy on both screens.' },
   },
   evidence: [
     { location: 'desktop top', observation: 'The heading says Book a lesson.' },
@@ -82,7 +81,7 @@ try {
   });
   check('the saved review records both screenshots and the v2 prompt', () => {
     const { review } = bothResult;
-    assert.equal(review.promptVersion, 'visual-clarity-v2');
+    assert.equal(review.promptVersion, 'visual-clarity-v3');
     assert.equal(review.captures.desktop.sha256, book.captures.desktop.sha256);
     assert.equal(review.captures.mobile.sha256, book.captures.mobile.sha256);
     assert.equal(desktopOnly.review.captures.mobile, null);
@@ -143,7 +142,7 @@ try {
       assert.ok(offered.every(item => item.checked));
       assert.ok(offered[0].text.includes('Pick a swimmer age group'));
       assert.ok(offered[0].text.includes('filters the times'), 'shows the expected behavior');
-      assert.ok(!offered.some(item => /class picker/i.test(item.text)));
+      assert.ok(!offered.some(item => /reserve a lesson for a swimmer/i.test(item.text)));
     });
     page(`(() => { const boxes = document.querySelectorAll('section[aria-label="Suggested features"] input[name="suggested-feature"]'); boxes[1].checked = false; document.querySelector('button[data-action="add-suggested-features"]').click(); return true; })()`);
     browser('wait', '1000');

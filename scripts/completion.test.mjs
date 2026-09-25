@@ -93,14 +93,14 @@ test('a page moves from registered to complete only when every requirement has e
   page = store.readProject('shop').pages[0];
   assert.equal(page.features[0].expected, 'Shows the offer and one Shop button.');
 
-  assert.throws(() => store.recordVerdicts('shop', 'home', { checks: { clarity: { status: 'pass', note: 'ok' } } }, 'agent:test'), /evidence note/);
+  assert.throws(() => store.recordVerdicts('shop', 'home', { checks: { clear: { status: 'pass', note: 'ok' } } }, 'agent:test'), /evidence note/);
   assert.throws(() => store.recordVerdicts('shop', 'home', { features: [{ id: 'missing', status: 'pass', note }] }, 'agent:test'), /does not exist/);
   store.recordVerdicts('shop', 'home', {
-    checks: Object.fromEntries(['functionality', 'optimization', 'design', 'excess', 'clarity'].map(key => [key, { status: 'pass', note }])),
+    checks: Object.fromEntries(['connected', 'highlighted', 'obvious', 'accurate', 'clear'].map(key => [key, { status: 'pass', note }])),
     features: [{ id: 'hero', status: 'pass', note }],
     audit: Object.fromEntries(Object.entries(page.audit).map(([key, rows]) => [key, rows.map(row => ({ id: row.id, status: 'pass', note }))])),
   }, 'agent:test');
-  assert.equal(store.readProject('shop').pages[0].checks.clarity.by, 'agent:test');
+  assert.equal(store.readProject('shop').pages[0].checks.clear.by, 'agent:test');
   assert.deepEqual(unmet(progress()), ['ai-review']);
   assert.equal(progress().status, 'in_review');
 
@@ -108,7 +108,7 @@ test('a page moves from registered to complete only when every requirement has e
   const reviews = join(data, 'visual-reviews/shop/home');
   mkdirSync(reviews, { recursive: true });
   const reviewed = store.readProject('shop').pages[0].captures;
-  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-a.json'), JSON.stringify({ captures: { desktop: { sha256: reviewed.desktop.sha256 }, mobile: { sha256: reviewed.mobile.sha256 } } }));
+  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-a.json'), JSON.stringify({ captures: { desktop: { sha256: reviewed.desktop.sha256 }, mobile: { sha256: reviewed.mobile.sha256 } }, analysis: { dimensions: { highlighted: { score: 8, reason: 'The main job is visible.' }, obvious: { score: 8, reason: 'Labels say what happens.' }, clear: { score: 8, reason: 'One clear hierarchy.' } } } }));
   assert.deepEqual(unmet(progress()), ['issues']);
   assert.equal(progress().status, 'needs_work');
 
@@ -140,7 +140,7 @@ test('a rescan records how each screenshot changed and flags reviews older than 
   assert.equal(progress().changedSinceReview, true);
   scanWith(true);
   assert.equal(progress().changedSinceReview, true, 'a later scan without changes does not clear the flag');
-  store.recordVerdicts('deli', 'home', { checks: { clarity: { status: 'pass', note } } }, 'agent:test');
+  store.recordVerdicts('deli', 'home', { checks: { clear: { status: 'pass', note } } }, 'agent:test');
   assert.equal(progress().changedSinceReview, false, 'a review after the change clears the flag');
   scanWith(true);
   assert.equal(page().scan.changes.desktop.changed, false);

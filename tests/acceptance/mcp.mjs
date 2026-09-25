@@ -183,17 +183,17 @@ try {
     assert.match(page.progress.requirements.find(item => item.id === 'capture').missing, /mobile/);
   });
 
-  const vague = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', checks: { clarity: { status: 'pass', note: 'fine' } } });
+  const vague = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', checks: { clear: { status: 'pass', note: 'fine' } } });
   check('a verdict without a real evidence note is refused', () => assert.equal(vague.isError, true));
   const verdicts = await call('dogfood_record_verdicts', {
     project: 'shop', page: 'home', agent: 'proof',
-    checks: Object.fromEntries(['functionality', 'optimization', 'design', 'excess', 'clarity'].map(key => [key, { status: 'pass', note }])),
+    checks: Object.fromEntries(['connected', 'highlighted', 'obvious', 'accurate', 'clear'].map(key => [key, { status: 'pass', note }])),
     features: [{ id: 'hero', status: 'pass', note }],
     audit: auditPass(page),
   });
   check('record_verdicts saves partial verdicts', () => assert.equal(verdicts.isError, false, verdicts.text));
   const manifest = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8'));
-  check('verdicts are attributed to the named agent', () => assert.equal(manifest.pages[0].checks.clarity.by, 'agent:proof'));
+  check('verdicts are attributed to the named agent', () => assert.equal(manifest.pages[0].checks.clear.by, 'agent:proof'));
 
   const connections = await call('dogfood_set_connections', { project: 'shop', page: 'home', connections: [{ id: 'page', name: 'Page request', method: 'GET', endpoint: '/', sends: 'Nothing', receives: 'HTML', source: 'Network panel', provenance: 'observed' }] });
   check('set_connections saves the connection map', () => assert.equal(connections.isError, false, connections.text));
@@ -239,7 +239,7 @@ try {
   const reviewedCaptures = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8')).pages[0].captures;
   const reviews = join(data, 'visual-reviews/shop/home');
   (await import('node:fs')).mkdirSync(reviews, { recursive: true });
-  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-proof.json'), JSON.stringify({ captures: { desktop: { sha256: reviewedCaptures.desktop.sha256 }, mobile: { sha256: reviewedCaptures.mobile.sha256 } } }));
+  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-proof.json'), JSON.stringify({ captures: { desktop: { sha256: reviewedCaptures.desktop.sha256 }, mobile: { sha256: reviewedCaptures.mobile.sha256 } }, analysis: { dimensions: { highlighted: { score: 8, reason: 'The main job is visible.' }, obvious: { score: 8, reason: 'Labels say what happens.' }, clear: { score: 8, reason: 'One clear hierarchy.' } } } }));
 
   const done = await call('dogfood_complete', { project: 'shop', page: 'home' });
   check('complete accepts the page once every requirement has evidence', () => {

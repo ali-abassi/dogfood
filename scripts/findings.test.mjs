@@ -143,16 +143,16 @@ test('page findings and checklists persist with page-scoped validation', async (
   const reviewPath = '/api/projects/tidepool/pages/home/review';
   const reviewedPage = savedAudit.body.pages[0];
   const reviewBody = {
-    checks: { ...reviewedPage.checks, clarity: { status: 'pass', note: 'The primary action and its result were checked in the fixture.' } },
+    checks: { ...reviewedPage.checks, clear: { status: 'pass', note: 'The primary action and its result were checked in the fixture.' } },
     features: reviewedPage.features,
   };
   const reviewed = await request(url, reviewPath, 'PUT', reviewBody);
   assert.equal(reviewed.status, 200);
-  assert.equal(reviewed.body.pages[0].checks.clarity.status, 'pass');
-  assert.equal(reviewed.body.pages[0].checks.clarity.by, 'person');
+  assert.equal(reviewed.body.pages[0].checks.clear.status, 'pass');
+  assert.equal(reviewed.body.pages[0].checks.clear.by, 'person');
   assert.equal(reviewed.body.pages[0].progress.complete, false);
-  assert.equal((await (await fetch(`${url}/api/projects/tidepool`)).json()).pages[0].checks.clarity.note, reviewBody.checks.clarity.note);
-  assert.equal((await request(url, reviewPath, 'PUT', { ...reviewBody, checks: { ...reviewBody.checks, clarity: { status: 'pass', note: 'Vague' } } })).status, 400);
+  assert.equal((await (await fetch(`${url}/api/projects/tidepool`)).json()).pages[0].checks.clear.note, reviewBody.checks.clear.note);
+  assert.equal((await request(url, reviewPath, 'PUT', { ...reviewBody, checks: { ...reviewBody.checks, clear: { status: 'pass', note: 'Vague' } } })).status, 400);
   const qaPath = '/api/projects/tidepool/pages/home/qa-runs';
   const plan = await (await fetch(`${url}${qaPath}`)).json();
   assert.equal(plan.planError, '');

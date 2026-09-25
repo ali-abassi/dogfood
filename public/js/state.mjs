@@ -1,9 +1,9 @@
 export const checkNames = {
-  functionality: ['Functionality', 'Does the page help the user complete its main task?'],
-  optimization: ['Optimization', 'Is the route efficient and responsive in a measured check?'],
-  design: ['Design fit', 'Does the rendered state follow this product’s design guidance?'],
-  excess: ['Slop & excess', 'Is there duplicated, decorative, or unnecessary work?'],
-  clarity: ['Clarity', 'Can a person tell what to do and what will happen?'],
+  connected: ['Connected', 'Does each feature work end to end, with its data loading and saving?'],
+  highlighted: ['Highlighted', 'Is each feature easy to find on the page?'],
+  obvious: ['Obvious', 'Can a person tell what they can do here before trying it?'],
+  accurate: ['Accurate', 'Does each feature do what the page says it does?'],
+  clear: ['Clear', 'Is the page clear overall?'],
 };
 export const statusNames = { blocked: 'Blocked', untested: 'Untested', in_review: 'In review', pass: 'Pass', needs_work: 'Needs work', open: 'Open', resolved: 'Resolved' };
 export const tierNames = { source: 'Source-based', automated: 'Automated', mock: 'Mock', real: 'Real browser', longitudinal: 'Longitudinal' };
@@ -14,7 +14,7 @@ export const scanHeaderNames = ['content-security-policy', 'strict-transport-sec
 export const scanSeoNames = { title: 'Title', description: 'Description', canonical: 'Canonical', robots: 'Robots', lang: 'Language', h1Count: 'H1 count' };
 export const scanAccessibilityNames = { imagesWithoutAlt: 'Images without alt', unlabeledFields: 'Unlabeled fields', unnamedButtons: 'Unnamed buttons' };
 export const requirementViews = { capture: 'capture', scan: 'capture', features: 'review', checks: 'review', audit: 'risk', connections: 'risk', tests: 'tests', 'ai-review': 'capture', issues: 'findings' };
-export const requirementShortNames = { capture: 'Screenshots', scan: 'Scan', features: 'Features', checks: 'Quality', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
+export const requirementShortNames = { capture: 'Screenshots', scan: 'Scan', features: 'Features', checks: 'Questions', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
 export const requirementActions = { capture: 'See page', scan: 'See page', features: 'My review', checks: 'My review', audit: 'Safety & search', connections: 'Safety & search', tests: 'Run checks', 'ai-review': 'See page', issues: 'Issues' };
 export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, removingPage: null, screenshotDevice: 'desktop', suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
 
