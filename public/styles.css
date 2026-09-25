@@ -269,6 +269,15 @@ code { font-family: var(--mono); }
 .suggested-feature input { margin-top: 2px; }
 .suggested-feature small { display: block; color: var(--secondary); font-size: 12.5px; }
 
+/* Project-level suggestion review */
+.suggestions-waiting { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0 0 16px; font-size: 13.5px; }
+.suggestions-review { display: grid; gap: 16px; align-content: start; }
+.suggestions-heading h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
+.suggestions-heading h1:focus { outline: 0; }
+.suggestions-heading p { max-width: 64ch; margin: 6px 0 0; color: var(--secondary); }
+.suggestion-page-group h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+.suggestion-page-group h2 small { color: var(--secondary); font-size: 13px; font-weight: 400; }
+
 /* Screenshot */
 .capture-column { position: sticky; top: 76px; min-width: 0; }
 .capture-view .capture-column { position: static; }
@@ -427,6 +436,7 @@ textarea { resize: vertical; line-height: 1.45; }
 .remove-page-button:hover { text-decoration: underline; }
 .remove-page-form { margin: -8px 0 24px; }
 .danger-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 16px; border: 0; border-radius: 980px; background: var(--red); color: #fff; font-size: 13px; font-weight: 500; }
+.suggestions-review > .form-actions { position: sticky; bottom: 0; z-index: 4; margin: 0; padding: 12px 0 16px; background: var(--canvas); border-top: .5px solid var(--hairline); }
 .field-optional { color: var(--tertiary); font-weight: 400; }
 .field-hint { margin: -6px 0 0; color: var(--tertiary); font-size: 12px; }
 .onboarding-progress { margin: 16px 0 0; color: var(--secondary); font-size: 13px; }
@@ -476,6 +486,7 @@ textarea { resize: vertical; line-height: 1.45; }
   .completion-chip[open] { flex-basis: 100%; }
   .page-heading { flex-direction: column; gap: 8px; }
   .page-heading h1 { font-size: 24px; }
+  .suggestions-heading h1 { font-size: 24px; }
   .page-verdict { padding-top: 0; }
   .page-option, .project-picker select, .menu-select select { min-height: 40px; }
   .search-field { height: 40px; }
