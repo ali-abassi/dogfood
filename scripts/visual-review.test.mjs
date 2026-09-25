@@ -30,7 +30,7 @@ test('visual review uses the saved full-page PNG and becomes stale when it chang
   mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
   writeFileSync(file, png);
   const capture = { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo.png', sourceUrl: 'https://example.com/#/inspo' };
-  const page = { id: 'inspo', name: 'Inspo', capture };
+  const page = { id: 'inspo', name: 'Inspo', captures: { desktop: capture } };
   process.env.OPENROUTER_API_KEY = 'fixture-key';
   let outbound;
   globalThis.fetch = async (_url, options) => {
@@ -70,7 +70,7 @@ test('provider failure keeps an attempt receipt without creating a review', asyn
   globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'Provider unavailable' } }), { status: 503 });
   try {
     const capture = { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo.png', sourceUrl: 'https://example.com/#/inspo' };
-    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', capture }), /Provider unavailable/);
+    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', captures: { desktop: capture } }), /Provider unavailable/);
     assert.equal(latestVisualReview(root, 'fixture', 'inspo', capture).review, null);
     const directory = join(root, 'visual-reviews', 'fixture', 'inspo', 'failed-attempts');
     const receipt = JSON.parse(readFileSync(join(directory, readdirSync(directory)[0]), 'utf8'));

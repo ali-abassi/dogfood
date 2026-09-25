@@ -38,7 +38,7 @@ process.exit(1);
 chmodSync(fakeVitest, 0o755);
 const seeded = JSON.parse(readFileSync(join(projects, 'tidepool.json'), 'utf8'));
 seeded.source.checkout = checkout;
-seeded.pages[0].capture.fullPage = false;
+seeded.pages[0].captures.desktop.fullPage = false;
 seeded.pages[0].qa.tests = [{ id: 'home', label: 'Home sign-in boundary', file: 'src/home.test.ts', reason: 'The sign-in route must admit the owner and refuse invalid access.' }];
 writeFileSync(join(projects, 'tidepool.json'), `${JSON.stringify(seeded, null, 2)}\n`);
 let child;

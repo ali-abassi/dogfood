@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "id": "tidepool",
   "name": "Tidepool (demo)",
   "description": "A fictional swim school site bundled with dogfood to show every page state.",
@@ -21,19 +21,6 @@
       "group": "Marketing",
       "route": "/",
       "heading": "Home",
-      "capture": {
-        "path": "/captures/tidepool/home.png",
-        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
-        "capturedAt": "2026-09-25T16:13:16Z",
-        "viewport": "1440 × 900",
-        "tier": "real",
-        "state": "rendered",
-        "fullPage": true,
-        "pixelWidth": 1440,
-        "pixelHeight": 900,
-        "actor": "Signed-out visitor",
-        "sha256": "0ef3d89d57f84ade0de9b634e77f65a80a804851119e4ceb91e96db954e5ebe7"
-      },
       "features": [
         {
           "id": "home-1",
@@ -125,6 +112,32 @@
             "status": "untested",
             "note": ""
           }
+        ],
+        "accessibility": [
+          {
+            "id": "keyboard",
+            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "names",
+            "question": "Do images, fields, and buttons have accessible names?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "contrast",
+            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "reflow",
+            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "status": "untested",
+            "note": ""
+          }
         ]
       },
       "connections": [
@@ -142,7 +155,27 @@
       "qa": {
         "tests": [],
         "note": "No automated tests yet: the Book button link and page speed are unchecked."
-      }
+      },
+      "captures": {
+        "desktop": {
+          "path": "/captures/tidepool/home.png",
+          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
+          "capturedAt": "2026-09-25T16:13:16Z",
+          "viewport": "1440 × 900",
+          "tier": "real",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 1440,
+          "pixelHeight": 900,
+          "actor": "Signed-out visitor",
+          "sha256": "0ef3d89d57f84ade0de9b634e77f65a80a804851119e4ceb91e96db954e5ebe7"
+        },
+        "mobile": {
+          "state": "blocked",
+          "reason": "Not captured yet."
+        }
+      },
+      "scan": null
     },
     {
       "id": "classes",
@@ -150,19 +183,6 @@
       "group": "Marketing",
       "route": "/classes",
       "heading": "Classes",
-      "capture": {
-        "path": "/captures/tidepool/classes.png",
-        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/classes.html",
-        "capturedAt": "2026-09-25T16:13:16Z",
-        "viewport": "1440 × 900",
-        "tier": "real",
-        "state": "rendered",
-        "fullPage": true,
-        "pixelWidth": 1440,
-        "pixelHeight": 900,
-        "actor": "Signed-out visitor",
-        "sha256": "108149b3133757feae034d102126f2acc60852133757e45486fdfd1e29956839"
-      },
       "features": [
         {
           "id": "classes-1",
@@ -254,6 +274,32 @@
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           }
+        ],
+        "accessibility": [
+          {
+            "id": "keyboard",
+            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "names",
+            "question": "Do images, fields, and buttons have accessible names?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "contrast",
+            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "reflow",
+            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "status": "untested",
+            "note": ""
+          }
         ]
       },
       "connections": [
@@ -271,7 +317,27 @@
       "qa": {
         "tests": [],
         "note": "Fully reviewed by hand; add a link check when the site gets a build step."
-      }
+      },
+      "captures": {
+        "desktop": {
+          "path": "/captures/tidepool/classes.png",
+          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/classes.html",
+          "capturedAt": "2026-09-25T16:13:16Z",
+          "viewport": "1440 × 900",
+          "tier": "real",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 1440,
+          "pixelHeight": 900,
+          "actor": "Signed-out visitor",
+          "sha256": "108149b3133757feae034d102126f2acc60852133757e45486fdfd1e29956839"
+        },
+        "mobile": {
+          "state": "blocked",
+          "reason": "Not captured yet."
+        }
+      },
+      "scan": null
     },
     {
       "id": "book",
@@ -279,19 +345,6 @@
       "group": "Booking",
       "route": "/book",
       "heading": "Book a lesson",
-      "capture": {
-        "path": "/captures/tidepool/book.png",
-        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/book.html",
-        "capturedAt": "2026-09-25T16:13:16Z",
-        "viewport": "1440 × 900",
-        "tier": "real",
-        "state": "rendered",
-        "fullPage": true,
-        "pixelWidth": 1440,
-        "pixelHeight": 900,
-        "actor": "Signed-out visitor",
-        "sha256": "6830772367ef04c6125ac7a8a991dc8b3b4117a0d14f564188ee71d0d03d6b39"
-      },
       "features": [
         {
           "id": "book-1",
@@ -406,6 +459,32 @@
             "status": "untested",
             "note": ""
           }
+        ],
+        "accessibility": [
+          {
+            "id": "keyboard",
+            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "names",
+            "question": "Do images, fields, and buttons have accessible names?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "contrast",
+            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "reflow",
+            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "status": "untested",
+            "note": ""
+          }
         ]
       },
       "connections": [
@@ -423,7 +502,27 @@
       "qa": {
         "tests": [],
         "note": "No automated tests yet: booking submission and the confirmation email are unchecked."
-      }
+      },
+      "captures": {
+        "desktop": {
+          "path": "/captures/tidepool/book.png",
+          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/book.html",
+          "capturedAt": "2026-09-25T16:13:16Z",
+          "viewport": "1440 × 900",
+          "tier": "real",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 1440,
+          "pixelHeight": 900,
+          "actor": "Signed-out visitor",
+          "sha256": "6830772367ef04c6125ac7a8a991dc8b3b4117a0d14f564188ee71d0d03d6b39"
+        },
+        "mobile": {
+          "state": "blocked",
+          "reason": "Not captured yet."
+        }
+      },
+      "scan": null
     },
     {
       "id": "account",
@@ -431,19 +530,6 @@
       "group": "Account",
       "route": "/account",
       "heading": "Sign in",
-      "capture": {
-        "path": "/captures/tidepool/account.png",
-        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/account.html",
-        "capturedAt": "2026-09-25T16:13:16Z",
-        "viewport": "1440 × 900",
-        "tier": "real",
-        "state": "rendered",
-        "fullPage": true,
-        "pixelWidth": 1440,
-        "pixelHeight": 900,
-        "actor": "Signed-out visitor",
-        "sha256": "256ec18520aa20899b1694c57e6a483cc9360ecc7df41b8886f9f5c8148f72a0"
-      },
       "features": [
         {
           "id": "account-1",
@@ -529,6 +615,32 @@
             "status": "untested",
             "note": ""
           }
+        ],
+        "accessibility": [
+          {
+            "id": "keyboard",
+            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "names",
+            "question": "Do images, fields, and buttons have accessible names?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "contrast",
+            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "reflow",
+            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "status": "untested",
+            "note": ""
+          }
         ]
       },
       "connections": [
@@ -546,7 +658,27 @@
       "qa": {
         "tests": [],
         "note": "Nothing reviewed yet: sign-in, error messages, and lockout are unchecked."
-      }
+      },
+      "captures": {
+        "desktop": {
+          "path": "/captures/tidepool/account.png",
+          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/account.html",
+          "capturedAt": "2026-09-25T16:13:16Z",
+          "viewport": "1440 × 900",
+          "tier": "real",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 1440,
+          "pixelHeight": 900,
+          "actor": "Signed-out visitor",
+          "sha256": "256ec18520aa20899b1694c57e6a483cc9360ecc7df41b8886f9f5c8148f72a0"
+        },
+        "mobile": {
+          "state": "blocked",
+          "reason": "Not captured yet."
+        }
+      },
+      "scan": null
     },
     {
       "id": "admin",
@@ -554,15 +686,6 @@
       "group": "Account",
       "route": "/admin",
       "heading": "Staff schedule",
-      "capture": {
-        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
-        "capturedAt": "2026-09-25T16:13:16Z",
-        "viewport": "1440 × 900",
-        "tier": "real",
-        "state": "blocked",
-        "actor": "Signed-out visitor",
-        "reason": "Staff-only page. It was not captured because the demo has no staff account."
-      },
       "features": [
         {
           "id": "admin-1",
@@ -642,6 +765,32 @@
             "status": "untested",
             "note": ""
           }
+        ],
+        "accessibility": [
+          {
+            "id": "keyboard",
+            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "names",
+            "question": "Do images, fields, and buttons have accessible names?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "contrast",
+            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "status": "untested",
+            "note": ""
+          },
+          {
+            "id": "reflow",
+            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "status": "untested",
+            "note": ""
+          }
         ]
       },
       "connections": [
@@ -659,7 +808,23 @@
       "qa": {
         "tests": [],
         "note": "Blocked until a staff account exists for capture."
-      }
+      },
+      "captures": {
+        "desktop": {
+          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
+          "capturedAt": "2026-09-25T16:13:16Z",
+          "viewport": "1440 × 900",
+          "tier": "real",
+          "state": "blocked",
+          "actor": "Signed-out visitor",
+          "reason": "Staff-only page. It was not captured because the demo has no staff account."
+        },
+        "mobile": {
+          "state": "blocked",
+          "reason": "Not captured yet."
+        }
+      },
+      "scan": null
     }
   ]
 }
