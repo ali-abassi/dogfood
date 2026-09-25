@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { join, relative } from 'node:path';
 import { capturesDir, dataDir, root } from './lib/paths.mjs';
-import { capturePathPattern } from './lib/schema.mjs';
+import { servedImagePattern } from './lib/schema.mjs';
 import { onboard, onboardingPlan } from './lib/onboard.mjs';
 import { currentReview, startReview } from './lib/reviews.mjs';
 import { scanPage } from './lib/scanner.mjs';
@@ -106,7 +106,7 @@ function staticFile(pathname) {
     const [file, type] = assets.get(pathname);
     return { path: join(publicDir, file), type };
   }
-  if (capturePathPattern.test(pathname)) return { path: join(capturesDir, pathname.slice('/captures/'.length)), type: 'image/png' };
+  if (servedImagePattern.test(pathname)) return { path: join(capturesDir, pathname.slice('/captures/'.length)), type: 'image/png' };
   return null;
 }
 

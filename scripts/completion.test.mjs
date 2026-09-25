@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -119,6 +119,30 @@ test('a page moves from registered to complete only when every requirement has e
   store.recordCapture('shop', 'home', { ...capture, device: 'mobile', viewport: '390 × 844', file: screenshot('newer.png', 40, true) });
   assert.deepEqual(unmet(progress()), ['scan', 'ai-review'], 'a replaced screenshot makes the scan and the AI review stale');
   assert.ok(existsSync(join(data, 'captures/shop/home.png')));
+});
+
+test('a rescan records how each screenshot changed and flags reviews older than the change', () => {
+  store.createProject({ id: 'deli', name: 'Deli', url: 'https://deli.example' });
+  store.registerPage('deli', { id: 'home', name: 'Home', group: 'Public', route: '/', features: [{ id: 'menu', name: 'Menu' }] });
+  const scanWith = sidebar => store.recordScan('deli', 'home', { ...scan(), desktop: { file: screenshot('deli-desktop.png', 40, sidebar), viewport: '1440 × 900', facts: facts() } });
+  const page = () => store.readProject('deli').pages[0];
+  const progress = () => store.pageProgress(store.readProject('deli'), page());
+  scanWith(false);
+  assert.deepEqual(page().scan.changes, { desktop: null, mobile: null }, 'nothing to compare on the first scan');
+  store.recordVerdicts('deli', 'home', { features: [{ id: 'menu', status: 'pass', note }] }, 'agent:test');
+  scanWith(true);
+  const change = page().scan.changes.desktop;
+  assert.equal(change.changed, true);
+  assert.equal(change.changedShare, 0.1, 'four of the forty columns turned dark');
+  assert.match(change.previousPath, /^\/captures\/deli\/history\/home-\d+\.png$/);
+  assert.equal(readFileSync(join(data, change.diffPath.slice(1))).subarray(1, 4).toString(), 'PNG');
+  assert.equal(page().scan.changes.mobile.changed, false, 'the same mobile screenshot did not change');
+  assert.equal(progress().changedSinceReview, true);
+  store.recordVerdicts('deli', 'home', { checks: { clarity: { status: 'pass', note } } }, 'agent:test');
+  assert.equal(progress().changedSinceReview, false, 'a review after the change clears the flag');
+  scanWith(true);
+  assert.equal(page().scan.changes.desktop.changed, false);
+  assert.equal(page().scan.changes.desktop.changedShare, 0);
 });
 
 test('suggested features are added once, with unique IDs and expected behavior', () => {
