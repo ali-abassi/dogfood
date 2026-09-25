@@ -1,6 +1,6 @@
 # dogfood design system
 
-Revision 3, 2026-09-25. Supersedes the warm-canvas, green-action system of revision 1.
+Revision 4, 2026-09-25. Supersedes the warm-canvas, green-action system of revision 1.
 
 ## Product and register
 
@@ -28,8 +28,11 @@ For people checking a product page by page, dogfood feels like a first-party mac
 
 - Desktop: 256px sidebar (brand, project, search, show and sort, Overview, grouped page list, product link) and a content column with an opaque sticky toolbar holding the segmented page-view control.
 - Project overview opens by default. Its content starts with the project name and four metrics, then lists every page in site order under the same groups used by the sidebar. Each page row carries server status, open-issue count, capture age, and unmet requirement labels.
+- See page puts the desktop screenshot (wide) and the mobile screenshot (a 248px phone column) side by side, then the scan results, then the AI review. Other page views keep one sticky screenshot column with a Desktop/Mobile segmented toggle.
+- Scan results lead with measured problems in the red state tint, then two device columns of compact label/value rows: load time, errors, failed requests, API calls, sideways scrolling, search tags, security headers (a missing one says "Missing"), and accessibility counts. Lists longer than five entries fold behind a disclosure.
+- Add project is a single narrow group: the product URL, an optional name, an optional Chrome profile for signed-in pages, one blue "Add and scan" pill, then live progress ("Scanning 3 of 12 · Pricing"). With no projects, the same group is centred on the canvas as the welcome ("Add your first project").
 - A page shows its route in mono, a 28px title, one line of guidance, and server status on the right. A single compact row of requirement chips sits directly below the heading; each chip expands to its full requirement, missing evidence, and the view that resolves it. The active page view follows, beside the sticky screenshot column. See page uses the full width.
-- Phone (≤760px): the sidebar becomes a full-screen Pages sheet with a Done button; overview metrics become two columns and page rows stack their metadata. The segmented control takes its own full-width row with short labels ("Checks, Page, Review, Safety, Issues") while accessible names stay complete. Requirement chips remain a single horizontal row that can scroll and expand.
+- Phone (≤760px): the two screenshots and the two scan columns stack; the sidebar becomes a full-screen Pages sheet with a Done button; overview metrics become two columns and page rows stack their metadata. The segmented control takes its own full-width row with short labels ("Checks, Page, Review, Safety, Issues") while accessible names stay complete. Requirement chips remain a single horizontal row that can scroll and expand.
 
 ### Typography
 
@@ -62,7 +65,7 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 ### Components
 
-- Primary action: one blue pill per view (Run checks, Ask AI to review image, Review this page, Edit checks & connections, Save). Secondary: grey pill (Cancel). Tertiary: blue text (Resolve, Add issue, View full size).
+- Primary action: one blue pill per view (Run checks, Ask AI to review image, Review this page, Edit checks & connections, Save, Add and scan). Secondary: grey pill (Cancel, Scan again). Tertiary: blue text (Resolve, Add issue, View full size).
 - Status: pill with a dot and text; sidebar rows show the dot alone with the status as the accessible name and tooltip.
 - Overview uses one four-cell metrics group and grouped page rows. Each row is one page-opening button; completion is shown by requirement labels and a "QA complete" state, never a per-page score.
 - QA completion uses state-marked requirement chips. Opening an unmet chip reveals its server-provided missing text and a tertiary button for the corresponding page view. Verdict attribution appears as small metadata under the evidence note; issue attribution distinguishes opening from resolution.
@@ -85,3 +88,5 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **Agent-selected working policy, 2026-09-25:** Pages without selected tests open on My review, because an empty runner is not a useful first view. Pages with tests open on Run checks.
 - **Agent-selected working policy, 2026-09-25:** The bundled demo is a fictional product so the public repository ships no private product data.
 - **Agent-selected working policy, 2026-09-25:** Open the project overview first and keep page requirements in compact expandable chips below each page heading. This makes page status and remaining QA visible immediately while keeping detailed evidence and resolving views one activation away.
+- **User-stated, 2026-09-25:** every page shows its mobile and desktop view, and onboarding a new project must be as easy as possible.
+- **Agent-selected working policy, 2026-09-25:** See page shows both screenshots at once, because comparing the two layouts is the point; Scan again stays a grey pill so the AI review remains the view's one primary action; onboarding asks only for a URL, and the welcome state replaces the old "no projects" error so the first run starts working instead of failing.

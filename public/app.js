@@ -8,11 +8,16 @@ const checkNames = {
 };
 const statusNames = { blocked: 'Blocked', untested: 'Untested', in_review: 'In review', pass: 'Pass', needs_work: 'Needs work', open: 'Open', resolved: 'Resolved' };
 const tierNames = { source: 'Source-based', automated: 'Automated', mock: 'Mock', real: 'Real browser', longitudinal: 'Longitudinal' };
-const auditNames = { security: 'Security', scraping: 'Automated copying', seo: 'Search visibility' };
-const requirementViews = { capture: 'capture', features: 'review', checks: 'review', audit: 'risk', connections: 'risk', tests: 'tests', 'ai-review': 'capture', issues: 'findings' };
-const requirementShortNames = { capture: 'Capture', features: 'Features', checks: 'Quality', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
-const requirementActions = { capture: 'See page', features: 'My review', checks: 'My review', audit: 'Safety & search', connections: 'Safety & search', tests: 'Run checks', 'ai-review': 'See page', issues: 'Issues' };
-const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
+const auditNames = { security: 'Security', scraping: 'Automated copying', seo: 'Search visibility', accessibility: 'Accessibility' };
+const deviceNames = { desktop: 'Desktop', mobile: 'Mobile' };
+const deviceViewports = { desktop: '1440 × 900', mobile: '390 × 844' };
+const scanHeaderNames = ['content-security-policy', 'strict-transport-security', 'x-frame-options', 'x-content-type-options', 'referrer-policy'];
+const scanSeoNames = { title: 'Title', description: 'Description', canonical: 'Canonical', robots: 'Robots', lang: 'Language', h1Count: 'H1 count' };
+const scanAccessibilityNames = { imagesWithoutAlt: 'Images without alt', unlabeledFields: 'Unlabeled fields', unnamedButtons: 'Unnamed buttons' };
+const requirementViews = { capture: 'capture', scan: 'capture', features: 'review', checks: 'review', audit: 'risk', connections: 'risk', tests: 'tests', 'ai-review': 'capture', issues: 'findings' };
+const requirementShortNames = { capture: 'Screenshots', scan: 'Scan', features: 'Features', checks: 'Quality', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
+const requirementActions = { capture: 'See page', scan: 'See page', features: 'My review', checks: 'My review', audit: 'Safety & search', connections: 'Safety & search', tests: 'Run checks', 'ai-review': 'See page', issues: 'Issues' };
+const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, screenshotDevice: 'desktop', scan: { key: '', running: false, error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -78,7 +83,7 @@ function activePage() {
 }
 
 function ensureSelection() {
-  if (state.view === 'overview') return;
+  if (['overview', 'add-project'].includes(state.view)) return;
   if (state.project.pages.some(page => page.id === state.pageId)) return;
   state.pageId = state.project.pages[0]?.id ?? null;
   state.view = defaultView(activePage());
@@ -126,6 +131,7 @@ function sidebarMarkup() {
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project pages">
       <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
         ${projectPickerMarkup()}
+        <button type="button" class="add-project-button" data-action="add-project">+ Add project</button>
         <h2 class="sr-only">Pages</h2>
         <label class="search-field"><span class="sr-only">Search pages or features</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or features" value="${escapeHtml(state.query)}"></label>
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Untested'], ['reviewed', 'Reviewed']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least reviewed']])}</div>
@@ -141,47 +147,142 @@ function externalLinkMarkup(value, label, className = '') {
 
 function captureImageMarkup(page, capture, imagePath) {
   if (imagePath) return `<a class="capture-image-link" href="${imagePath}" target="_blank" rel="noopener" aria-label="Open full-size screenshot of ${escapeHtml(page.name)}"><img src="${imagePath}" alt="${escapeHtml(page.name)} page captured at ${escapeHtml(capture.viewport)}" loading="eager"></a>`;
-  return `<div class="missing-capture"><strong>Screenshot unavailable</strong><p>${escapeHtml(capture.reason || 'No screenshot has been saved for this page.')}</p></div>`;
+  return `<div class="missing-capture"><strong>Not captured</strong><p>${escapeHtml(capture.reason || 'Not captured yet.')}</p></div>`;
 }
 
 function captureEvidence(capture, imagePath) {
-  if (!imagePath) return 'No rendered evidence is attached.';
+  if (!imagePath) return escapeHtml(capture.reason || 'Not captured yet.');
   const tier = tierNames[capture.tier] || capture.tier;
-  return `${escapeHtml(tier)} · ${escapeHtml(capture.actor)} · ${escapeHtml(capture.pixelWidth || '—')} × ${escapeHtml(capture.pixelHeight || '—')} px. Rendering only.`;
-}
-
-function capturePresentation(capture, imagePath) {
-  const label = imagePath ? (capture.fullPage ? 'Full-page screenshot' : 'Partial screenshot') : 'Screenshot unavailable';
-  const fullLink = imagePath ? `<a href="${imagePath}" target="_blank" rel="noopener">View full size ↗</a>` : '';
-  return { label, evidence: captureEvidence(capture, imagePath), fullLink };
+  return `${escapeHtml(tier)} · ${escapeHtml(capture.actor)} · ${escapeHtml(capture.pixelWidth)} × ${escapeHtml(capture.pixelHeight)} px. Rendering only.`;
 }
 
 function captureImagePath(capture) {
   return capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
 }
 
-function captureScrollHint(capture, imagePath) {
-  return imagePath && capture.fullPage ? ' · Scroll inside the image to see the rest' : '';
-}
-
-function captureDateLabel(capture) {
-  if (capture.state !== 'rendered') return 'Not captured';
-  return dateLabel(capture.capturedAt) || 'Not captured';
+function captureFrameMarkup(page, device) {
+  const capture = page.captures[device];
+  const imagePath = captureImagePath(capture);
+  const viewport = capture.viewport || deviceViewports[device];
+  const fullLink = imagePath ? `<a href="${imagePath}" target="_blank" rel="noopener">View full size ↗</a>` : '';
+  const source = externalLinkMarkup(capture.sourceUrl, 'Open original page ↗');
+  return `<figure class="device-frame device-frame-${device}" data-device="${escapeHtml(device)}">
+    <figcaption class="device-caption"><span><strong>${escapeHtml(deviceNames[device])}</strong><small>${escapeHtml(viewport)} · ${escapeHtml(relativeCaptureAge(capture))}</small></span>${fullLink}</figcaption>
+    <div class="capture-panel"><div class="capture-image">${captureImageMarkup(page, capture, imagePath)}</div></div>
+    <div class="capture-caption"><details><summary>About this screenshot</summary><p>${captureEvidence(capture, imagePath)}</p></details>${source}</div>
+  </figure>`;
 }
 
 function captureMarkup(page) {
-  const capture = page.captures.desktop;
-  const imagePath = captureImagePath(capture);
-  const image = captureImageMarkup(page, capture, imagePath);
-  const { label, evidence, fullLink } = capturePresentation(capture, imagePath);
-  const scrollHint = captureScrollHint(capture, imagePath);
-  const originalPage = externalLinkMarkup(capture.sourceUrl, 'Open original page ↗');
+  const selected = state.screenshotDevice;
+  const toggles = Object.entries(deviceNames).map(([device, label]) => `<button type="button" data-action="screenshot-device" data-screenshot-device="${escapeHtml(device)}" aria-pressed="${selected === device}">${escapeHtml(label)}</button>`).join('');
   return `<section class="capture-column" aria-label="Page screenshot">
-    <div class="capture-heading"><h3>${label}</h3>${fullLink}</div>
-    <p class="capture-meta">${escapeHtml(captureDateLabel(capture))}${scrollHint}</p>
-    <div class="capture-panel" ${imagePath ? 'role="region" tabindex="0" aria-label="Screenshot preview; scroll to see the rest"' : ''}><div class="capture-image">${image}</div></div>
-    <div class="capture-caption"><details><summary>About this screenshot</summary><p>${evidence}</p></details>${originalPage}</div>
+    <div class="capture-column-heading"><h3>Page screenshot</h3><div class="device-toggle" role="group" aria-label="Screenshot device">${toggles}</div></div>
+    ${captureFrameMarkup(page, selected)}
   </section>`;
+}
+
+function scanLoadTime(value) {
+  if (value === null || value === undefined) return 'Not measured';
+  return value >= 1000 ? `${(value / 1000).toFixed(1)} s` : `${Math.round(value)} ms`;
+}
+
+function scanListMarkup(items, label, empty, formatItem) {
+  const rows = (items || []).map(formatItem);
+  if (!rows.length) return `<p class="scan-empty-list">${escapeHtml(empty)}</p>`;
+  const remaining = rows.slice(5);
+  const disclosure = remaining.length ? `<details><summary>Show ${remaining.length} more ${escapeHtml(label)}</summary><ul class="scan-list">${remaining.join('')}</ul></details>` : '';
+  return `<ul class="scan-list">${rows.slice(0, 5).join('')}</ul>${disclosure}`;
+}
+
+function scanMessageItemMarkup(message) {
+  return `<li>${escapeHtml(message || 'No message provided')}</li>`;
+}
+
+function scanRequestItemMarkup(request) {
+  return `<li><code>${escapeHtml(request.method)}</code> <span>${escapeHtml(request.url)}</span> <strong>${escapeHtml(request.status)}</strong></li>`;
+}
+
+function scanFactMarkup(label, value) {
+  return `<div><dt>${escapeHtml(label)}</dt><dd>${value}</dd></div>`;
+}
+
+function scanListFactMarkup(label, items, empty, formatItem) {
+  return scanFactMarkup(label, scanListMarkup(items, label.toLowerCase(), empty, formatItem));
+}
+
+function scanSeoMarkup(seo) {
+  const values = Object.entries(scanSeoNames).map(([key, label]) => scanFactMarkup(label, escapeHtml(seo[key] ?? 'Missing'))).join('');
+  return `<dl class="scan-subfacts">${values}</dl>`;
+}
+
+function scanHeadersMarkup(headers) {
+  const values = scanHeaderNames.map(name => scanFactMarkup(name, escapeHtml(headers[name] || 'Missing'))).join('');
+  return `<dl class="scan-subfacts">${values}</dl>`;
+}
+
+function scanAccessibilityMarkup(accessibility) {
+  const values = Object.entries(scanAccessibilityNames).map(([key, label]) => scanFactMarkup(label, escapeHtml(accessibility[key]))).join('');
+  return `<dl class="scan-subfacts">${values}</dl>`;
+}
+
+function scanDeviceMarkup(scan, page, device) {
+  const facts = scan.viewports[device];
+  const capture = page.captures[device];
+  return `<section class="scan-device" aria-label="${escapeHtml(deviceNames[device])} scan results">
+    <header><h3>${escapeHtml(deviceNames[device])}</h3><span>${escapeHtml(capture.viewport || deviceViewports[device])}</span></header>
+    <dl class="scan-facts">
+      ${scanFactMarkup('Load time', escapeHtml(scanLoadTime(facts.loadMs)))}
+      ${scanListFactMarkup('Page errors', facts.pageErrors, 'None', scanMessageItemMarkup)}
+      ${scanListFactMarkup('Console errors', facts.consoleErrors, 'None', scanMessageItemMarkup)}
+      ${scanListFactMarkup('Failed requests', facts.failedRequests, 'None', scanRequestItemMarkup)}
+      ${scanListFactMarkup('API calls', facts.requests, 'None recorded', scanRequestItemMarkup)}
+      ${scanFactMarkup('Sideways scrolling', facts.horizontalOverflow ? '<span class="scan-problem-value">Yes</span>' : 'No')}
+      ${scanFactMarkup('Search tags', scanSeoMarkup(facts.seo))}
+      ${scanFactMarkup('Security headers', scanHeadersMarkup(facts.headers))}
+      ${scanFactMarkup('Accessibility counts', scanAccessibilityMarkup(facts.accessibility))}
+    </dl>
+  </section>`;
+}
+
+function scanProblemListMarkup(page) {
+  const problems = page.progress.scanProblems || [];
+  if (!problems.length) return '<p class="scan-clear">No scan problems found.</p>';
+  return `<ul class="scan-problems">${problems.map(problem => `<li>${escapeHtml(problem)}</li>`).join('')}</ul>`;
+}
+
+function scanButtonLabel(page, scanning) {
+  if (scanning) return 'Scanning…';
+  return page.scan ? 'Scan again' : 'Scan page';
+}
+
+// The scan button, progress, and error for the page being viewed; state.scan.key says which page they belong to.
+function scanControlsMarkup(page) {
+  const scan = state.scan.key === `${state.project.id}/${page.id}` ? state.scan : { running: false, error: '' };
+  const button = `<button type="button" class="text-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${scanButtonLabel(page, scan.running)}</button>`;
+  const progress = scan.running ? '<p class="scan-progress" role="status">Scanning… this takes about 15 seconds.</p>' : '';
+  const error = scan.error ? `<p class="form-error" role="alert">${escapeHtml(scan.error)}</p>` : '';
+  return { button, notices: `${progress}${error}` };
+}
+
+function scanSummaryMarkup(page) {
+  const scan = page.scan;
+  if (!scan) return '<p class="scan-unavailable">This page has not been scanned yet. Scan it to measure errors, requests, speed, search tags, and accessibility.</p>';
+  const devices = ['desktop', 'mobile'].map(device => scanDeviceMarkup(scan, page, device)).join('');
+  return `<div class="scan-problem-summary"><h3>Scan problems</h3>${scanProblemListMarkup(page)}</div><div class="scan-devices">${devices}</div>`;
+}
+
+function scanResultsMarkup(page) {
+  const { button, notices } = scanControlsMarkup(page);
+  const scanned = page.scan ? `<p>Scanned ${escapeHtml(dateLabel(page.scan.scannedAt))} by ${escapeHtml(page.scan.actor)}</p>` : '';
+  return `<section class="scan-results content-panel" aria-label="Scan results">
+    <div class="scan-results-heading"><div><h2>Scan results</h2>${scanned}</div>${button}</div>
+    ${notices}${scanSummaryMarkup(page)}
+  </section>`;
+}
+
+function seePageMarkup(page) {
+  return `<div class="see-page-content"><section class="capture-gallery" aria-label="Page screenshots">${captureFrameMarkup(page, 'desktop')}${captureFrameMarkup(page, 'mobile')}</section>${scanResultsMarkup(page)}${visualReviewMarkup(page)}</div>`;
 }
 
 const clarityDimensions = { purpose: 'Purpose', nextAction: 'Next action', hierarchy: 'Hierarchy', copy: 'Copy' };
@@ -240,7 +341,8 @@ function visualReviewMarkup(page) {
 }
 
 function featureMarkup(feature) {
-  return `<li class="feature"><div><strong>${escapeHtml(feature.name)}</strong>${feature.note ? `<p>${escapeHtml(feature.note)}</p>` : ''}${verdictByMarkup(feature.by, feature.at)}</div>${statusPill(feature.status)}</li>`;
+  const expected = feature.expected ? `<p class="feature-expected">Expected: ${escapeHtml(feature.expected)}</p>` : '';
+  return `<li class="feature"><div><strong>${escapeHtml(feature.name)}</strong>${expected}${feature.note ? `<p>${escapeHtml(feature.note)}</p>` : ''}${verdictByMarkup(feature.by, feature.at)}</div>${statusPill(feature.status)}</li>`;
 }
 
 function checkMarkup(key, entry) {
@@ -453,12 +555,12 @@ function overviewMetricsMarkup() {
   const complete = pages.filter(page => page.progress.complete).length;
   const needsWork = pages.filter(page => page.progress.status === 'needs_work').length;
   const blocking = pages.flatMap(page => page.findings).filter(isBlockingIssue).length;
-  const screenshots = pages.filter(page => page.progress.requirements.some(item => item.id === 'capture' && !item.met)).length;
+  const scans = pages.filter(page => page.progress.requirements.some(item => ['capture', 'scan'].includes(item.id) && !item.met)).length;
   return `<div class="overview-metrics" aria-label="Project metrics">
     <div class="overview-metric" data-metric="complete"><strong>${escapeHtml(complete)} of ${escapeHtml(pages.length)}</strong><span> pages complete</span></div>
     <div class="overview-metric" data-metric="needs-work"><strong>${escapeHtml(needsWork)}</strong><span> ${needsWork === 1 ? 'page needs work' : 'pages need work'}</span></div>
     <div class="overview-metric" data-metric="blocking-issues"><strong>${escapeHtml(blocking)}</strong><span> open P0/P1 ${blocking === 1 ? 'issue' : 'issues'}</span></div>
-    <div class="overview-metric" data-metric="screenshots"><strong>${escapeHtml(screenshots)}</strong><span> ${screenshots === 1 ? 'page needs a' : 'pages need a'} validated screenshot</span></div>
+    <div class="overview-metric" data-metric="scans"><strong>${escapeHtml(scans)}</strong><span> ${scans === 1 ? 'page needs a scan' : 'pages need a scan'}</span></div>
   </div>`;
 }
 
@@ -472,12 +574,14 @@ function overviewRequirementsMarkup(page) {
 
 function overviewPageMarkup(page) {
   const status = page.progress.status;
+  const scanProblemCount = page.progress.scanProblems.length;
+  const scanProblems = scanProblemCount ? `<span class="overview-scan-problems" data-scan-problems="${escapeHtml(scanProblemCount)}">${escapeHtml(plural(scanProblemCount, 'scan problem', 'scan problems'))}</span>` : '';
   return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(status)}"><button type="button" data-page="${escapeHtml(page.id)}">
     <span class="overview-status">${statusPill(status)}</span>
     <span class="overview-identity"><strong>${escapeHtml(page.name)}</strong><code>${escapeHtml(page.route)}</code></span>
     <span class="overview-open-issues">${escapeHtml(openIssueCount(page))}</span>
     <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.captures.desktop))}</span>
-    <span class="overview-requirements">${overviewRequirementsMarkup(page)}</span>
+    <span class="overview-requirements">${scanProblems}${overviewRequirementsMarkup(page)}</span>
   </button></div>`;
 }
 
@@ -535,16 +639,63 @@ function activeViewMarkup(page) {
 }
 
 function toolbarMarkup(page) {
-  const navigation = state.view !== 'overview' && page ? viewNavigationMarkup(page) : '';
-  const toolbarClass = state.view === 'overview' ? 'toolbar overview-toolbar' : 'toolbar';
+  const navigation = state.view !== 'overview' && state.view !== 'add-project' && page ? viewNavigationMarkup(page) : '';
+  const toolbarClass = navigation ? 'toolbar' : 'toolbar overview-toolbar';
   return `<div class="${toolbarClass}"><button type="button" class="page-menu-toggle" data-action="open-pages">Pages</button>${navigation}</div>`;
+}
+
+const addProjectCopy = {
+  welcome: { eyebrow: 'Welcome to dogfood', title: 'Add your first project', lede: 'Start with a product URL. dogfood finds its pages and scans each one on desktop and mobile.' },
+  add: { eyebrow: 'New project', title: 'Add project', lede: 'Enter a URL and dogfood finds its pages and scans each one on desktop and mobile.' },
+};
+
+function onboardingButtonText() {
+  if (!state.onboarding.running) return 'Add and scan';
+  return state.onboarding.job ? 'Scanning…' : 'Adding project…';
+}
+
+function onboardingNoticeMarkup() {
+  const progress = state.onboarding.running ? `<p class="onboarding-progress" role="status">${onboardingProgressText()}</p>` : '';
+  const error = state.onboarding.error ? `<p class="form-error" role="alert">${escapeHtml(state.onboarding.error)}</p>` : '';
+  return `${progress}${error}`;
+}
+
+function addProjectFormMarkup(welcome) {
+  const copy = addProjectCopy[welcome ? 'welcome' : 'add'];
+  const disabled = state.onboarding.running ? 'disabled' : '';
+  const cancel = welcome ? '' : `<button class="text-button" type="button" data-action="cancel-add-project" ${disabled}>Cancel</button>`;
+  const draft = state.projectDraft;
+  return `<section class="add-project-panel content-panel" aria-label="Add project">
+    <header class="add-project-heading"><p class="page-route">${copy.eyebrow}</p><h1>${copy.title}</h1><p>${copy.lede}</p></header>
+    <form id="add-project-form" novalidate>
+      <fieldset ${disabled}>
+        <label for="product-url">Product URL<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}"></label>
+        <label for="project-name">Name <span class="field-optional">Optional</span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
+        <label for="browser-profile">Chrome profile <span class="field-optional">Optional</span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
+        <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>
+      </fieldset>
+      ${onboardingNoticeMarkup()}
+      <div class="form-actions"><button class="save-button" type="submit" ${disabled}>${onboardingButtonText()}</button>${cancel}</div>
+    </form>
+  </section>`;
+}
+
+function onboardingProgressText() {
+  if (state.onboarding.total === null) return 'Finding pages…';
+  const current = state.onboarding.current ? ` · ${escapeHtml(state.onboarding.current)}` : '';
+  return `Scanning ${escapeHtml(state.onboarding.scanned)} of ${escapeHtml(state.onboarding.total)}${current}`;
+}
+
+function welcomeMarkup() {
+  return `<main class="welcome-state">${addProjectFormMarkup(true)}</main>`;
 }
 
 function pageContentMarkup(page) {
   if (state.view === 'overview') return overviewMarkup();
+  if (state.view === 'add-project') return addProjectFormMarkup(false);
   if (!page) return '<div class="workspace-empty"><h2>No pages yet</h2><p>No pages have been added to this project.</p></div>';
-  const primary = state.view === 'capture' ? visualReviewMarkup(page) : activeViewMarkup(page);
-  return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}<div class="view-grid ${state.view === 'capture' ? 'capture-view' : ''}">${primary}${captureMarkup(page)}</div>`;
+  if (state.view === 'capture') return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}${seePageMarkup(page)}`;
+  return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}<div class="view-grid">${activeViewMarkup(page)}${captureMarkup(page)}</div>`;
 }
 
 function workspaceMarkup() {
@@ -553,6 +704,10 @@ function workspaceMarkup() {
 }
 
 function render() {
+  if (!state.project && !state.projects.length) {
+    app.innerHTML = `${welcomeMarkup()}<div class="save-message" role="status"></div>`;
+    return;
+  }
   if (!state.project) return;
   ensureSelection();
   syncQaState();
@@ -696,6 +851,9 @@ async function loadProject(id) {
   state.editing = false;
   state.auditEditing = false;
   state.findingForm = null;
+  state.scan = { key: '', running: false, error: '' };
+  state.onboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
+  state.projectDraft = { url: '', name: '', browserProfile: '' };
   state.qa.key = '';
   state.visual.key = '';
   state.message = '';
@@ -705,7 +863,12 @@ async function loadProject(id) {
 async function start() {
   try {
     state.projects = await readJson('/api/projects');
-    if (!state.projects.length) throw new Error('No projects yet. Run npm run demo to see an example, or add a manifest to data/projects.');
+    if (!state.projects.length) {
+      state.project = null;
+      state.view = 'add-project';
+      render();
+      return;
+    }
     await loadProject(state.projects[0].id);
   } catch (error) { showError(error.message); }
 }
@@ -939,7 +1102,81 @@ const buttonActions = new Map([
   ['add-connection', addConnectionRow],
   ['run-qa', runQa],
   ['run-visual', runVisualReview],
+  ['scan', scanActivePage],
+  ['screenshot-device', button => { state.screenshotDevice = button.dataset.screenshotDevice; render(); }],
+  ['add-project', openAddProject],
+  ['cancel-add-project', () => { state.view = 'overview'; render(); }],
 ]);
+
+const idleOnboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
+
+function openAddProject() {
+  if (blockOpenFormNavigation()) return;
+  state.view = 'add-project';
+  state.browseOpen = false;
+  state.onboarding = { ...idleOnboarding };
+  render();
+  document.querySelector('#product-url')?.focus();
+}
+
+function isHttpUrl(value) {
+  return URL.canParse(value ?? '') && ['http:', 'https:'].includes(new URL(value).protocol);
+}
+
+// Only fields the person filled in are sent; the server fills in the rest.
+function onboardingInput(form) {
+  const data = new FormData(form);
+  return Object.fromEntries(['url', 'name', 'browserProfile'].map(key => [key, String(data.get(key) ?? '').trim()]).filter(([, value]) => value));
+}
+
+function failOnboarding(message) {
+  state.onboarding = { ...state.onboarding, running: false, error: message };
+  render();
+}
+
+async function submitOnboarding(form) {
+  const input = onboardingInput(form);
+  state.projectDraft = { url: '', name: '', browserProfile: '', ...input };
+  if (!isHttpUrl(input.url)) return failOnboarding('Enter the product URL, starting with http:// or https://.');
+  state.onboarding = { ...idleOnboarding, running: true };
+  render();
+  try {
+    const { job } = await readJson('/api/onboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+    state.onboarding.job = job;
+    await followOnboarding(job);
+  } catch (error) { failOnboarding(error.message); }
+}
+
+// Polls the onboarding job once a second until it finishes, then opens the new project.
+async function followOnboarding(job) {
+  const status = await readJson(`/api/onboard/${encodeURIComponent(job)}`);
+  if (status.status === 'failed') throw new Error(status.error || 'Onboarding failed.');
+  if (status.status === 'done') return openOnboardedProject(status.projectId);
+  Object.assign(state.onboarding, { total: status.total, scanned: status.scanned, current: status.current });
+  render();
+  await new Promise(done => setTimeout(done, 1000));
+  return followOnboarding(job);
+}
+
+async function openOnboardedProject(id) {
+  state.projects = await readJson('/api/projects');
+  await loadProject(id);
+}
+
+async function scanActivePage() {
+  const page = activePage();
+  const key = `${state.project.id}/${page.id}`;
+  if (state.scan.running) return;
+  state.scan = { key, running: true, error: '' };
+  render();
+  try {
+    const project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/scan`, { method: 'POST' });
+    if (project.id === state.project.id) state.project = project;
+    state.scan = { key, running: false, error: '' };
+    state.visual.key = '';
+  } catch (error) { state.scan = { key, running: false, error: error.message }; }
+  render();
+}
 
 function navigationRequested(button) {
   return button.dataset.page || button.dataset.view || button.dataset.overview !== undefined;
@@ -1039,11 +1276,19 @@ app.addEventListener('input', event => {
   renderSidebarPageList();
 });
 
+const formHandlers = new Map([
+  ['review-form', saveReview],
+  ['finding-form', saveFinding],
+  ['resolution-form', resolveFinding],
+  ['audit-form', saveAudit],
+  ['add-project-form', submitOnboarding],
+]);
+
 app.addEventListener('submit', event => {
-  if (event.target.id === 'review-form') { event.preventDefault(); return saveReview(event.target); }
-  if (event.target.id === 'finding-form') { event.preventDefault(); return saveFinding(event.target); }
-  if (event.target.id === 'resolution-form') { event.preventDefault(); return resolveFinding(event.target); }
-  if (event.target.id === 'audit-form') { event.preventDefault(); return saveAudit(event.target); }
+  const handler = formHandlers.get(event.target.id);
+  if (!handler) return;
+  event.preventDefault();
+  handler(event.target);
 });
 
 start();

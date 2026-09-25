@@ -4,3 +4,4 @@ node_modules/
 data/
 demo/runs/
 demo/visual-reviews/
+demo/captures/*/history/
