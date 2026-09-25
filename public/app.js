@@ -307,6 +307,7 @@ function changeFigureMarkup(page, device, kind, path, caption) {
 
 function changeDeviceMarkup(page, device) {
   const change = page.scan.changes[device];
+  if (!change.changed) return `<div class="change-device"><h3>${escapeHtml(deviceNames[device])}: no visual change</h3></div>`;
   const figures = [
     changeFigureMarkup(page, device, 'previous', change.previousPath, 'Previous'),
     changeFigureMarkup(page, device, 'current', page.captures[device].path, 'Current'),
@@ -962,6 +963,7 @@ async function readJson(url, options) {
 
 async function loadProject(id) {
   state.project = await readJson(`/api/projects/${encodeURIComponent(id)}`);
+  rememberProject(id);
   state.pageId = null;
   state.view = 'overview';
   state.query = '';
@@ -990,8 +992,21 @@ async function start() {
       render();
       return;
     }
-    await loadProject(state.projects[0].id);
+    await loadProject(rememberedProjectId() ?? state.projects[0].id);
   } catch (error) { showError(error.message); }
+}
+
+// The last project opened in this browser; storage can be unavailable (private windows), so it is only a convenience.
+function rememberedProjectId() {
+  try {
+    const id = localStorage.getItem('dogfood:project');
+    return state.projects.some(project => project.id === id) ? id : null;
+  } catch { return null; }
+}
+
+function rememberProject(id) {
+  try { localStorage.setItem('dogfood:project', id); }
+  catch { /* Remembering the project is optional. */ }
 }
 
 function reviewFromForm(form, page) {
