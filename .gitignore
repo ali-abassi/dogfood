@@ -3,3 +3,4 @@ node_modules/
 # Your own projects, captures, runs and AI reviews stay local.
 data/
 demo/runs/
+design-evidence/

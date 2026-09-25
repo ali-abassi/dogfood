@@ -5,7 +5,7 @@ import { render } from '../app.mjs';
 
 function captureImageMarkup(page, capture, imagePath) {
   if (imagePath) return `<a class="capture-image-link" href="${imagePath}" target="_blank" rel="noopener" aria-label="Open full-size screenshot of ${escapeHtml(page.name)}"><img src="${imagePath}" alt="${escapeHtml(page.name)} page captured at ${escapeHtml(capture.viewport)}" loading="eager"></a>`;
-  return `<div class="missing-capture"><strong>Not captured</strong><p>${escapeHtml(capture.reason || 'Not captured yet.')}</p></div>`;
+  return `<div class="missing-capture"><strong>Not captured</strong><p>${escapeHtml(capture.reason || 'Not captured yet.')}</p><button type="button" class="text-button" data-action="scan">Scan page</button></div>`;
 }
 
 function captureEvidence(capture, imagePath) {

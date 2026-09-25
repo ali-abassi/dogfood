@@ -55,30 +55,29 @@ function removePageMarkup(page) {
 }
 
 export function pageHeaderMarkup(page) {
-  const guidance = page.qa.tests.length ? 'Start by running checks, then inspect the page and save your review.' : 'Inspect this page and save what you found.';
-  return `<div class="page-heading"><div><p class="page-route">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1><p class="page-guidance">${escapeHtml(guidance)}</p></div><div class="page-verdict"><small>Checklist status</small>${statusPill(page.progress.status)}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${removePageMarkup(page)}`;
+  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-verdict">${statusPill(page.progress.status)}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${removePageMarkup(page)}`;
 }
 
-function requirementDetailMarkup(requirement) {
-  if (requirement.met) return '<p class="completion-met">Requirement met.</p>';
+// What is missing leads, each with its reason and the view that fixes it; what is done
+// shares one quiet line. Nothing expands, so nothing moves while someone reads.
+function missingRequirementMarkup(requirement) {
   const view = requirementViews[requirement.id] || 'review';
   const action = requirementActions[requirement.id] || 'Open';
-  return `<p>${escapeHtml(requirement.missing)}</p><button type="button" class="completion-action" data-view="${escapeHtml(view)}">Open ${escapeHtml(action)}</button>`;
+  return `<li class="completion-item" data-requirement="${escapeHtml(requirement.id)}" data-met="false"><span class="completion-mark" aria-hidden="true"></span><div class="completion-text"><strong>${escapeHtml(requirement.label)}</strong><p>${escapeHtml(requirement.missing)}</p></div><button type="button" class="completion-action" data-view="${escapeHtml(view)}">Open ${escapeHtml(action)}</button></li>`;
 }
 
-function requirementChipMarkup(requirement) {
-  const met = String(requirement.met);
-  const shortName = requirementShortNames[requirement.id] || requirement.label;
-  const mark = requirement.met ? '✓' : '•';
-  return `<details class="completion-chip ${requirement.met ? 'met' : 'unmet'}" data-requirement="${escapeHtml(requirement.id)}" data-met="${escapeHtml(met)}">
-    <summary><span class="completion-mark" aria-hidden="true">${mark}</span><span>${escapeHtml(shortName)}</span></summary>
-    <div class="completion-detail"><strong>${escapeHtml(requirement.label)}</strong>${requirementDetailMarkup(requirement)}</div>
-  </details>`;
+function doneRequirementsMarkup(done) {
+  if (!done.length) return '';
+  const names = done.map(item => `<span data-requirement="${escapeHtml(item.id)}" data-met="true" title="${escapeHtml(item.label)}">${escapeHtml(requirementShortNames[item.id] || item.label)}</span>`).join('<span aria-hidden="true"> · </span>');
+  return `<p class="completion-done"><span class="completion-done-mark" aria-hidden="true">✓</span><span class="sr-only">Done: </span>${names}</p>`;
 }
 
 export function qaCompletionMarkup(page) {
-  const message = page.progress.complete ? '<p>This page’s QA is complete.</p>' : '<p>Expand a requirement to see what remains.</p>';
-  return `<section class="qa-completion" aria-label="QA completion"><div class="completion-heading"><h2>QA completion</h2>${message}</div><div class="completion-chips">${page.progress.requirements.map(requirementChipMarkup).join('')}</div></section>`;
+  const missing = page.progress.requirements.filter(item => !item.met);
+  const done = page.progress.requirements.filter(item => item.met);
+  const heading = missing.length ? 'What QA still needs' : 'QA complete';
+  const list = missing.length ? `<ul class="completion-list">${missing.map(missingRequirementMarkup).join('')}</ul>` : '';
+  return `<section class="qa-completion ${missing.length ? '' : 'complete'}" aria-label="QA completion"><h2>${heading}</h2>${list}${doneRequirementsMarkup(done)}</section>`;
 }
 
 function viewButton(name, label, short, suffix = '') {

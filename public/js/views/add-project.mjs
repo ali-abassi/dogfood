@@ -4,8 +4,8 @@ import { state } from '../state.mjs';
 import { loadProject, render } from '../app.mjs';
 
 const addProjectCopy = {
-  welcome: { eyebrow: 'Welcome to dogfood', title: 'Add your first project', lede: 'Start with a product URL. dogfood finds its pages and scans each one on desktop and mobile.' },
-  add: { eyebrow: 'New project', title: 'Add project', lede: 'Enter a URL and dogfood finds its pages and scans each one on desktop and mobile.' },
+  welcome: { title: 'Add your first project', lede: 'Start with a product URL. dogfood finds its pages and scans each one on desktop and mobile.' },
+  add: { title: 'Add project', lede: 'Enter a URL and dogfood finds its pages and scans each one on desktop and mobile.' },
 };
 
 export const idleOnboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
@@ -21,18 +21,24 @@ function onboardingNoticeMarkup() {
   return `${progress}${error}`;
 }
 
+// The first run is the brand's first impression, so the icon and name lead it.
+function addProjectHeadingMarkup(welcome, copy) {
+  const brand = welcome ? '<p class="welcome-brand"><img src="/logo.svg" alt="" width="40" height="40"><span>dogfood</span></p>' : '';
+  return `<header class="add-project-heading">${brand}<h1>${copy.title}</h1><p>${copy.lede}</p></header>`;
+}
+
 export function addProjectFormMarkup(welcome) {
   const copy = addProjectCopy[welcome ? 'welcome' : 'add'];
   const disabled = state.onboarding.running ? 'disabled' : '';
   const cancel = welcome ? '' : `<button class="text-button" type="button" data-action="cancel-add-project" ${disabled}>Cancel</button>`;
   const draft = state.projectDraft;
   return `<section class="add-project-panel content-panel" aria-label="Add project">
-    <header class="add-project-heading"><p class="page-route">${copy.eyebrow}</p><h1>${copy.title}</h1><p>${copy.lede}</p></header>
+    ${addProjectHeadingMarkup(welcome, copy)}
     <form id="add-project-form" novalidate>
       <fieldset ${disabled}>
         <label for="product-url">Product URL<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}"></label>
-        <label for="project-name">Name <span class="field-optional">Optional</span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
-        <label for="browser-profile">Chrome profile <span class="field-optional">Optional</span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
+        <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
+        <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
         <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>
         <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also ask AI to suggest each page’s features (about half a cent per page)</label>
       </fieldset>
