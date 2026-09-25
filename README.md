@@ -48,10 +48,14 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 ## How it works
 
-- `server.mjs` is a dependency-free Node server bound to `127.0.0.1`. It rejects cross-origin writes, validates every save, and writes manifests atomically.
+- `server.mjs` is a dependency-free Node server bound to `127.0.0.1`. It rejects cross-origin writes and serves the app and its API.
+- `lib/` holds everything the server and agents share: `schema.mjs` (the manifest vocabulary), `store.mjs` (every validated read and write), `completion.mjs` (when a page's QA is complete), `capture.mjs` (screenshot validity), `test-runs.mjs`, and `visual-review.mjs`.
 - `public/` is the interface: plain HTML, CSS, and JavaScript with light and dark themes.
-- `visual-review.mjs` builds the AI request and validates its structured response.
-- `npm test` runs the server and review tests; `npm run check` validates syntax and the demo manifest.
+- `npm test` runs the store, server, and review tests; `npm run check` validates syntax and the demo manifest.
+
+### When is a page's QA complete?
+
+A page is complete only when every applicable requirement has evidence: a validated full-page screenshot, a verdict for every feature, all five quality questions, the security, copying, and search checklists, at least one mapped connection, passing focused tests (when the page has any), an AI review of the current screenshot, and no open P0 or P1 issue. A page passes only when its QA is complete and every verdict is Pass.
 
 ## License
 

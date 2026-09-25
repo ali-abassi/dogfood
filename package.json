@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node server.mjs",
     "demo": "DOGFOOD_DATA=demo node server.mjs",
-    "check": "node --check server.mjs && node --check public/app.js && DOGFOOD_DATA=demo node scripts/check-projects.mjs",
+    "check": "for f in server.mjs lib/*.mjs public/app.js; do node --check $f || exit 1; done && DOGFOOD_DATA=demo node scripts/check-projects.mjs",
     "test": "node --test scripts/*.test.mjs"
   },
   "engines": {
