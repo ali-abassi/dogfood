@@ -25,7 +25,8 @@ function png(width, height, filled, sidebar = false) {
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
   header.set([8, 2, 0, 0, 0], 8);
-  const pixel = (x, y) => ((x < filled && y < filled / 2 && x % 3 === 0) || (sidebar && x < 6) ? [20, 20, 20] : [255, 255, 255]);
+  const content = (x, y) => x < filled && y < filled / 2 && x % 3 === 0;
+  const pixel = (x, y) => (content(x, y) || (sidebar && x < 6) ? [20, 20, 20] : [255, 255, 255]);
   const rows = Array.from({ length: height }, (_, y) => Buffer.from([0, ...Array.from({ length: width }, (_, x) => pixel(x, y)).flat()]));
   return Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', header), chunk('IDAT', deflateSync(Buffer.concat(rows))), chunk('IEND', Buffer.alloc(0))]);
 }
