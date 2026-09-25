@@ -607,11 +607,18 @@ function overviewGroupMarkup({ group, pages }) {
   return `<section class="overview-group" aria-label="${escapeHtml(group)} pages"><h3>${escapeHtml(group)}</h3>${pages.map(overviewPageMarkup).join('')}</section>`;
 }
 
+// Orange, not red: the manifest still works, but edits made outside dogfood skipped its validation.
+function integrityNoticeMarkup() {
+  if (state.project.integrity !== 'edited-outside') return '';
+  return '<p class="integrity-notice" role="status">This project’s manifest was edited outside dogfood since dogfood last saved it, so those edits skipped validation and attribution. Run <code>npm run check</code> to see what changed hands.</p>';
+}
+
 function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
   const pages = groups ? `<div class="overview-groups">${groups}</div>` : '<p class="overview-empty">No pages have been added to this project.</p>';
   return `<section class="overview-content" aria-label="Project overview">
     <header class="overview-heading"><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></header>
+    ${integrityNoticeMarkup()}
     ${overviewMetricsMarkup()}
     <section class="overview-pages" aria-label="Pages"><h2>Pages</h2>${pages}</section>
   </section>`;

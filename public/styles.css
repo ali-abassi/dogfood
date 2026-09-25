@@ -230,6 +230,7 @@ code { font-family: var(--mono); }
 .qa-tests strong { display: block; font-size: 13.5px; font-weight: 600; }
 .qa-tests p { margin: 2px 0; color: var(--secondary); font-size: 13px; }
 .qa-tests code, .technical-details code, .technical-details small { display: block; color: var(--tertiary); font-size: 12px; overflow-wrap: anywhere; }
+.integrity-notice { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; background: var(--orange-tint); font-size: 13px; }
 .qa-gap { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--orange-tint); font-size: 13px; }
 .qa-detail-gap, .qa-failures { color: var(--secondary); font-size: 12.5px; }
 .qa-failures p { color: var(--red); white-space: pre-wrap; }
