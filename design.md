@@ -70,6 +70,7 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - Overview uses one four-cell metrics group and grouped page rows. Each row is one page-opening button; completion is shown by requirement labels and a "QA complete" state, never a per-page score.
 - QA completion uses state-marked requirement chips. Opening an unmet chip reveals its server-provided missing text and a tertiary button for the corresponding page view. Verdict attribution appears as small metadata under the evidence note; issue attribution distinguishes opening from resolution.
 - A blocked capture shows its reason and "Not captured" age when its timestamp is absent; it has no screenshot or original-page link.
+- Suggested features: the AI review lists the things a person can do or see on the page, each with one sentence of expected behavior; each is a checked-by-default checkbox, and one grey "Add N features" pill adds the checked ones.
 - Disclosures show a chevron that rotates when open.
 
 ### Brand
@@ -90,3 +91,4 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **Agent-selected working policy, 2026-09-25:** Open the project overview first and keep page requirements in compact expandable chips below each page heading. This makes page status and remaining QA visible immediately while keeping detailed evidence and resolving views one activation away.
 - **User-stated, 2026-09-25:** every page shows its mobile and desktop view, and onboarding a new project must be as easy as possible.
 - **Agent-selected working policy, 2026-09-25:** See page shows both screenshots at once, because comparing the two layouts is the point; Scan again stays a grey pill so the AI review remains the view's one primary action; onboarding asks only for a URL, and the welcome state replaces the old "no projects" error so the first run starts working instead of failing.
+- **Agent-selected working policy, 2026-09-25:** The AI review reads both screenshots and proposes the page's features, because onboarding leaves every feature list empty and judging both screens keeps the suggestions honest; adding them stays one explicit click so a person approves each feature before it becomes a QA requirement.

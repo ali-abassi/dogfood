@@ -261,6 +261,11 @@ code { font-family: var(--mono); }
 .visual-list ul, .visual-list ol { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; }
 .visual-list li + li { margin-top: 6px; }
 .visual-provenance { margin: 16px 0 0; padding-top: 12px; border-top: .5px solid var(--separator); color: var(--tertiary); font-size: 12px; overflow-wrap: anywhere; }
+[aria-label="Suggested features"] h3 { margin: 16px 0 0; font-size: 15px; font-weight: 600; }
+.suggested-list { display: grid; gap: 10px; margin: 12px 0; }
+.suggested-feature { display: flex; gap: 10px; align-items: start; font-size: 13.5px; }
+.suggested-feature input { margin-top: 2px; }
+.suggested-feature small { display: block; color: var(--secondary); font-size: 12.5px; }
 
 /* Screenshot */
 .capture-column { position: sticky; top: 76px; min-width: 0; }

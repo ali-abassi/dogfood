@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { onboardProject } from './lib/onboard.mjs';
 import { scanPage } from './lib/scanner.mjs';
 import {
-  createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
+  addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
   recordVerdicts, registerPage, saveAudit, setConnections, updateFinding,
 } from './lib/store.mjs';
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
@@ -93,6 +93,10 @@ function createDogfoodProject(input) {
 
 function register({ project, page }) {
   return savePage(page.id, () => registerPage(project, page));
+}
+
+function addPageFeatures({ project, page, agent, features }) {
+  return savePage(page, () => addFeatures(project, page, features, byAgent(agent)));
 }
 
 function keepExistingQuestions(audit, currentAudit) {
@@ -203,6 +207,20 @@ const definitions = [
     run: register,
   },
   {
+    name: 'dogfood_add_features',
+    description: 'Add features to a page, for example ones dogfood_ai_review suggested; names already listed are skipped. Returns the page’s compact QA outcome.',
+    inputSchema: objectSchema({
+      ...projectPageProperties,
+      agent: { type: 'string', description: 'Agent name used to attribute the added features.' },
+      features: {
+        type: 'array',
+        description: 'Features to add, each with a name and one sentence of expected behavior.',
+        items: objectSchema({ name: { type: 'string' }, expected: { type: 'string' } }, ['name']),
+      },
+    }, ['project', 'page', 'agent', 'features']),
+    run: addPageFeatures,
+  },
+  {
     name: 'dogfood_page',
     description: 'Read one registered page with its capture, verdicts, findings, connection map, test plan, and derived completion requirements.',
     inputSchema: objectSchema(projectPageProperties, projectPageRequired),
@@ -293,7 +311,7 @@ const definitions = [
   },
   {
     name: 'dogfood_ai_review',
-    description: 'Request a visual review of the current full-page screenshot; this sends the image to a model provider and spends usage, so explicit confirmation is required.',
+    description: 'Request a visual review of the current desktop and mobile screenshots; it returns clarity analysis plus suggested features an agent can add with dogfood_add_features. This sends the images to a model provider and spends usage, so explicit confirmation is required.',
     inputSchema: objectSchema({
       ...projectPageProperties,
       confirmUsage: { type: 'boolean', description: 'Set true to confirm sending the screenshot to a model provider and spending usage.' },

@@ -50,7 +50,7 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 ### AI screenshot review
 
-**See page → Ask AI to review image** sends the saved screenshot to Gemini 3.8 Flash through OpenRouter and saves a page description, a provisional 1–10 clarity estimate, reasons, and suggestions. Set `OPENROUTER_API_KEY` in the server's environment. Each review costs a small amount of provider usage and is tied to the screenshot's hash, so it is marked stale when the screenshot changes.
+**See page → Ask AI to review image** sends the saved desktop and mobile screenshots to Gemini 3.8 Flash through OpenRouter and saves a page description, a provisional 1–10 clarity estimate, reasons, suggestions, and suggested features you can add to the page in one click. Set `OPENROUTER_API_KEY` in the server's environment. Each review costs a small amount of provider usage and is tied to both screenshots' hashes, so it is marked stale when either screenshot changes.
 
 ### Agents (MCP)
 
@@ -63,6 +63,7 @@ Page-writing tools return that page's status, completion state, and remaining re
 - `dogfood_scan_page` — rescan a registered page at desktop and mobile sizes.
 - `dogfood_create_project` — create a project with its URL, environment, checkout, and guidelines.
 - `dogfood_register_page` — register a page, its features, tests, and untested boundary.
+- `dogfood_add_features` — add features to a page, for example ones the AI review suggested; names already listed are skipped.
 - `dogfood_page` — read a page and its derived QA progress.
 - `dogfood_next` — list incomplete pages in site order with missing evidence.
 - `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker; prefer `dogfood_scan_page` for both devices and measured facts.

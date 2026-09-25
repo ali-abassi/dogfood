@@ -7,7 +7,7 @@ import { capturePathPattern } from './lib/schema.mjs';
 import { onboard, onboardingPlan } from './lib/onboard.mjs';
 import { currentReview, startReview } from './lib/reviews.mjs';
 import { scanPage } from './lib/scanner.mjs';
-import { createFinding, listProjects, projectView, readProject, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
+import { addFeatures, createFinding, listProjects, projectView, readProject, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
 const publicDir = join(root, 'public');
@@ -72,6 +72,10 @@ function startOnboarding(input) {
 
 const pagePath = '/api/projects/([a-z0-9-]+)/pages/([a-z0-9-]+)';
 const withBody = handler => async (params, request) => projectView(handler(...params, await requestJson(request), person));
+
+function addPageFeatures(projectId, pageId, input, by) {
+  return addFeatures(projectId, pageId, input.features, by);
+}
 const routes = [
   ['POST', '/api/onboard', (params, request) => requestJson(request).then(startOnboarding), 202],
   ['GET', '/api/onboard/([a-f0-9-]+)', ([id]) => onboardingJob(id)],
@@ -82,6 +86,7 @@ const routes = [
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],
   ['POST', `${pagePath}/qa-runs`, params => startTests(...params)],
   ['POST', `${pagePath}/scan`, params => scanProjectPage(...params)],
+  ['POST', `${pagePath}/features`, withBody(addPageFeatures)],
   ['PUT', `${pagePath}/review`, withBody(saveReview)],
   ['PUT', `${pagePath}/audit`, withBody(saveAudit)],
   ['POST', `${pagePath}/findings`, withBody(createFinding)],
