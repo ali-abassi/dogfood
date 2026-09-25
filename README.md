@@ -89,6 +89,12 @@ A page is not complete until `dogfood_complete` accepts it; agents must call it 
 
 A page is complete only when every applicable requirement has evidence: validated full-page desktop and mobile screenshots, a scan that matches them, a verdict for every listed feature, all five quality questions, the security, copying, search, and accessibility checklists, at least one mapped connection, passing focused tests (when the page has any), an AI review of the current desktop screenshot, and no open P0 or P1 issue. Problems a scan measures (uncaught errors, failed requests, sideways scrolling) mark the page as needing work. A page passes only when its QA is complete and every verdict is Pass.
 
+## Development
+
+- `npm test` runs the unit tests; `npm run check` validates syntax and the demo manifest; `npm run lint` keeps every function at cyclomatic complexity 5 or less.
+- `npm run test:acceptance` runs the end-to-end suites in `tests/acceptance/`. All but the MCP suite drive a real headless browser, so they need agent-browser.
+- CI runs the unit tests, the checks, lint, and the MCP suite on every push.
+
 ## License
 
 [MIT](LICENSE)
