@@ -31,7 +31,8 @@
         "fullPage": true,
         "pixelWidth": 1440,
         "pixelHeight": 900,
-        "actor": "Signed-out visitor"
+        "actor": "Signed-out visitor",
+        "sha256": "0ef3d89d57f84ade0de9b634e77f65a80a804851119e4ceb91e96db954e5ebe7"
       },
       "features": [
         {
@@ -159,7 +160,8 @@
         "fullPage": true,
         "pixelWidth": 1440,
         "pixelHeight": 900,
-        "actor": "Signed-out visitor"
+        "actor": "Signed-out visitor",
+        "sha256": "108149b3133757feae034d102126f2acc60852133757e45486fdfd1e29956839"
       },
       "features": [
         {
@@ -287,7 +289,8 @@
         "fullPage": true,
         "pixelWidth": 1440,
         "pixelHeight": 900,
-        "actor": "Signed-out visitor"
+        "actor": "Signed-out visitor",
+        "sha256": "6830772367ef04c6125ac7a8a991dc8b3b4117a0d14f564188ee71d0d03d6b39"
       },
       "features": [
         {
@@ -438,7 +441,8 @@
         "fullPage": true,
         "pixelWidth": 1440,
         "pixelHeight": 900,
-        "actor": "Signed-out visitor"
+        "actor": "Signed-out visitor",
+        "sha256": "256ec18520aa20899b1694c57e6a483cc9360ecc7df41b8886f9f5c8148f72a0"
       },
       "features": [
         {
