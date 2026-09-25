@@ -2,9 +2,9 @@
   "version": 1,
   "id": "tidepool",
   "name": "Tidepool (demo)",
-  "description": "A fictional swim school site bundled with QA to show every page state.",
+  "description": "A fictional swim school site bundled with dogfood to show every page state.",
   "source": {
-    "url": "https://github.com/ali-abassi/qa/tree/main/demo/site",
+    "url": "https://github.com/ali-abassi/dogfood/tree/main/demo/site",
     "environment": "Local static files · fictional demo",
     "checkout": "demo/site",
     "capturedAt": "2026-09-25T16:13:16Z"
@@ -23,7 +23,7 @@
       "heading": "Home",
       "capture": {
         "path": "/captures/tidepool/home.png",
-        "sourceUrl": "https://github.com/ali-abassi/qa/blob/main/demo/site/index.html",
+        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
         "capturedAt": "2026-09-25T16:13:16Z",
         "viewport": "1440 × 900",
         "tier": "real",
@@ -151,7 +151,7 @@
       "heading": "Classes",
       "capture": {
         "path": "/captures/tidepool/classes.png",
-        "sourceUrl": "https://github.com/ali-abassi/qa/blob/main/demo/site/classes.html",
+        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/classes.html",
         "capturedAt": "2026-09-25T16:13:16Z",
         "viewport": "1440 × 900",
         "tier": "real",
@@ -279,7 +279,7 @@
       "heading": "Book a lesson",
       "capture": {
         "path": "/captures/tidepool/book.png",
-        "sourceUrl": "https://github.com/ali-abassi/qa/blob/main/demo/site/book.html",
+        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/book.html",
         "capturedAt": "2026-09-25T16:13:16Z",
         "viewport": "1440 × 900",
         "tier": "real",
@@ -430,7 +430,7 @@
       "heading": "Sign in",
       "capture": {
         "path": "/captures/tidepool/account.png",
-        "sourceUrl": "https://github.com/ali-abassi/qa/blob/main/demo/site/account.html",
+        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/account.html",
         "capturedAt": "2026-09-25T16:13:16Z",
         "viewport": "1440 × 900",
         "tier": "real",
@@ -551,7 +551,7 @@
       "route": "/admin",
       "heading": "Staff schedule",
       "capture": {
-        "sourceUrl": "https://github.com/ali-abassi/qa/blob/main/demo/site/index.html",
+        "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
         "capturedAt": "2026-09-25T16:13:16Z",
         "viewport": "1440 × 900",
         "tier": "real",

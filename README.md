@@ -1,17 +1,17 @@
-<p align="center"><img src="public/logo.svg" width="96" height="96" alt="QA app icon"></p>
+<p align="center"><img src="public/logo.svg" width="96" height="96" alt="dogfood app icon"></p>
 
-<h1 align="center">QA</h1>
+<h1 align="center">dogfood</h1>
 
-<p align="center">A local QA workspace that lists every page of a product, the criteria each page must meet, the evidence you have, and what is still unproven.</p>
+<p align="center">An AI QA system. A local workspace that lists every page of a product, the criteria each page must meet, the evidence you have, and what is still unproven.</p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
-  <img src="docs/screenshot-light.png" alt="QA showing the Book a lesson page of the Tidepool demo with two open issues">
+  <img src="docs/screenshot-light.png" alt="dogfood showing the Book a lesson page of the Tidepool demo with two open issues">
 </picture>
 
 ## Why
 
-"Did we QA it?" usually means someone clicked around. QA makes the answer specific, page by page:
+"Did we QA it?" usually means someone clicked around. dogfood makes the answer specific, page by page:
 
 - **Every page, one status.** The sidebar lists each page with a status dot: untested, in review, passed, needs work, or blocked.
 - **Criteria, not vibes.** Each page carries its features, five quality questions (functionality, speed, design fit, excess, clarity), and security, scraping, and search checklists. A verdict of Pass or Needs work requires a written evidence note.
@@ -23,8 +23,8 @@
 Requires Node 20 or newer. There are no dependencies to install.
 
 ```sh
-git clone https://github.com/ali-abassi/qa.git
-cd qa
+git clone https://github.com/ali-abassi/dogfood.git
+cd dogfood
 npm run demo
 ```
 
@@ -36,7 +36,7 @@ Open <http://127.0.0.1:4321>. The demo is **Tidepool**, a fictional swim school 
 2. Save full-page PNG screenshots to `data/captures/<id>/<page>.png`. Any tool works; for example `agent-browser screenshot --full`.
 3. Run `node scripts/check-projects.mjs` to validate the manifest, then `npm start`.
 
-`data/` is git-ignored, so your projects, screenshots, runs, and reviews stay on your machine. Set `QA_DATA` to keep them elsewhere, and `QA_PORT` to change the port.
+`data/` is git-ignored, so your projects, screenshots, runs, and reviews stay on your machine. Set `DOGFOOD_DATA` to keep them elsewhere, and `DOGFOOD_PORT` to change the port.
 
 ### Focused test runs
 

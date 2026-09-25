@@ -1,4 +1,4 @@
-# QA design system
+# dogfood design system
 
 Revision 2, 2026-09-25. Supersedes the warm-canvas, green-action system of revision 1.
 
@@ -11,7 +11,7 @@ Revision 2, 2026-09-25. Supersedes the warm-canvas, green-action system of revis
 
 ## Visual thesis
 
-For people checking a product page by page, QA feels like a first-party macOS utility (Finder's source list, System Settings' grouped rows) so the next page to check and the proof behind each verdict are obvious in one glance. It prioritises calm legibility and state over decoration, expressed through a grey sidebar source list, one segmented control, white 12px groups on a soft canvas, and colour reserved for state. It succeeds when a person can name the page that needs work and its open issue within five seconds of opening the app.
+For people checking a product page by page, dogfood feels like a first-party macOS utility (Finder's source list, System Settings' grouped rows) so the next page to check and the proof behind each verdict are obvious in one glance. It prioritises calm legibility and state over decoration, expressed through a grey sidebar source list, one segmented control, white 12px groups on a soft canvas, and colour reserved for state. It succeeds when a person can name the page that needs work and its open issue within five seconds of opening the app.
 
 ## Reference ledger
 
@@ -76,6 +76,6 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 ## Decision ledger
 
-- **User-stated, 2026-09-25:** QA becomes a public repository with a clean logo and a design "like a Mac app, clean, crisp, purposeful". This revision implements that direction.
+- **User-stated, 2026-09-25:** QA (now dogfood) becomes a public repository with a clean logo and a design "like a Mac app, clean, crisp, purposeful". This revision implements that direction.
 - **Agent-selected working policy, 2026-09-25:** Pages without selected tests open on My review, because an empty runner is not a useful first view. Pages with tests open on Run checks.
 - **Agent-selected working policy, 2026-09-25:** The bundled demo is a fictional product so the public repository ships no private product data.

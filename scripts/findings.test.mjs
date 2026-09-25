@@ -67,7 +67,7 @@ async function waitForServer(url) {
     catch { /* Process may still be starting. */ }
     await new Promise(resolve => setTimeout(resolve, 50));
   }
-  throw new Error('QA test server did not start.');
+  throw new Error('Test server did not start.');
 }
 
 async function request(url, path, method, body, origin = url) {
@@ -83,7 +83,7 @@ test('page findings and checklists persist with page-scoped validation', async (
   const port = await availablePort();
   const url = `http://127.0.0.1:${port}`;
   child = spawn(process.execPath, [join(fixture, 'server.mjs')], {
-    env: { ...process.env, QA_PORT: String(port), QA_DATA: fixture }, stdio: 'ignore',
+    env: { ...process.env, DOGFOOD_PORT: String(port), DOGFOOD_DATA: fixture }, stdio: 'ignore',
   });
   await waitForServer(url);
   const home = '/api/projects/tidepool/pages/home/findings';
