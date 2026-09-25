@@ -289,7 +289,7 @@ const clarityDimensions = { purpose: 'Purpose', nextAction: 'Next action', hiera
 
 function visualResultMarkup(result) {
   const { review, stale } = result;
-  if (!review) return '<p class="visual-empty">Ask AI to describe this screenshot and suggest ways to make it clearer.</p>';
+  if (!review) return '<p class="visual-empty">Ask AI to describe both screenshots, suggest ways to make them clearer, and propose this page’s features.</p>';
   const analysis = review.analysis;
   const dimensions = Object.entries(clarityDimensions).map(([key, label]) => `<div class="visual-dimension"><div><strong>${label}</strong><span>${escapeHtml(analysis.dimensions[key].score)} / 10</span></div><p>${escapeHtml(analysis.dimensions[key].reason)}</p></div>`).join('');
   const evidence = analysis.evidence.map(item => `<li><strong>${escapeHtml(item.location)}</strong> ${escapeHtml(item.observation)}</li>`).join('');
@@ -306,7 +306,7 @@ function visualResultMarkup(result) {
     <div class="visual-dimensions">${dimensions}</div>
     <div class="visual-list"><h4>What the image shows</h4><ul>${evidence}</ul></div>
     ${nextVersion}
-    <p class="visual-provenance">${escapeHtml(review.model)} · ${escapeHtml(dateLabel(review.analyzedAt))}<br>Capture SHA ${escapeHtml(review.capture.sha256.slice(0, 12))} · ${visualCostLabel(review.usage)} · ${escapeHtml(review.latencyMs)} ms</p>
+    <p class="visual-provenance">${escapeHtml(review.model)} · ${escapeHtml(dateLabel(review.analyzedAt))}<br>Capture SHA ${escapeHtml(review.captures.desktop.sha256.slice(0, 12))} · ${visualCostLabel(review.usage)} · ${escapeHtml(review.latencyMs)} ms</p>
   </details>`;
 }
 
@@ -331,13 +331,31 @@ function visualContentMarkup(canRun) {
   return visualResultMarkup(result ?? { review: null, stale: false });
 }
 
+function remainingSuggestions(page, review) {
+  const names = new Set(page.features.map(feature => feature.name.toLowerCase()));
+  return (review?.analysis?.suggestedFeatures || []).filter(item => !names.has(String(item.name).toLowerCase()));
+}
+
+function suggestedFeatureMarkup(item, index) {
+  return `<label class="suggested-feature"><input type="checkbox" name="suggested-feature" value="${index}" checked><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.expected)}</small></span></label>`;
+}
+
+function suggestedFeaturesMarkup(page, result) {
+  const review = result?.review;
+  if (!review) return '';
+  const remaining = remainingSuggestions(page, review);
+  if (!remaining.length) return '<section aria-label="Suggested features"><h3>Suggested features</h3><p class="visual-empty">Every suggestion is already listed.</p></section>';
+  return `<section aria-label="Suggested features"><h3>Suggested features</h3><div class="suggested-list">${remaining.map(suggestedFeatureMarkup).join('')}</div><button type="button" class="text-button" data-action="add-suggested-features">Add ${plural(remaining.length, 'feature', 'features')}</button></section>`;
+}
+
 function visualReviewMarkup(page) {
   const canRun = page.captures.desktop.state === 'rendered' && page.captures.desktop.fullPage;
   const button = visualRunButton(canRun);
   const content = visualContentMarkup(canRun);
   const gap = canRun ? '' : '<p class="visual-empty">AI review needs a full-page screenshot.</p>';
   const error = state.visual.error ? `<p class="form-error" role="alert">${escapeHtml(state.visual.error)}</p>` : '';
-  return `<section class="visual-panel content-panel" aria-label="AI image review"><div class="visual-heading"><div><h2>AI view of this page</h2><p>Based on the screenshot. It cannot tell whether buttons or data work.</p></div>${button}</div>${error}${gap}${content}</section>`;
+  const suggestions = suggestedFeaturesMarkup(page, state.visual.result);
+  return `<section class="visual-panel content-panel" aria-label="AI image review"><div class="visual-heading"><div><h2>AI view of this page</h2><p>Based on both screenshots. It cannot tell whether buttons or data work.</p></div>${button}</div>${error}${gap}${content}${suggestions}</section>`;
 }
 
 function featureMarkup(feature) {
@@ -762,6 +780,34 @@ function finishVisualReview(key, result, error) {
   if (state.view === 'capture') render();
 }
 
+function checkedSuggestions(page) {
+  const remaining = remainingSuggestions(page, state.visual.result?.review);
+  return [...document.querySelectorAll('input[name="suggested-feature"]:checked')].map(box => remaining[Number(box.value)]).filter(item => item);
+}
+
+async function addSuggestedFeatures(button) {
+  const page = activePage();
+  const checked = checkedSuggestions(page);
+  if (!checked.length) return;
+  button.disabled = true;
+  try {
+    state.project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/features`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ features: checked.map(item => ({ name: item.name, expected: item.expected })) }),
+    });
+    state.message = `Added ${plural(checked.length, 'feature', 'features')} to ${page.name}`;
+  } catch (error) { state.message = error.message; }
+  render();
+}
+
+function updateSuggestedButton() {
+  const button = document.querySelector('[data-action="add-suggested-features"]');
+  if (!button) return;
+  const count = document.querySelectorAll('input[name="suggested-feature"]:checked').length;
+  button.textContent = `Add ${plural(count, 'feature', 'features')}`;
+  button.disabled = count === 0;
+}
+
 function syncQaState() {
   if (!state.pageId) return;
   const key = `${state.project.id}/${state.pageId}`;
@@ -1102,6 +1148,7 @@ const buttonActions = new Map([
   ['add-connection', addConnectionRow],
   ['run-qa', runQa],
   ['run-visual', runVisualReview],
+  ['add-suggested-features', addSuggestedFeatures],
   ['scan', scanActivePage],
   ['screenshot-device', button => { state.screenshotDevice = button.dataset.screenshotDevice; render(); }],
   ['add-project', openAddProject],
@@ -1262,7 +1309,8 @@ function handlePageFilter(select) {
 app.addEventListener('change', event => {
   if (event.target.id === 'project-select') return handleProjectSelection(event.target);
   if (event.target.id === 'page-filter') return handlePageFilter(event.target);
-  if (event.target.id === 'page-sort') handlePageSort(event.target);
+  if (event.target.id === 'page-sort') return handlePageSort(event.target);
+  if (event.target.name === 'suggested-feature') updateSuggestedButton();
 });
 
 app.addEventListener('keydown', event => {

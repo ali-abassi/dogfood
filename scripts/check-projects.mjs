@@ -6,7 +6,7 @@ import {
   auditKeys, captureStates, captureTiers, checkKeys, connectionProvenance, devices, evidenceNote, findingStatuses,
   httpMethods, idPattern, manifestVersion, severities, testFilePattern, verdicts,
 } from '../lib/schema.mjs';
-import { projectView } from '../lib/store.mjs';
+import { manifestIntegrity, projectView } from '../lib/store.mjs';
 
 function fail(message) { throw new Error(message); }
 
@@ -157,11 +157,25 @@ function checkProjectIdentity(project, name) {
   checkUniqueIds(project.pages, `${name} pages`);
 }
 
+const authorPattern = /^(person|agent:[A-Za-z0-9-]{1,40})$/;
+
+function verdictAuthors(page) {
+  return [...Object.values(page.checks), ...page.features, ...Object.values(page.audit).flat(), ...page.findings].map(entry => entry.by).filter(Boolean);
+}
+
+// Warnings, not failures: the manifest is still usable, but someone wrote it without dogfood.
+function warnAboutOutsideEdits(project) {
+  if (manifestIntegrity(project.id) === 'edited-outside') console.warn(`warning: ${project.id} was edited outside dogfood since dogfood last wrote it; write through the app, the MCP server, or the store.`);
+  const unknown = project.pages.flatMap(verdictAuthors).filter(author => !authorPattern.test(author));
+  if (unknown.length) console.warn(`warning: ${project.id} has ${unknown.length} entries attributed outside dogfood (for example "${unknown[0]}").`);
+}
+
 function checkProject(name) {
   const project = JSON.parse(readFileSync(join(projectsDir, name), 'utf8'));
   checkProjectIdentity(project, name);
   const checkout = project.source.checkout ? realpathSync(resolve(root, project.source.checkout)) : null;
   project.pages.forEach(page => checkPage(page, project, checkout));
+  warnAboutOutsideEdits(project);
   const complete = projectView(project).pages.filter(page => page.progress.complete).length;
   console.log(`${project.name}: ${project.pages.length} pages, ${complete} with complete QA`);
 }

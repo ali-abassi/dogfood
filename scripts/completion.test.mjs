@@ -107,7 +107,8 @@ test('a page moves from registered to complete only when every requirement has e
   store.createFinding('shop', 'home', { severity: 'P1', title: 'Hero overlaps', detail: 'At 390 px the hero text overlaps the button.', attachCapture: true }, 'agent:test');
   const reviews = join(data, 'visual-reviews/shop/home');
   mkdirSync(reviews, { recursive: true });
-  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-a.json'), JSON.stringify({ capture: { sha256: store.readProject('shop').pages[0].captures.desktop.sha256 } }));
+  const reviewed = store.readProject('shop').pages[0].captures;
+  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-a.json'), JSON.stringify({ captures: { desktop: { sha256: reviewed.desktop.sha256 }, mobile: { sha256: reviewed.mobile.sha256 } } }));
   assert.deepEqual(unmet(progress()), ['issues']);
   assert.equal(progress().status, 'needs_work');
 
@@ -116,7 +117,7 @@ test('a page moves from registered to complete only when every requirement has e
   assert.equal(progress().status, 'pass');
 
   store.recordCapture('shop', 'home', { ...capture, device: 'mobile', viewport: '390 × 844', file: screenshot('newer.png', 40, true) });
-  assert.deepEqual(unmet(progress()), ['scan'], 'a replaced screenshot makes the scan stale');
+  assert.deepEqual(unmet(progress()), ['scan', 'ai-review'], 'a replaced screenshot makes the scan and the AI review stale');
   assert.ok(existsSync(join(data, 'captures/shop/home.png')));
 });
 
