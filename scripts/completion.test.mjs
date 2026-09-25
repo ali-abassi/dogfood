@@ -138,6 +138,8 @@ test('a rescan records how each screenshot changed and flags reviews older than 
   assert.equal(readFileSync(join(data, change.diffPath.slice(1))).subarray(1, 4).toString(), 'PNG');
   assert.equal(page().scan.changes.mobile.changed, false, 'the same mobile screenshot did not change');
   assert.equal(progress().changedSinceReview, true);
+  scanWith(true);
+  assert.equal(progress().changedSinceReview, true, 'a later scan without changes does not clear the flag');
   store.recordVerdicts('deli', 'home', { checks: { clarity: { status: 'pass', note } } }, 'agent:test');
   assert.equal(progress().changedSinceReview, false, 'a review after the change clears the flag');
   scanWith(true);
