@@ -170,7 +170,7 @@ function captureDateLabel(capture) {
 }
 
 function captureMarkup(page) {
-  const capture = page.capture;
+  const capture = page.captures.desktop;
   const imagePath = captureImagePath(capture);
   const image = captureImageMarkup(page, capture, imagePath);
   const { label, evidence, fullLink } = capturePresentation(capture, imagePath);
@@ -231,7 +231,7 @@ function visualContentMarkup(canRun) {
 }
 
 function visualReviewMarkup(page) {
-  const canRun = page.capture.state === 'rendered' && page.capture.fullPage;
+  const canRun = page.captures.desktop.state === 'rendered' && page.captures.desktop.fullPage;
   const button = visualRunButton(canRun);
   const content = visualContentMarkup(canRun);
   const gap = canRun ? '' : '<p class="visual-empty">AI review needs a full-page screenshot.</p>';
@@ -393,7 +393,7 @@ function resolutionFormMarkup(finding) {
 }
 
 function newFindingFormMarkup(page) {
-  const capture = page.capture.state === 'rendered' ? `<label class="capture-choice"><input type="checkbox" name="attachCapture"> Attach this screenshot if it shows the issue</label>` : '';
+  const capture = page.captures.desktop.state === 'rendered' ? `<label class="capture-choice"><input type="checkbox" name="attachCapture"> Attach this screenshot if it shows the issue</label>` : '';
   return `<form id="finding-form" class="finding-form"><label for="finding-title">Issue title</label><input id="finding-title" name="title" required minlength="8" maxlength="120" placeholder="What is wrong?"><label for="finding-severity">Priority</label><select id="finding-severity" name="severity"><option value="P2">P2 · important</option><option value="P1">P1 · blocks core work</option><option value="P0">P0 · critical</option><option value="P3">P3 · minor</option></select><label for="finding-detail">What happened and how to repeat it?</label><textarea id="finding-detail" name="detail" rows="4" required minlength="20" maxlength="1200" placeholder="Where did you start, what did you do, and what happened?"></textarea>${capture}<div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save issue</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
 }
 
@@ -476,7 +476,7 @@ function overviewPageMarkup(page) {
     <span class="overview-status">${statusPill(status)}</span>
     <span class="overview-identity"><strong>${escapeHtml(page.name)}</strong><code>${escapeHtml(page.route)}</code></span>
     <span class="overview-open-issues">${escapeHtml(openIssueCount(page))}</span>
-    <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.capture))}</span>
+    <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.captures.desktop))}</span>
     <span class="overview-requirements">${overviewRequirementsMarkup(page)}</span>
   </button></div>`;
 }

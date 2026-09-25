@@ -3,8 +3,8 @@ import { join, resolve, sep } from 'node:path';
 import { captureProblem, readCapture } from '../lib/capture.mjs';
 import { dataDir, projectsDir, root } from '../lib/paths.mjs';
 import {
-  auditKeys, captureStates, captureTiers, checkKeys, connectionProvenance, evidenceNote, findingStatuses,
-  httpMethods, idPattern, severities, testFilePattern, verdicts,
+  auditKeys, captureStates, captureTiers, checkKeys, connectionProvenance, devices, evidenceNote, findingStatuses,
+  httpMethods, idPattern, manifestVersion, severities, testFilePattern, verdicts,
 } from '../lib/schema.mjs';
 import { projectView } from '../lib/store.mjs';
 
@@ -44,11 +44,18 @@ function checkRenderedCapture(capture, project, label) {
   if (problem) fail(`${label}: ${problem}`);
 }
 
-function checkCapture(page, project) {
-  const label = `${project.id}/${page.id}`;
-  if (!captureStates.has(page.capture?.state)) fail(`${label}: capture state invalid`);
-  if (page.capture.state === 'rendered') return checkRenderedCapture(page.capture, project, label);
-  if (!page.capture.reason) fail(`${label}: blocked capture needs a reason`);
+function checkCapture(capture, project, label) {
+  if (!captureStates.has(capture?.state)) fail(`${label}: capture state invalid`);
+  if (capture.state === 'rendered') return checkRenderedCapture(capture, project, label);
+  if (!capture.reason) fail(`${label}: blocked capture needs a reason`);
+}
+
+function checkScan(page, label) {
+  if (page.scan === null) return;
+  assertRules(`${label}/scan`, [
+    [() => Number.isNaN(Date.parse(page.scan?.scannedAt)), 'scan time invalid'],
+    [() => !devices.every(device => page.scan.viewports?.[device] && page.scan.captureSha256?.[device]), 'scan must cover desktop and mobile'],
+  ]);
 }
 
 function checkUniqueIds(rows, label) {
@@ -70,7 +77,7 @@ function checkFinding(finding, page, label) {
     [() => resolved && String(finding.resolution ?? '').trim().length < 20, 'resolution evidence missing'],
     [() => resolved && Number.isNaN(Date.parse(finding.resolvedAt)), 'resolution time invalid'],
     [() => typeof finding.evidence !== 'string', 'finding evidence field missing'],
-    [() => finding.evidence && finding.evidence !== page.capture.path?.slice(1), 'finding evidence belongs to another page'],
+    [() => finding.evidence && finding.evidence !== page.captures.desktop.path?.slice(1), 'finding evidence belongs to another page'],
   ]);
 }
 
@@ -102,6 +109,7 @@ function checkConnections(page, label) {
 }
 
 function checkFocusedTest(test, checkout, label) {
+  if (!checkout) fail(`${label}: focused tests need a project checkout`);
   const file = join(checkout, String(test.file));
   assertRules(`${label}/${test.id}`, [
     [() => !test.id || !test.label || !testFilePattern.test(test.file), 'invalid focused test'],
@@ -126,7 +134,8 @@ function checkPage(page, project, checkout) {
     [() => ['name', 'group', 'route'].some(key => !page[key]), 'page identity missing'],
     [() => !Array.isArray(page.findings), 'findings list missing'],
   ]);
-  checkCapture(page, project);
+  devices.forEach(device => checkCapture(page.captures?.[device], project, `${label}/${device}`));
+  checkScan(page, label);
   for (const key of checkKeys) checkEntry(page.checks?.[key], `${label}/${key}`);
   checkFeatures(page, label);
   page.findings.forEach(finding => checkFinding(finding, page, label));
@@ -137,11 +146,11 @@ function checkPage(page, project, checkout) {
 
 function checkProjectIdentity(project, name) {
   assertRules(name, [
-    [() => project.version !== 1 || `${project.id}.json` !== name, 'project version or ID mismatch'],
+    [() => project.version !== manifestVersion || `${project.id}.json` !== name, 'project version or ID mismatch'],
     [() => !idPattern.test(project.id), 'invalid project ID'],
     [() => ['name', 'description'].some(key => !project[key]) || !project.source?.environment, 'project identity or source missing'],
     [() => !isHttpUrl(project.source.url), 'project URL must be HTTP(S)'],
-    [() => !project.source.checkout || !existsSync(resolve(root, project.source.checkout)), 'local checkout missing'],
+    [() => project.source.checkout && !existsSync(resolve(root, project.source.checkout)), 'local checkout missing'],
     [() => !Array.isArray(project.guidelines), 'design guidelines missing'],
     [() => !Array.isArray(project.pages), 'pages missing'],
   ]);
@@ -151,7 +160,7 @@ function checkProjectIdentity(project, name) {
 function checkProject(name) {
   const project = JSON.parse(readFileSync(join(projectsDir, name), 'utf8'));
   checkProjectIdentity(project, name);
-  const checkout = realpathSync(resolve(root, project.source.checkout));
+  const checkout = project.source.checkout ? realpathSync(resolve(root, project.source.checkout)) : null;
   project.pages.forEach(page => checkPage(page, project, checkout));
   const complete = projectView(project).pages.filter(page => page.progress.complete).length;
   console.log(`${project.name}: ${project.pages.length} pages, ${complete} with complete QA`);

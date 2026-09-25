@@ -4,7 +4,7 @@ import {
   createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
   recordVerdicts, registerPage, saveAudit, setConnections, updateFinding,
 } from './lib/store.mjs';
-import { auditKeys, captureTiers, checkKeys, connectionProvenance, httpMethods, severities, verdicts } from './lib/schema.mjs';
+import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
 import { startReview } from './lib/reviews.mjs';
 
@@ -147,16 +147,17 @@ const definitions = [
   },
   {
     name: 'dogfood_create_project',
-    description: 'Create a dogfood project before registering its pages; provide the product URL, environment, local checkout, and useful QA guidelines.',
+    description: 'Create an empty dogfood project from its URL before registering pages by hand. Prefer dogfood_onboard_project, which also finds and scans every page.',
     inputSchema: objectSchema({
       id: { type: 'string', description: 'Lowercase project ID using letters, numbers, and hyphens.' },
       name: { type: 'string', description: 'Human-readable product or project name.' },
       description: { type: 'string', description: 'Short description of the product being checked.' },
       url: { type: 'string', description: 'HTTP or HTTPS URL of the product.' },
       environment: { type: 'string', description: 'Environment under review, such as local, preview, or production.' },
-      checkout: { type: 'string', description: 'Local project checkout path used for any focused tests.' },
+      checkout: { type: 'string', description: 'Optional local checkout path; needed only for focused tests.' },
+      browserProfile: { type: 'string', description: 'Optional Chrome profile name (for example Default) so scans see signed-in pages.' },
       guidelines: { type: 'array', items: { type: 'string' }, description: 'Optional project-specific QA guidance.' },
-    }, ['id', 'name', 'description', 'url', 'environment', 'checkout']),
+    }, ['id', 'name', 'url']),
     run: createDogfoodProject,
   },
   {
@@ -190,9 +191,10 @@ const definitions = [
   },
   {
     name: 'dogfood_record_capture',
-    description: 'Attach an absolute PNG screenshot as page evidence, or record why capture is blocked; rendered evidence needs its URL, viewport, actor, tier, and full-page state.',
+    description: 'Attach one absolute PNG screenshot (desktop or mobile) as page evidence, or record why capture is blocked. Prefer dogfood_scan_page, which takes both screenshots and measures the page in one step.',
     inputSchema: objectSchema({
       ...projectPageProperties,
+      device: { type: 'string', enum: devices, description: 'Which screenshot this is: desktop or mobile.' },
       file: { type: 'string', description: 'Absolute PNG path. For rendered evidence provide all rendered fields (file, sourceUrl, viewport, actor, tier, fullPage), or provide blockedReason instead.' },
       sourceUrl: { type: 'string', description: 'HTTP(S) capture URL. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
       viewport: { type: 'string', description: 'Capture viewport such as 1440 × 900. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
@@ -200,7 +202,7 @@ const definitions = [
       tier: { type: 'string', enum: [...captureTiers], description: 'Evidence provenance tier. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
       fullPage: { type: 'boolean', description: 'Whether the screenshot covers the full page. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
       blockedReason: { type: 'string', description: 'Reason capture is blocked; provide this instead of all rendered fields (file, sourceUrl, viewport, actor, tier, fullPage).' },
-    }, projectPageRequired),
+    }, [...projectPageRequired, 'device']),
     run: capture,
   },
   {
@@ -243,7 +245,7 @@ const definitions = [
       severity: { type: 'string', enum: severities, description: 'Issue priority.' },
       title: { type: 'string', description: 'Concise issue title.' },
       detail: { type: 'string', description: 'Observed behavior and steps to reproduce.' },
-      attachCapture: { type: 'boolean', description: 'Whether to attach the current page capture as evidence.' },
+      attachCapture: { type: 'boolean', description: 'Whether to attach the current desktop screenshot as evidence.' },
     }, ['project', 'page', 'agent', 'severity', 'title', 'detail', 'attachCapture']),
     run: addIssue,
   },
