@@ -147,6 +147,19 @@ test('a rescan records how each screenshot changed and flags reviews older than 
   assert.equal(page().scan.changes.desktop.changedShare, 0);
 });
 
+test('removing a page keeps an audit trail and needs a reason', () => {
+  store.createProject({ id: 'bakery', name: 'Bakery', url: 'https://bakery.example' });
+  store.registerPage('bakery', { id: 'home', name: 'Home', group: 'Public', route: '/' });
+  store.registerPage('bakery', { id: 'home-2', name: 'Home again', group: 'Public', route: '/index.html' });
+  assert.throws(() => store.removePage('bakery', 'home-2', 'dup', 'agent:test'), /12–400/);
+  store.removePage('bakery', 'home-2', 'Duplicate of home: /index.html serves the same page.', 'agent:test');
+  const project = store.readProject('bakery');
+  assert.deepEqual(project.pages.map(page => page.id), ['home']);
+  assert.equal(project.removedPages[0].id, 'home-2');
+  assert.equal(project.removedPages[0].by, 'agent:test');
+  assert.throws(() => store.removePage('bakery', 'home-2', 'Already removed, so this must fail.', 'agent:test'), /does not exist/);
+});
+
 test('suggested features are added once, with unique IDs and expected behavior', () => {
   store.createProject({ id: 'cafe', name: 'Cafe', url: 'https://cafe.example' });
   store.registerPage('cafe', { id: 'menu', name: 'Menu', group: 'Public', route: '/menu', features: [{ id: 'order', name: 'Order' }] });

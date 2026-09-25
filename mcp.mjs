@@ -4,7 +4,7 @@ import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
   addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
-  recordVerdicts, registerPage, saveAudit, setConnections, updateFinding,
+  recordVerdicts, registerPage, removePage, saveAudit, setConnections, updateFinding,
 } from './lib/store.mjs';
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
@@ -256,6 +256,19 @@ const definitions = [
       },
     }, ['project', 'page', 'agent', 'features']),
     run: addPageFeatures,
+  },
+  {
+    name: 'dogfood_remove_page',
+    description: 'Remove a page registered by mistake (a duplicate, a redirect, or a route that does not exist). Needs a reason; the page\'s screenshots and history stay on disk. Never edit the manifest by hand instead.',
+    inputSchema: objectSchema({
+      ...projectPageProperties,
+      agent: { type: 'string', description: 'Agent name used to attribute the removal.' },
+      reason: { type: 'string', description: 'Why the page should not be in the project, in 12–400 characters.' },
+    }, ['project', 'page', 'agent', 'reason']),
+    run: ({ project, page, agent, reason }) => {
+      const saved = removePage(project, page, reason, byAgent(agent));
+      return { project, removed: page, pageCount: saved.pages.length };
+    },
   },
   {
     name: 'dogfood_page',
