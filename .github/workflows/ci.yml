@@ -18,3 +18,18 @@ jobs:
       - run: npm run lint
       - name: MCP acceptance (no browser needed)
         run: node tests/acceptance/mcp.mjs
+
+  acceptance:
+    # The end-to-end suites drive a real headless browser; model calls are faked, so no secrets are needed.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AGENT_BROWSER_ARGS: --no-sandbox
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global agent-browser@0.38.1
+      - run: agent-browser install --with-deps
+      - run: npm run test:acceptance
