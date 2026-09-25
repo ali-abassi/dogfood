@@ -1,17 +1,17 @@
 # dogfood design system
 
-Revision 4, 2026-09-25. Supersedes the warm-canvas, green-action system of revision 1.
+Revision 5, 2026-09-26. Each page is a report card: screenshots, then six plain answers. Supersedes revision 4's tabs and requirement list; tokens, type, and brand carry over.
 
 ## Product and register
 
-- **Product:** a local workspace for page-by-page QA of any web product.
-- **User and moment:** a founder, designer, or agent checking a product's pages after a change or before a release.
-- **Job:** see every page's status at a glance, open one page, and record or run the checks that prove it works.
-- **Register:** compact desktop product workspace; a native-feeling macOS utility.
+- **Product:** a local app that tells the owner of an app whether each page works.
+- **User and moment (user-stated, 2026-09-26):** a non-technical person who built an app with an AI coding agent and wants to know if it is working; their agent fills dogfood in, and they open it to read the answer.
+- **Job:** see each page on a computer and a phone, and know six things about it: does it look right, is its purpose clear, is it easy to use, is it safe, is it fast and findable, and does it work as expected.
+- **Register:** a calm report in a native-feeling macOS utility; read far more than edited.
 
 ## Visual thesis
 
-For people checking a product page by page, dogfood feels like a first-party macOS utility (Finder's source list, System Settings' grouped rows) so the next page to check and the proof behind each verdict are obvious in one glance. It prioritises calm legibility and state over decoration, expressed through a grey sidebar source list, one segmented control, white 12px groups on a soft canvas, and colour reserved for state. It succeeds when a person can name the page that needs work and its open issue within five seconds of opening the app.
+For a non-technical builder asking "is my app working?", dogfood feels like a checkup report in a first-party Mac utility: every page shows how it looks on a computer and a phone, then six plain answers with one clear mark each, so they know what is good and what to fix without meeting a technical word. It prioritises the answer over the process (checklists, scans, and attribution stay one tap behind each answer), expressed through large screenshots, six icon-led rows, grouped white panels on a soft canvas, and colour only for the answer. It succeeds when a person can say, within five seconds of opening a page, whether it works and which of the six things needs fixing.
 
 ## Reference ledger
 
@@ -21,18 +21,21 @@ For people checking a product page by page, dogfood feels like a first-party mac
 | The owner's reference implementation of that default, rendered at 1440 × 900 on 2026-09-25 | A full-height grey sidebar with rounded grey selection; large 32px title; content in white groups; one blue "Start" pill. | The sidebar owns navigation, so the content column can hold one object at a time. | Sidebar treatment and group rhythm. | Depart: QA puts sibling views in a toolbar segmented control, not in the page body, and pairs the evidence group with a sticky screenshot column. |
 | [Apple HIG: Sidebars](https://developer.apple.com/design/human-interface-guidelines/sidebars) | Sidebars sit on the leading side for top-level collections; group hierarchy with sections; let people hide the sidebar. | Familiar placement means no learning cost. | Sectioned page groups in a leading source list; a Pages sheet replaces the sidebar on phones. | Avoid SF Symbols copies; QA uses text and state dots rather than an icon per row. |
 | [Linear — Refero Styles](https://styles.refero.design/style/90ce5883-bb24-4466-93f7-801cd617b0d1), rendered preview inspected 2026-09-25 | Dense task rows sit beside a narrow source list on a dark canvas; white text and small state marks carry the reading order. | Compact rows make many related objects scannable without turning each into a card. | Use grouped rows with a clear name, route, and state. | Avoid its dark palette, lime accent, and task-specific panels; dogfood keeps its Apple light/dark tokens and groups pages by site section, with completion details that open to their resolving view. |
+| [PageSpeed Insights report](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fwww.apple.com%2F&form_factor=mobile), rendered at 1440 × 900 on 2026-09-25 | One sentence leads ("Assessment: Passed"), only the verdict word coloured; measurements and diagnosis sit below. | A verdict first lets a person stop reading when it is good. | The overview's one-sentence answer and each answer's single mark and line. | Avoid its acronyms (LCP, INP, CLS) and gauges; dogfood says "Load time on a phone 1.8 s". |
+| [GitHub Actions run summary](https://github.com/ali-abassi/dogfood/actions), rendered 2026-09-25 | A one-word status beside a large state icon; one row per check with an icon, a plain name, and one fact; each row opens its detail. | Icon-led rows scan in a column; detail stays one click away. | The six answer rows: mark, name, one-line answer, chevron to its detail. | Avoid developer vocabulary and log dumps; the detail explains evidence in plain words. |
 
 ## System
 
 ### Composition
 
-- Desktop: 256px sidebar (brand, project, search, show and sort, Overview, grouped page list, product link) and a content column with an opaque sticky toolbar holding the segmented page-view control.
-- Project overview opens by default. Its content starts with the project name and a Scan all pages pill, then five metrics (the fifth counts pages changed since review), then lists every page in site order under the same groups used by the sidebar. Each page row carries server status, open-issue count, capture age, a "Changed since review" marker when its verdicts are out of date, and unmet requirement labels.
-- See page puts the desktop screenshot (wide) and the mobile screenshot (a 248px phone column) side by side, then the visual changes (per device, the changed-pixel share with previous, current, and diff images), then the scan results, then the AI review. Other page views keep one sticky screenshot column with a Desktop/Mobile segmented toggle.
-- Scan results lead with measured problems in the red state tint, then two device columns of compact label/value rows: load time, errors, failed requests, API calls, sideways scrolling, search tags, security headers (a missing one says "Missing"), and accessibility counts. Lists longer than five entries fold behind a disclosure.
-- Add project is a single narrow group: the product URL, an optional name, an optional Chrome profile for signed-in pages, one blue "Add and scan" pill, then live progress ("Scanning 3 of 12 · Pricing"). With no projects, the same group is centred on the canvas as the welcome ("Add your first project").
-- A page shows its route in mono, a 28px title, one line of guidance, and server status on the right. A single compact row of requirement chips sits directly below the heading; each chip expands to its full requirement, missing evidence, and the view that resolves it. The active page view follows, beside the sticky screenshot column. See page uses the full width.
-- Phone (≤760px): the two screenshots and the two scan columns stack; the sidebar becomes a full-screen Pages sheet with a Done button; overview metrics become two columns and page rows stack their metadata. The segmented control takes its own full-width row with short labels ("Checks, Page, Review, Safety, Issues") while accessible names stay complete. Requirement chips remain a single horizontal row that can scroll and expand.
+- Desktop: 256px sidebar (brand, project, search, show and sort, Overview, grouped page list with a status mark each, product link) and a content column up to 1120px wide. There is no toolbar and no tabs.
+- **Overview** answers "Is <app> working?" in one sentence (how many pages are good, need work, and are not fully checked), with Download report and the one blue Check all pages on the right. One white panel lists pages by site section; each row is the page name and route on the left and six marks under six short column headings (Looks, Purpose, Ease, Safety, Speed, Works) on the right. A changed page says "Changed since last check" in orange under its route.
+- **Page report**: route, name, plain status, and quiet actions (Check again, Open page ↗, Remove page…) on one line; a screenshot panel with the computer screenshot wide and the phone screenshot narrow, both cropped to one height, with View full page and the Changed chip; then "Is this page working?" with six rows in fixed order: mark, name, one-line answer (ellipsis), an "AI" tag when the AI answered, and a chevron. Check with AI is the one blue button while the AI has not seen these screenshots. Everything fits in 1440 × 900.
+- **Answer detail** (one per answer): a back link to the page, the answer name as the title, its question, the answer panel (big mark, word, full answer, where it came from and when, the pieces it is made of, Update answer), then the evidence in plain words: what the AI saw and would improve, measured facts ("Load time on a phone 1.8 s", "Page title Present: …"), the questions with their answers and an Answer questions form, and folded extras (design rules, protections the page asks browsers for).
+- **Works as expected** adds Things you can do here (mark, name, what should happen, what was seen), the AI's suggested things with one Add button, Bugs (Report a bug is the blue button; each bug names how bad it is in words), what the page check found, automated tests when the page has them, and folded data connections.
+- **Screenshots** view: back link, Computer | Phone switch, the full screenshot, then What changed (Before, Now, What changed) with "About N% of the page looks different".
+- **Add an app / welcome**: the logo, "Is your app working?", one sentence of promise, the sentence to give a coding agent with Copy, then "Or add it here" with the address field.
+- Phone (≤760px): a sticky bar with Pages; the sidebar becomes a full-screen sheet. The report stacks screenshots over answers; each answer row puts its one-line answer under its name. Overview rows put the six marks under the name, with a legend line above the panel.
 
 ### Typography
 
@@ -65,16 +68,11 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 ### Components
 
-- Primary action: one blue pill per view (Run checks, Ask AI to review image, Review this page, Edit checks & connections, Save, Add and scan, Scan all pages). Secondary: grey pill (Cancel, Scan again). Tertiary: blue text (Resolve, Add issue, View full size).
-- Visual changes: per device with a comparison, the changed-pixel share (or size change) with previous, current, and diff images side by side, each captioned and opening full size; pages changed since review lead with a recheck prompt.
-- Status: pill with a dot and text; sidebar rows show the dot alone with the status as the accessible name and tooltip.
-- Overview uses one five-cell metrics group and grouped page rows. Each row is one page-opening button; completion is shown by requirement labels and a "QA complete" state, never a per-page score.
-- QA completion uses state-marked requirement chips. Opening an unmet chip reveals its server-provided missing text and a tertiary button for the corresponding page view. Verdict attribution appears as small metadata under the evidence note; issue attribution distinguishes opening from resolution.
-- A blocked capture shows its reason and "Not captured" age when its timestamp is absent; it has no screenshot or original-page link.
-- Suggested features: the AI review lists the things a person can do or see on the page, each with one sentence of expected behavior; each is a checked-by-default checkbox, and one grey "Add N features" pill adds the checked ones.
-- Project-level review: the overview names the waiting count ("N suggested features waiting on M pages") with a grey Review pill; the review groups every page's waiting suggestions under its page name, each still a checked-by-default checkbox, and one blue "Add N features" pill adds the checked ones in one step.
-- Destructive actions are rare and red: "Remove page…" is red text in the page heading and opens an inline form with a red "Remove page" pill; the reason is required and kept on record. "Download report" is a grey pill beside the overview's Scan all.
-- Disclosures show a chevron that rotates when open.
+- **Marks** carry state with shape as well as colour: ✓ Good (green), ! Needs work (red), ◐ Partly checked (grey fill), – Not checked (grey ring). Every mark has an accessible name such as "Safe: Not checked".
+- **Words.** Good, Needs work, Partly checked, Not checked; page status adds Can’t open. Bugs: Breaks the app, Blocks this page, Annoying, Cosmetic (the P0–P3 codes stay in the data and the MCP tools). Devices are Computer and Phone. The report never shows requirement, verdict, audit, checklist, connection, or capture.
+- **Actions.** One blue pill per view: Check with AI or Take screenshots on the report, Update answer or Answer questions on an answer, Report a bug on Works as expected, Check all pages on the overview. Secondary actions are grey pills; tertiary actions are blue text (Check again, View full page, Add a thing people can do). Remove page… is grey text and turns red on hover; its confirm button is red.
+- **Sources.** Every answer says where it came from: From you, From <agent>, From the AI check of these screenshots, Measured by the page check, From the questions below, From trying the things you can do here, From the bugs below, or From an earlier answer that was not signed. A person's or agent's verdict outranks the AI's.
+- Forms open inline in place of what they edit; an unchanged form closes quietly, a changed one asks Save or Discard.
 
 ### Brand
 
@@ -83,8 +81,8 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 ## Invariants
 
-- **Always:** every page shows a status; every Pass or Needs work carries an evidence note; untested boundaries stay visible.
-- **Never:** turn a passing test count or an AI rating into an overall score; use green or red for decoration; add a second filled blue button to a view.
+- **Always:** every page shows its six answers in the same order; every Good or Needs work carries a note or a measurement; Not checked stays visible.
+- **Never:** turn counts or an AI score into a page score; use green or red for decoration; add a second filled blue button to a view; show an internal term on the report.
 
 ## Decision ledger
 
@@ -98,3 +96,9 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **Agent-selected working policy, 2026-09-25:** visual changes are orange and informational, because dynamic pages change a little on every scan; "Changed since review" prompts a recheck without failing the page.
 - **Agent-selected working policy, 2026-09-26:** project-level suggestions stay opt-in per item, checked by default, because a person still decides what the page is for.
 - **User-stated, 2026-09-26:** a feature is something a person can do on the page, not an interface element ("a feature isn't clicking the menu item"). Every page answers five questions about its features: connected (working end to end), highlighted, obvious, accurate, and clear overall. They replace functionality, optimization, design fit, excess, and clarity; old verdicts are kept in `retiredChecks`, and speed is measured by the scan.
+- **User-stated, 2026-09-26:** "think of the user as non technical, they want to know if their vibecoded application is working … there is so much on this page that is confusing." They need a skill so their agent can take dogfood and add their site with each page's criteria, and a UI showing each page on mobile and desktop with six answers: design consistency, clear purpose, easy to use and working, secure (scrape-free, hack-free), optimized for speed and search, and bug-free (the intended things work as expected). This supersedes the five questions about features.
+- **Agent-selected working policy, 2026-09-26:** "easy to use and working" and "bug free" are split into Easy to use (finding and doing things, accessibility, phone layout) and Works as expected (each thing a person can do, bugs, errors), so each answer has one kind of evidence. Features remain the things a person can do on the page and live under Works as expected.
+- **Agent-selected working policy, 2026-09-26:** the AI check counts as an answer for Looks right, Clear purpose, and Easy to use until a person or agent answers, and says so. A score of 7 or more is Good, because the prompt defines below 7 as "a visitor must guess or the page looks broken"; the reason still names any friction. Gemini scored the clean demo Home at 7–7.5, so a bar of 8 would have called almost every page Needs work.
+- **Agent-selected working policy, 2026-09-26:** load time over 3 seconds on either device is Needs work (`slowLoadMs`), with a ponytail note to revisit once scans time real networks rather than localhost. Missing security headers are shown, not counted, because nearly every local development server lacks them.
+- **Agent-selected working policy, 2026-09-26:** the page's tabs, requirement list, and checklist question editor are gone; agents still edit questions and connections through the MCP tools. Console warnings are no longer shown, since they were never counted and meant nothing to the owner.
+

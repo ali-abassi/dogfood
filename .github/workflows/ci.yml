@@ -32,4 +32,29 @@ jobs:
           node-version: 22
       - run: npm install --global agent-browser@0.38.1
       - run: agent-browser install --with-deps
-      - run: npm run test:acceptance
+      - name: Install ffmpeg (records the report-card suite)
+        run: sudo apt-get update && sudo apt-get install --yes ffmpeg
+      - name: Acceptance suites, recorded
+        # `shell: bash` runs with pipefail, so a failing suite still fails the step through tee.
+        shell: bash
+        env:
+          DOGFOOD_RECORD_DIR: recordings
+        run: npm run test:acceptance 2>&1 | tee acceptance.log
+      - name: Summarise what was checked
+        if: always()
+        run: |
+          {
+            echo "## Acceptance suites"
+            echo
+            echo '```'
+            grep -E '^(tests/acceptance/|ok [0-9]+ - |FAILED|[0-9]+ checks passed)' acceptance.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the recording and the log as proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-proof
+          path: |
+            recordings/
+            acceptance.log

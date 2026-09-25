@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "id": "tidepool",
   "name": "Tidepool (demo)",
   "description": "A fictional swim school site bundled with dogfood to show every page state.",
@@ -39,23 +39,15 @@
         }
       ],
       "checks": {
-        "connected": {
+        "design": {
+          "status": "pass",
+          "note": "Serif display, teal action, and white cards match the Tidepool guidelines."
+        },
+        "purpose": {
           "status": "untested",
           "note": ""
         },
-        "highlighted": {
-          "status": "untested",
-          "note": ""
-        },
-        "obvious": {
-          "status": "untested",
-          "note": ""
-        },
-        "accurate": {
-          "status": "untested",
-          "note": ""
-        },
-        "clear": {
+        "ease": {
           "status": "pass",
           "note": "The headline, lede, and single Book button make the next step obvious."
         }
@@ -159,51 +151,51 @@
           "sourceUrl": "http://127.0.0.1:4380/",
           "viewport": "1440 × 900",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T21:42:16.047Z",
+          "capturedAt": "2026-09-25T23:39:04.128Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
           "pixelWidth": 1440,
           "pixelHeight": 900,
-          "sha256": "d5ada657e2f90a1dba4440f52715c85a7c9652c8605601b54579394f4fee32e0"
+          "sha256": "2116ae6c2b6d946ffb9db9c67feefbc848ac71867398f530f0b55fffb9beda66"
         },
         "mobile": {
           "path": "/captures/tidepool/home-mobile.png",
           "sourceUrl": "http://127.0.0.1:4380/",
           "viewport": "390 × 844",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T21:42:16.399Z",
+          "capturedAt": "2026-09-25T23:39:04.157Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
           "pixelWidth": 390,
-          "pixelHeight": 844,
-          "sha256": "a8d66dfcce2ad22f4cfd16bc727559e2a3406aa996a45280ee5b80f8c1e7a5a5"
+          "pixelHeight": 1044,
+          "sha256": "19c015620a9ab07ea684b983e56bcb79cbeffb001f55354fb09581ae6f3981c1"
         }
       },
       "scan": {
-        "scannedAt": "2026-09-25T21:42:16.489Z",
+        "scannedAt": "2026-09-25T23:39:04.157Z",
         "sourceUrl": "http://127.0.0.1:4380/",
         "actor": "Signed-out visitor",
         "captureSha256": {
-          "desktop": "d5ada657e2f90a1dba4440f52715c85a7c9652c8605601b54579394f4fee32e0",
-          "mobile": "a8d66dfcce2ad22f4cfd16bc727559e2a3406aa996a45280ee5b80f8c1e7a5a5"
+          "desktop": "2116ae6c2b6d946ffb9db9c67feefbc848ac71867398f530f0b55fffb9beda66",
+          "mobile": "19c015620a9ab07ea684b983e56bcb79cbeffb001f55354fb09581ae6f3981c1"
         },
         "viewports": {
           "desktop": {
-            "loadMs": 12,
+            "loadMs": 19,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
             "requests": [],
             "horizontalOverflow": false,
             "seo": {
-              "title": "",
+              "title": "Home · Tidepool",
               "description": null,
               "canonical": null,
               "robots": null,
-              "lang": null,
-              "h1Count": 0
+              "lang": "en",
+              "h1Count": 1
             },
             "accessibility": {
               "imagesWithoutAlt": 0,
@@ -219,19 +211,19 @@
             }
           },
           "mobile": {
-            "loadMs": 10,
+            "loadMs": 9,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
             "requests": [],
             "horizontalOverflow": false,
             "seo": {
-              "title": "",
+              "title": "Home · Tidepool",
               "description": null,
               "canonical": null,
               "robots": null,
-              "lang": null,
-              "h1Count": 0
+              "lang": "en",
+              "h1Count": 1
             },
             "accessibility": {
               "imagesWithoutAlt": 0,
@@ -248,22 +240,8 @@
           }
         },
         "changes": {
-          "desktop": {
-            "previousPath": "/captures/tidepool/history/home-1790372536046.png",
-            "previousSha256": "d5ada657e2f90a1dba4440f52715c85a7c9652c8605601b54579394f4fee32e0",
-            "diffPath": "/captures/tidepool/diffs/home.png",
-            "changedShare": 0,
-            "sizeChanged": false,
-            "changed": false
-          },
-          "mobile": {
-            "previousPath": "/captures/tidepool/history/home-mobile-1790372536398.png",
-            "previousSha256": "a8d66dfcce2ad22f4cfd16bc727559e2a3406aa996a45280ee5b80f8c1e7a5a5",
-            "diffPath": "/captures/tidepool/diffs/home-mobile.png",
-            "changedShare": 0,
-            "sizeChanged": false,
-            "changed": false
-          }
+          "desktop": null,
+          "mobile": null
         },
         "lastChangedAt": null
       },
@@ -276,15 +254,11 @@
           "status": "untested",
           "note": ""
         },
-        "design": {
-          "status": "pass",
-          "note": "Serif display, teal action, and white cards match the Tidepool guidelines."
-        },
         "excess": {
           "status": "untested",
           "note": ""
         },
-        "retiredAt": "2026-09-26"
+        "retiredAt": "2026-09-25"
       }
     },
     {
@@ -312,23 +286,15 @@
         }
       ],
       "checks": {
-        "connected": {
+        "design": {
+          "status": "pass",
+          "note": "Cards, type, and spacing follow the Tidepool guidelines."
+        },
+        "purpose": {
           "status": "untested",
           "note": ""
         },
-        "highlighted": {
-          "status": "untested",
-          "note": ""
-        },
-        "obvious": {
-          "status": "untested",
-          "note": ""
-        },
-        "accurate": {
-          "status": "untested",
-          "note": ""
-        },
-        "clear": {
+        "ease": {
           "status": "pass",
           "note": "Each class states who it is for and what it costs."
         }
@@ -549,15 +515,11 @@
           "status": "pass",
           "note": "Static HTML and one stylesheet; loads instantly from disk."
         },
-        "design": {
-          "status": "pass",
-          "note": "Cards, type, and spacing follow the Tidepool guidelines."
-        },
         "excess": {
           "status": "pass",
           "note": "No duplicated content or decorative extras on the page."
         },
-        "retiredAt": "2026-09-26"
+        "retiredAt": "2026-09-25"
       }
     },
     {
@@ -577,23 +539,15 @@
         }
       ],
       "checks": {
-        "connected": {
+        "design": {
+          "status": "needs_work",
+          "note": "The Reserve button breaks the form column; see TP-001."
+        },
+        "purpose": {
           "status": "untested",
           "note": ""
         },
-        "highlighted": {
-          "status": "untested",
-          "note": ""
-        },
-        "obvious": {
-          "status": "untested",
-          "note": ""
-        },
-        "accurate": {
-          "status": "untested",
-          "note": ""
-        },
-        "clear": {
+        "ease": {
           "status": "needs_work",
           "note": "Time slots do not say which time zone they use; see TP-002."
         }
@@ -831,15 +785,11 @@
           "status": "untested",
           "note": ""
         },
-        "design": {
-          "status": "needs_work",
-          "note": "The Reserve button breaks the form column; see TP-001."
-        },
         "excess": {
           "status": "untested",
           "note": ""
         },
-        "retiredAt": "2026-09-26"
+        "retiredAt": "2026-09-25"
       }
     },
     {
@@ -858,23 +808,15 @@
         }
       ],
       "checks": {
-        "connected": {
+        "design": {
           "status": "untested",
           "note": ""
         },
-        "highlighted": {
+        "purpose": {
           "status": "untested",
           "note": ""
         },
-        "obvious": {
-          "status": "untested",
-          "note": ""
-        },
-        "accurate": {
-          "status": "untested",
-          "note": ""
-        },
-        "clear": {
+        "ease": {
           "status": "untested",
           "note": ""
         }
@@ -1095,15 +1037,11 @@
           "status": "untested",
           "note": ""
         },
-        "design": {
-          "status": "untested",
-          "note": ""
-        },
         "excess": {
           "status": "untested",
           "note": ""
         },
-        "retiredAt": "2026-09-26"
+        "retiredAt": "2026-09-25"
       }
     },
     {
@@ -1122,23 +1060,15 @@
         }
       ],
       "checks": {
-        "connected": {
+        "design": {
           "status": "untested",
           "note": ""
         },
-        "highlighted": {
+        "purpose": {
           "status": "untested",
           "note": ""
         },
-        "obvious": {
-          "status": "untested",
-          "note": ""
-        },
-        "accurate": {
-          "status": "untested",
-          "note": ""
-        },
-        "clear": {
+        "ease": {
           "status": "untested",
           "note": ""
         }
@@ -1261,15 +1191,11 @@
           "status": "untested",
           "note": ""
         },
-        "design": {
-          "status": "untested",
-          "note": ""
-        },
         "excess": {
           "status": "untested",
           "note": ""
         },
-        "retiredAt": "2026-09-26"
+        "retiredAt": "2026-09-25"
       }
     }
   ]

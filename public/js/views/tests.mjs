@@ -68,14 +68,14 @@ function qaHistoryMarkup(page) {
 }
 
 function qaRunButtonText() {
-  if (state.qa.running) return 'Running checks…';
-  if (!state.qa.plan.length && !state.qa.loading) return 'Checks unavailable';
-  return 'Run checks';
+  if (state.qa.running) return 'Running tests…';
+  if (!state.qa.plan.length && !state.qa.loading) return 'Tests unavailable';
+  return 'Run tests';
 }
 
 function qaRunButtonMarkup() {
   const disabled = state.qa.running || state.qa.loading || !state.qa.plan.length;
-  return `<button type="button" class="review-button qa-run-button" data-action="run-qa" ${disabled ? 'disabled' : ''}>${qaRunButtonText()}</button>`;
+  return `<button type="button" class="text-button qa-run-button" data-action="run-qa" ${disabled ? 'disabled' : ''}>${qaRunButtonText()}</button>`;
 }
 
 function qaControlMarkup() {
@@ -84,16 +84,11 @@ function qaControlMarkup() {
   return `${qaRunButtonMarkup()}<div class="qa-run-state" role="status">${progress}</div>${error}`;
 }
 
-// A page without focused tests needs one sentence and its untested boundary, not three headings.
-function noTestsMarkup(page) {
-  return `<section class="content-panel qa-section" aria-label="Automated page checks"><h3>No focused tests for this page</h3><p class="qa-gap">${escapeHtml(page.qa.note)}</p></section>`;
-}
-
+// Only pages with automated tests show this panel; the Works as expected answer counts its result.
 export function qaMarkup(page) {
-  if (!page.qa.tests.length) return noTestsMarkup(page);
   const control = `<div class="qa-control">${qaControlMarkup()}</div>`;
   const evidence = `<div class="qa-evidence"><div class="section-heading"><h4>Last run</h4><span>Saved examples</span></div>${qaHistoryMarkup(page)}</div>`;
-  return `<section class="content-panel qa-section" aria-label="Automated page checks"><div class="qa-heading"><div><h3>Run the page checks</h3><p>These checks use saved examples. They cannot prove the live page is ready.</p></div>${control}</div>${evidence}<div class="qa-plan"><div class="section-heading"><h4>Checks and gaps</h4></div>${qaPlanMarkup(page)}</div></section>`;
+  return `<section class="content-panel qa-section" aria-label="Automated tests"><div class="qa-heading"><div><h2>Automated tests</h2><p>These run the app’s own tests for this page with saved examples. They cannot prove the live page works.</p></div>${control}</div>${evidence}<div class="qa-plan"><div class="section-heading"><h4>Checks and gaps</h4></div>${qaPlanMarkup(page)}</div></section>`;
 }
 
 export function syncQaState() {

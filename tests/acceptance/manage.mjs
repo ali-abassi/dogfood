@@ -45,7 +45,7 @@ try {
   browser('open', url);
   browser('set', 'viewport', '1440', '900');
   browser('wait', '800');
-  check('the overview offers the report as a download next to Scan all', () => {
+  check('the overview offers the report as a download next to Check all pages', () => {
     const link = evaluate(`(() => { const a = document.querySelector('.overview-actions a[download]'); return a && { href: a.getAttribute('href'), download: a.getAttribute('download'), text: a.textContent }; })()`);
     assert.deepEqual(link, { href: '/api/projects/tidepool/report', download: 'tidepool-qa-report.md', text: 'Download report' });
   });

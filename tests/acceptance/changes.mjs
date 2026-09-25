@@ -62,7 +62,7 @@ const text = selector => evaluate(`document.querySelector(${JSON.stringify(selec
 let server;
 try {
   await run('scripts/onboard.mjs', [`${site}/`, '--name', 'Swim Club']);
-  store.recordVerdicts('swim-club', 'home', { checks: { clear: { status: 'pass', note: 'Heading and navigation read clearly at 1440 wide.' } } }, 'agent:proof');
+  store.recordVerdicts('swim-club', 'home', { checks: { ease: { status: 'pass', note: 'Heading and navigation read clearly at 1440 wide.' } } }, 'agent:proof');
   release = 2;
 
   const port = await freePort();
@@ -112,40 +112,36 @@ try {
   browser('open', url);
   browser('set', 'viewport', '1440', '900');
   browser('wait', '800');
-  check('the overview counts pages changed since their review', () => {
-    assert.match(text('[data-metric="changed"]'), /\b1\b/);
-  });
   check('the overview marks the changed page, and only it', () => {
-    assert.match(text('[data-overview-page="home"] [data-changed-since-review]'), /Changed since review/);
-    assert.equal(evaluate(`Boolean(document.querySelector('[data-overview-page="about"] [data-changed-since-review]'))`), false);
+    assert.equal(evaluate(`document.querySelectorAll('[data-changed-since-review]').length`), 1);
+    assert.match(text('[data-overview-page="home"] [data-changed-since-review]'), /Changed since last check/);
   });
-  check('Scan all pages is the overview\'s action', () => {
+  check('Check all pages is the overview\'s action', () => {
     assert.equal(evaluate(`document.querySelector('button[data-action="scan-all"]')?.classList.contains('save-button')`), true);
   });
   evaluate(`(() => { const select = document.querySelector('#page-filter'); select.value = 'changed'; select.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
   browser('wait', '500');
-  check('the sidebar can show only pages changed since review', () => {
+  check('the sidebar can show only pages changed since their last check', () => {
     assert.deepEqual(evaluate(`[...document.querySelectorAll('.page-groups [data-page]')].map(item => item.dataset.page)`), ['home']);
   });
 
   click('[data-page="home"]');
   browser('wait', '500');
-  click('[data-view="capture"]');
+  click('[data-report-screens] .changed-chip');
   browser('wait', '1500');
-  check('See page shows what changed, with the previous, current, and diff images', () => {
-    const panel = text('section[aria-label="Visual changes"]');
-    assert.match(panel, /Changed since review/i);
-    assert.match(panel, /\d+(\.\d+)?% of (the )?pixels/);
-    const loaded = evaluate(`['previous', 'current', 'diff'].map(kind => document.querySelector('section[aria-label="Visual changes"] img[data-change-image="' + kind + '"]')?.naturalWidth > 0)`);
+  check('the changed page shows what changed, with the before, now, and difference images', () => {
+    const panel = text('section[aria-label="What changed"]');
+    assert.match(panel, /\d+% of the page looks different/);
+    const loaded = evaluate(`['previous', 'current', 'diff'].map(kind => document.querySelector('section[aria-label="What changed"] img[data-change-image="' + kind + '"]')?.naturalWidth > 0)`);
     assert.deepEqual(loaded, [true, true, true]);
   });
   evaluate(`(() => { const select = document.querySelector('#page-filter'); select.value = 'all'; select.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
   click('[data-page="about"]');
   browser('wait', '500');
-  click('[data-view="capture"]');
+  click('[data-action="view-screens"]');
   browser('wait', '800');
   check('a page that did not change says so', () => {
-    assert.match(text('section[aria-label="Visual changes"]'), /No visual change/i);
+    assert.match(text('section[aria-label="What changed"]'), /looks the same as the last check/i);
   });
 
   const child = spawn(process.execPath, [join(repo, 'mcp.mjs')], { env: { ...process.env, DOGFOOD_DATA: data }, stdio: ['pipe', 'pipe', 'pipe'] });

@@ -4,15 +4,18 @@ import { state } from '../state.mjs';
 import { loadProject, render } from '../app.mjs';
 
 const addProjectCopy = {
-  welcome: { title: 'Add your first project', lede: 'Start with a product URL. dogfood finds its pages and scans each one on desktop and mobile.' },
-  add: { title: 'Add project', lede: 'Enter a URL and dogfood finds its pages and scans each one on desktop and mobile.' },
+  welcome: { title: 'Is your app working?', lede: 'dogfood checks every page of your app on a computer and a phone, and answers six plain questions about each one: does it look right, is its purpose clear, is it easy to use, safe, fast, and working as expected.' },
+  add: { title: 'Add an app', lede: 'Paste its address. dogfood finds its pages and takes screenshots of each one on a computer and a phone.' },
 };
+
+// The sentence a person gives their coding agent; the skill in the repository does the rest.
+export const agentPrompt = 'Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md to check every page of my app.';
 
 export const idleOnboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
 
 function onboardingButtonText() {
-  if (!state.onboarding.running) return 'Add and scan';
-  return state.onboarding.job ? 'Scanning…' : 'Adding project…';
+  if (!state.onboarding.running) return 'Add and check';
+  return state.onboarding.job ? 'Checking…' : 'Adding…';
 }
 
 function onboardingNoticeMarkup() {
@@ -24,7 +27,11 @@ function onboardingNoticeMarkup() {
 // The first run is the brand's first impression, so the icon and name lead it.
 function addProjectHeadingMarkup(welcome, copy) {
   const brand = welcome ? '<p class="welcome-brand"><img src="/logo.svg" alt="" width="40" height="40"><span>dogfood</span></p>' : '';
-  return `<header class="add-project-heading">${brand}<h1>${copy.title}</h1><p>${copy.lede}</p></header>`;
+  return `<header class="add-project-heading">${brand}<h1>${copy.title}</h1><p data-promise>${copy.lede}</p></header>`;
+}
+
+function agentPromptMarkup() {
+  return `<section class="agent-prompt" aria-labelledby="agent-prompt-heading"><h2 id="agent-prompt-heading">With your coding agent</h2><p>Give it this sentence. It sets dogfood up, adds every page with what people can do there, and checks them.</p><div class="agent-prompt-box"><p data-agent-prompt>${escapeHtml(agentPrompt)}</p><button type="button" class="text-button" data-action="copy-agent-prompt">${state.copied ? 'Copied' : 'Copy'}</button></div></section><h2 class="add-here-heading">Or add it here</h2>`;
 }
 
 export function addProjectFormMarkup(welcome) {
@@ -34,13 +41,14 @@ export function addProjectFormMarkup(welcome) {
   const draft = state.projectDraft;
   return `<section class="add-project-panel content-panel" aria-label="Add project">
     ${addProjectHeadingMarkup(welcome, copy)}
+    ${agentPromptMarkup()}
     <form id="add-project-form" novalidate>
       <fieldset ${disabled}>
-        <label for="product-url">Product URL<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}"></label>
+        <label for="product-url">Your app’s address<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}"></label>
         <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
         <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
         <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>
-        <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also ask AI to suggest each page’s features (about half a cent per page)</label>
+        <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also check each page with AI (about half a cent per page)</label>
       </fieldset>
       ${onboardingNoticeMarkup()}
       <div class="form-actions"><button class="save-button" type="submit" ${disabled}>${onboardingButtonText()}</button>${cancel}</div>
@@ -50,7 +58,7 @@ export function addProjectFormMarkup(welcome) {
 
 function onboardingProgressText() {
   if (state.onboarding.total === null) return 'Finding pages…';
-  const verb = state.onboarding.phase === 'review' ? 'Asking AI about' : 'Scanning';
+  const verb = state.onboarding.phase === 'review' ? 'Asking AI about' : 'Checking';
   return `${verb} ${escapeHtml(scanPosition(state.onboarding))}`;
 }
 
@@ -77,7 +85,7 @@ function failOnboarding(message) {
 export async function submitOnboarding(form) {
   const input = onboardingInput(form);
   state.projectDraft = { url: '', name: '', browserProfile: '', ...input };
-  if (!isHttpUrl(input.url)) return failOnboarding('Enter the product URL, starting with http:// or https://.');
+  if (!isHttpUrl(input.url)) return failOnboarding('Enter your app’s address, starting with http:// or https://.');
   state.onboarding = { ...idleOnboarding, running: true };
   render();
   try {

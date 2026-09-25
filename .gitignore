@@ -4,3 +4,6 @@ node_modules/
 data/
 demo/runs/
 design-evidence/
+# Proof of the acceptance runs (CI keeps them as an artifact).
+recordings/
+acceptance.log

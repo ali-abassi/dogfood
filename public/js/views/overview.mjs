@@ -1,52 +1,37 @@
 import { readJson } from '../api.mjs';
-import { escapeHtml, plural, relativeCaptureAge, scanPosition, statusPill } from '../format.mjs';
-import { groupedPages, requirementShortNames, state } from '../state.mjs';
+import { answerMarkMarkup, escapeHtml, plural, scanPosition } from '../format.mjs';
+import { answerIds, answerShortNames, groupedPages, state } from '../state.mjs';
 import { render } from '../app.mjs';
 import { reloadProjectSuggestions, suggestionsWaitingMarkup } from './suggestions.mjs';
 
-function openIssueCount(page) {
-  return plural(page.findings.filter(item => item.status === 'open').length, 'open issue', 'open issues');
+function countWords(count, singular, pluralForm) {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
 }
 
-function isBlockingIssue(item) {
-  return item.status === 'open' && ['P0', 'P1'].includes(item.severity);
+// One sentence answers the question the owner came with.
+function answerSentence(pages) {
+  const count = status => pages.filter(page => page.progress.status === status).length;
+  const good = count('pass');
+  const needs = count('needs_work');
+  const rest = pages.length - good - needs;
+  return `Is ${state.project.name} working? ${countWords(good, 'page is', 'pages are')} good, ${countWords(needs, 'needs', 'need')} work, and ${countWords(rest, 'is', 'are')} not fully checked yet.`;
 }
 
-function overviewMetricsMarkup() {
-  const pages = state.project.pages;
-  const complete = pages.filter(page => page.progress.complete).length;
-  const needsWork = pages.filter(page => page.progress.status === 'needs_work').length;
-  const blocking = pages.flatMap(page => page.findings).filter(isBlockingIssue).length;
-  const scans = pages.filter(page => page.progress.requirements.some(item => ['capture', 'scan'].includes(item.id) && !item.met)).length;
-  const changed = pages.filter(page => page.progress.changedSinceReview).length;
-  return `<div class="overview-metrics" aria-label="Project metrics">
-    <div class="overview-metric" data-metric="complete"><strong>${escapeHtml(complete)} of ${escapeHtml(pages.length)}</strong><span> pages complete</span></div>
-    <div class="overview-metric" data-metric="needs-work"><strong>${escapeHtml(needsWork)}</strong><span> ${needsWork === 1 ? 'page needs work' : 'pages need work'}</span></div>
-    <div class="overview-metric" data-metric="blocking-issues"><strong>${escapeHtml(blocking)}</strong><span> open P0/P1 ${blocking === 1 ? 'issue' : 'issues'}</span></div>
-    <div class="overview-metric" data-metric="scans"><strong>${escapeHtml(scans)}</strong><span> ${scans === 1 ? 'page needs a scan' : 'pages need a scan'}</span></div>
-    <div class="overview-metric" data-metric="changed"><strong>${escapeHtml(changed)}</strong><span> ${changed === 1 ? 'page changed since review' : 'pages changed since review'}</span></div>
-  </div>`;
+function columnsMarkup() {
+  const headings = answerIds.map(id => `<span data-answer-heading>${escapeHtml(answerShortNames[id])}</span>`).join('');
+  return `<div class="overview-columns" aria-hidden="true"><span>Page</span><span class="overview-marks">${headings}</span></div>`;
 }
 
-// Rows show short names so 20+ pages stay scannable; the full label stays available to screen readers.
-function overviewRequirementsMarkup(page) {
-  const unmet = page.progress.requirements.filter(item => !item.met);
-  if (!unmet.length) return 'QA complete';
-  const names = unmet.map(item => `<span title="${escapeHtml(item.label)}">${escapeHtml(requirementShortNames[item.id] || item.label)}<span class="sr-only">: ${escapeHtml(item.label)}</span></span>`);
-  return `Missing: ${names.join(' · ')}`;
+function legendMarkup() {
+  return `<p class="answer-legend" data-answer-legend aria-hidden="true">${answerIds.map(id => escapeHtml(answerShortNames[id])).join(' · ')}</p>`;
 }
 
 function overviewPageMarkup(page) {
-  const status = page.progress.status;
-  const scanProblemCount = page.progress.scanProblems.length;
-  const scanProblems = scanProblemCount ? `<span class="overview-scan-problems" data-scan-problems="${escapeHtml(scanProblemCount)}">${escapeHtml(plural(scanProblemCount, 'scan problem', 'scan problems'))}</span>` : '';
-  const changed = page.progress.changedSinceReview ? '<span class="overview-changed" data-changed-since-review>Changed since review</span>' : '';
-  return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(status)}"><button type="button" data-page="${escapeHtml(page.id)}">
-    <span class="overview-status">${statusPill(status)}</span>
-    <span class="overview-identity"><strong title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</strong><code title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</code></span>
-    <span class="overview-open-issues">${escapeHtml(openIssueCount(page))}</span>
-    <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.captures.desktop))}</span>
-    <span class="overview-requirements">${changed}${scanProblems}${overviewRequirementsMarkup(page)}</span>
+  const changed = page.progress.changedSinceReview ? '<span class="changed-note" data-changed-since-review>Changed since last check</span>' : '';
+  const marks = page.progress.answers.map(answer => answerMarkMarkup(answer.name, answer.status)).join('');
+  return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(page.progress.status)}"><button type="button" data-page="${escapeHtml(page.id)}">
+    <span class="overview-identity"><strong title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</strong><code title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</code>${changed}</span>
+    <span class="overview-marks">${marks}</span>
   </button></div>`;
 }
 
@@ -57,13 +42,13 @@ function overviewGroupMarkup({ group, pages }) {
 // Orange, not red: the manifest still works, but edits made outside dogfood skipped its validation.
 function integrityNoticeMarkup() {
   if (state.project.integrity !== 'edited-outside') return '';
-  return '<p class="integrity-notice" role="status">This project’s manifest was edited outside dogfood since dogfood last saved it, so those edits skipped validation and attribution. Run <code>npm run check</code> to see what changed hands.</p>';
+  return '<p class="integrity-notice" role="status">Someone changed this project’s file outside dogfood, so those changes were not checked or signed. Run <code>npm run check</code> to see what changed.</p>';
 }
 
 function scanAllLabel() {
-  if (!state.scanAll.running) return 'Scan all pages';
-  if (state.scanAll.total === null) return 'Scanning…';
-  return `Scanning ${scanPosition(state.scanAll)}`;
+  if (!state.scanAll.running) return 'Check all pages';
+  if (state.scanAll.total === null) return 'Checking…';
+  return `Checking ${scanPosition(state.scanAll)}`;
 }
 
 function scanAllButtonMarkup() {
@@ -78,14 +63,14 @@ function scanAllNoticeMarkup() {
 
 export function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
-  const pages = groups ? `<div class="overview-groups">${groups}</div>` : '<p class="overview-empty">No pages have been added to this project.</p>';
+  const pages = groups ? `${columnsMarkup()}${groups}` : '<p class="overview-empty">No pages yet. Add the app’s address to find its pages.</p>';
   return `<section class="overview-content" aria-label="Project overview">
-    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
+    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${suggestionsWaitingMarkup()}
-    ${overviewMetricsMarkup()}
-    <section class="overview-pages" aria-label="Pages"><h2>Pages</h2>${pages}</section>
+    ${legendMarkup()}
+    <section class="overview-pages content-panel" aria-label="Pages">${pages}</section>
   </section>`;
 }
 
@@ -110,7 +95,7 @@ export async function scanAllPages() {
     state.project = await readJson(`/api/projects/${encodeURIComponent(state.project.id)}`);
     await reloadProjectSuggestions();
     state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
-    state.message = `Scanned ${plural(status.total, 'page', 'pages')}; ${status.changed.length} changed`;
+    state.message = `Checked ${plural(status.total, 'page', 'pages')}; ${status.changed.length} changed`;
   } catch (error) {
     state.scanAll = { running: false, total: null, scanned: 0, current: '', error: error.message };
   }

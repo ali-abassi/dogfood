@@ -1,4 +1,4 @@
-// Acceptance: the project overview and per-page QA completion in the app (needs agent-browser).
+// Acceptance: the project overview and each page's six answers in the app (needs agent-browser).
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -68,9 +68,8 @@ try {
   const project = await api('/api/projects/tidepool');
   const book = project.pages.find(item => item.id === 'book');
   // Seed one attributed verdict so the UI has something to attribute.
-  await api('/api/projects/tidepool/pages/home/review', { method: 'PUT', body: JSON.stringify({
-    checks: { ...project.pages[0].checks, connected: { status: 'pass', note: 'Booking loads its classes and saves the reservation.' } },
-    features: project.pages[0].features,
+  await api('/api/projects/tidepool/pages/home/verdicts', { method: 'PATCH', body: JSON.stringify({
+    checks: { purpose: { status: 'pass', note: 'The heading says Tidepool teaches swimming to children and adults.' } },
   }) });
   const seeded = await api('/api/projects/tidepool');
 
@@ -85,27 +84,23 @@ try {
     const ids = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => row.dataset.overviewPage)`);
     assert.deepEqual(ids, seeded.pages.map(item => item.id));
   });
-  check('each overview row shows the server status and names the missing requirements', () => {
-    const rows = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => ({ id: row.dataset.overviewPage, status: row.dataset.status, text: row.textContent }))`);
+  const words = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked' };
+  check('each overview row shows the server\'s status and six answers, not a client-side recomputation', () => {
+    const rows = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => ({ id: row.dataset.overviewPage, status: row.dataset.status, marks: [...row.querySelectorAll('[data-answer-mark]')].map(mark => mark.getAttribute('aria-label')) }))`);
     for (const item of seeded.pages) {
       const row = rows.find(entry => entry.id === item.id);
       assert.equal(row.status, item.progress.status, `${item.id} status`);
-      for (const requirement of item.progress.requirements.filter(entry => !entry.met)) assert.ok(row.text.includes(requirement.label), `${item.id} should name ${requirement.label}`);
+      assert.deepEqual(row.marks, item.progress.answers.map(answer => `${answer.name}: ${words[answer.status]}`), `${item.id} answers`);
     }
   });
-  check('the overview summarises complete pages, pages needing work, and open P0/P1 issues', () => {
-    const metrics = page(`Object.fromEntries([...document.querySelectorAll('[data-metric]')].map(item => [item.dataset.metric, item.textContent]))`);
-    const complete = seeded.pages.filter(item => item.progress.complete).length;
-    const needsWork = seeded.pages.filter(item => item.progress.status === 'needs_work').length;
-    const blocking = seeded.pages.flatMap(item => item.findings).filter(item => item.status === 'open' && ['P0', 'P1'].includes(item.severity)).length;
-    assert.match(metrics.complete, new RegExp(`\\b${complete}\\b`));
-    assert.match(metrics.complete, new RegExp(`\\b${seeded.pages.length}\\b`));
-    assert.match(metrics['needs-work'], new RegExp(`\\b${needsWork}\\b`));
-    assert.match(metrics['blocking-issues'], new RegExp(`\\b${blocking}\\b`));
+  check('the overview sentence counts good pages, pages that need work, and the rest from the server', () => {
+    const count = status => seeded.pages.filter(item => item.progress.status === status).length;
+    const sentence = page(`document.querySelector('[data-answer-sentence]').textContent`);
+    assert.match(sentence, new RegExp(`\\b${count('pass')} pages? (is|are) good, ${count('needs_work')} needs? work, and ${seeded.pages.length - count('pass') - count('needs_work')} `));
   });
-  check('sidebar status dots use the server status, not a client-side recomputation', () => {
-    const labels = page(`[...document.querySelectorAll('[data-page]')].map(item => ({ id: item.dataset.page, label: item.querySelector('[role="img"]')?.getAttribute('aria-label') }))`);
-    const names = { blocked: 'Blocked', untested: 'Untested', in_review: 'In review', pass: 'Pass', needs_work: 'Needs work' };
+  check('sidebar status marks use the server status in plain words', () => {
+    const labels = page(`[...document.querySelectorAll('.page-sidebar [data-page]')].map(item => ({ id: item.dataset.page, label: item.querySelector('[role="img"]')?.getAttribute('aria-label') }))`);
+    const names = { blocked: 'Can’t open', untested: 'Not checked', in_review: 'Partly checked', pass: 'Good', needs_work: 'Needs work' };
     for (const item of seeded.pages) assert.equal(labels.find(entry => entry.id === item.id)?.label, names[item.progress.status], item.id);
   });
   check('the overview has no horizontal overflow at 1440 × 900', () => assert.equal(noHorizontalOverflow(), true));
@@ -115,31 +110,31 @@ try {
   check('choosing a page from the overview opens that page', () => {
     assert.equal(page(`document.querySelector('#selected-page-heading')?.textContent`), book.name);
   });
-  check('the page shows its QA completion with every applicable requirement', () => {
-    const requirements = page(`[...document.querySelectorAll('section[aria-label="QA completion"] [data-requirement]')].map(item => ({ id: item.dataset.requirement, met: item.dataset.met }))`);
-    // Unmet requirements are listed first (see docs/design/interface-contract.md), so compare as a set.
-    const pairs = list => list.map(item => `${item.id}:${item.met}`).sort();
-    assert.deepEqual(pairs(requirements), pairs(book.progress.requirements.map(item => ({ id: item.id, met: String(item.met) }))));
+  check('the page shows the server\'s six answers with their summaries', () => {
+    const rows = page(`[...document.querySelectorAll('[data-answer-row]')].map(row => ({ id: row.dataset.answerRow, mark: row.querySelector('[data-answer-mark]').getAttribute('aria-label'), summary: row.querySelector('.answer-summary').textContent }))`);
+    assert.deepEqual(rows, book.progress.answers.map(answer => ({ id: answer.id, mark: `${answer.name}: ${words[answer.status]}`, summary: answer.summary })));
   });
-  check('an unmet requirement shows why and links to the view that resolves it', () => {
-    const missing = book.progress.requirements.find(item => !item.met);
-    const detail = page(`(() => { const item = document.querySelector('[data-requirement="${missing.id}"]'); return { text: item.textContent, action: Boolean(item.querySelector('button[data-view]')) }; })()`);
-    assert.ok(detail.text.includes(missing.missing.slice(0, 30)), 'missing detail text');
-    assert.equal(detail.action, true, 'a button with data-view that opens the resolving view');
+  check('an answer that is not answered says what would answer it, and opens its detail', () => {
+    const open = book.progress.answers.find(answer => answer.status === 'untested');
+    const row = page(`(() => { const row = document.querySelector('[data-answer-row="${open.id}"]'); return { summary: row.querySelector('.answer-summary').textContent, view: row.dataset.view }; })()`);
+    assert.deepEqual(row, { summary: open.summary, view: open.id });
   });
 
   page(`document.querySelector('[data-page="home"]').click() || true`);
   settle();
-  page(`document.querySelector('[data-view="review"]').click() || true`);
+  page(`document.querySelector('[data-answer-row="purpose"]').click() || true`);
   settle();
-  check('a verdict recorded in the app is attributed to "you"; agent verdicts name the agent', () => {
-    const attribution = page(`[...document.querySelectorAll('.verdict-by')].map(item => item.textContent)`);
-    assert.ok(attribution.some(text => /you/i.test(text)), JSON.stringify(attribution));
+  check('an answer given in the app says it came from you; agent answers name the agent', () => {
+    assert.match(page(`document.querySelector('[data-answer-source]').textContent`), /^From you/);
+    const agentNamed = seeded.pages.flatMap(item => item.progress.answers).flatMap(answer => answer.parts).find(part => part.source === 'verdict' && String(part.by).startsWith('agent:'));
+    if (agentNamed) assert.doesNotMatch(agentNamed.by.slice(6), /^you$/);
   });
+  page(`document.querySelector('[data-action="back-to-report"]').click() || true`);
+  settle();
 
   page(`document.querySelector('[data-page="admin"]').click() || true`);
   settle();
-  check('a page whose capture is blocked without a capture time still renders its reason', () => {
+  check('a page whose screenshot is blocked without a time still shows its reason', () => {
     assert.equal(page(`document.querySelector('#selected-page-heading')?.textContent`), 'Staff schedule');
     assert.equal(page(`document.body.textContent.includes('Staff sign-in is not available')`), true);
     assert.equal(page(`document.body.textContent.includes('Invalid Date')`), false);

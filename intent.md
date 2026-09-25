@@ -29,6 +29,14 @@
 
 Change detection already catches the failure that matters, evidence describing a page that no longer looks like it; a month-old scan of an unchanged page is still true. Age alone is a weak proxy. Revisit if someone relies on an old scan of a page that changed without being rescanned; the change would be a per-project `staleAfterDays` that turns old scans back into a completion requirement.
 
+## Shipped next (2026-09-26): six answers for a non-technical owner
+
+1. Every page is a report card: computer and phone screenshots, then six plain answers (Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected), each opening to its evidence. The tabs and the requirement list are gone.
+2. The overview answers "Is <app> working?" in one sentence and shows each page's six marks.
+3. `skills/dogfood/SKILL.md` lets a person's coding agent set dogfood up, add the app, write each page's criteria, try everything, and answer the six questions; `node mcp.mjs <tool> '<json>'` works before an MCP client loads dogfood.
+4. Proof: `tests/acceptance/report-card.mjs` runs the 33 locked checks of `docs/design/interface-contract.md` v2 (30 there, SG-1–3 in the suggestions suite), and CI keeps a video of it and every suite's result.
+5. The AI check found that the committed demo Home screenshot showed raw HTML, because the one-off demo scan served `/` as plain text; the demo was recaptured.
+
 ## Next
 
 - Watch real use (AI Social Team and AI Money Team are live in dogfood) and fix what slows people or agents down.

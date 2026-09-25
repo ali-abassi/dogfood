@@ -121,38 +121,20 @@ test('page findings and checklists persist with page-scoped validation', async (
 
   const foreignOrigin = await request(url, home, 'POST', valid, 'https://example.com');
   assert.equal(foreignOrigin.status, 403);
-  const auditPath = '/api/projects/tidepool/pages/home/audit';
+  const verdictsPath = '/api/projects/tidepool/pages/home/verdicts';
   const initial = (await (await fetch(`${url}/api/projects/tidepool`)).json()).pages[0];
-  const updatedAudit = structuredClone(initial.audit);
-  updatedAudit.security.push({ id: 'custom-auth', question: 'Does login reject invalid accounts?', status: 'needs_work', note: 'Owner-only signup has not been checked at the live route.' });
-  const updatedConnections = [...initial.connections, { id: 'manual-api', name: 'Marketing metadata', method: 'GET', endpoint: '/metadata', sends: 'No body', receives: 'Title and description', source: 'Manual inventory for a future traffic check', provenance: 'manual' }];
-  const auditBody = { audit: updatedAudit, connections: updatedConnections };
-  const savedAudit = await request(url, auditPath, 'PUT', auditBody);
-  assert.equal(savedAudit.status, 200);
-  assert.equal(savedAudit.body.pages[0].audit.security.at(-1).id, 'custom-auth');
-  assert.equal(savedAudit.body.pages[0].connections.at(-1).name, 'Marketing metadata');
-  assert.equal(savedAudit.body.pages[1].audit.security.length, 3);
-  const shortNote = structuredClone(auditBody);
-  shortNote.audit.security.at(-1).note = 'No';
-  assert.equal((await request(url, auditPath, 'PUT', shortNote)).status, 400);
-  const duplicate = structuredClone(auditBody);
-  duplicate.connections.at(-1).id = duplicate.connections[0].id;
-  assert.equal((await request(url, auditPath, 'PUT', duplicate)).status, 400);
-  assert.equal((await request(url, '/api/projects/tidepool/pages/missing/audit', 'PUT', auditBody)).status, 400);
-  assert.equal((await request(url, auditPath, 'PUT', auditBody, 'https://example.com')).status, 403);
-  const reviewPath = '/api/projects/tidepool/pages/home/review';
-  const reviewedPage = savedAudit.body.pages[0];
-  const reviewBody = {
-    checks: { ...reviewedPage.checks, clear: { status: 'pass', note: 'The primary action and its result were checked in the fixture.' } },
-    features: reviewedPage.features,
-  };
-  const reviewed = await request(url, reviewPath, 'PUT', reviewBody);
-  assert.equal(reviewed.status, 200);
-  assert.equal(reviewed.body.pages[0].checks.clear.status, 'pass');
-  assert.equal(reviewed.body.pages[0].checks.clear.by, 'person');
-  assert.equal(reviewed.body.pages[0].progress.complete, false);
-  assert.equal((await (await fetch(`${url}/api/projects/tidepool`)).json()).pages[0].checks.clear.note, reviewBody.checks.clear.note);
-  assert.equal((await request(url, reviewPath, 'PUT', { ...reviewBody, checks: { ...reviewBody.checks, clear: { status: 'pass', note: 'Vague' } } })).status, 400);
+  const answer = { checks: { purpose: { status: 'needs_work', note: 'Nothing on the page says what Tidepool teaches or for which ages.' } }, audit: { security: [{ id: initial.audit.security[0].id, status: 'pass', note: 'Inputs are validated by the booking API in the fixture.' }] } };
+  const answered = await request(url, verdictsPath, 'PATCH', answer);
+  assert.equal(answered.status, 200);
+  const answeredHome = answered.body.pages[0];
+  assert.deepEqual([answeredHome.checks.purpose.status, answeredHome.checks.purpose.by], ['needs_work', 'person']);
+  assert.equal(answeredHome.audit.security[0].status, 'pass');
+  assert.equal(answeredHome.checks.design.status, initial.checks.design.status, 'a partial answer leaves the other answers alone');
+  assert.equal(answeredHome.progress.answers.find(item => item.id === 'purpose').status, 'needs_work');
+  assert.equal((await request(url, verdictsPath, 'PATCH', { checks: { purpose: { status: 'pass', note: 'Vague' } } })).status, 400);
+  assert.equal((await request(url, verdictsPath, 'PATCH', { checks: { clarity: { status: 'pass', note: 'Checked in the fixture at 1440 × 900.' } } })).status, 400);
+  assert.equal((await request(url, '/api/projects/tidepool/pages/missing/verdicts', 'PATCH', answer)).status, 400);
+  assert.equal((await request(url, verdictsPath, 'PATCH', answer, 'https://example.com')).status, 403);
   const qaPath = '/api/projects/tidepool/pages/home/qa-runs';
   const plan = await (await fetch(`${url}${qaPath}`)).json();
   assert.equal(plan.planError, '');
@@ -183,7 +165,6 @@ test('page findings and checklists persist with page-scoped validation', async (
   assert.equal(saved.pages[0].findings.at(-1).id, finding.id);
   assert.equal(saved.pages[0].findings.at(-1).status, 'open');
   assert.equal(saved.pages.find(page => page.id === 'book').findings[0].id, 'TP-001');
-  assert.equal(saved.pages[0].audit.security.at(-1).id, 'custom-auth');
-  assert.equal(saved.pages[0].connections.at(-1).id, 'manual-api');
+  assert.equal(saved.pages[0].checks.purpose.status, 'needs_work');
   assert.equal(saved.pages[0].qa.latest.status, 'failed');
 });

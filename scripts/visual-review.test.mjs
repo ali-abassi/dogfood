@@ -10,9 +10,9 @@ const analysis = {
   pagePurpose: 'A library of archived ads for browsing.',
   primaryAction: 'Search archived ads.',
   dimensions: {
-    highlighted: { score: 8, reason: 'The main job is visible above the fold.' },
-    obvious: { score: 8, reason: 'Labels say what will happen.' },
-    clear: { score: 8, reason: 'One clear hierarchy on both screens.' },
+    design: { score: 8, reason: 'One consistent style on both screens.' },
+    purpose: { score: 8, reason: 'The heading says this is an archive of ads.' },
+    ease: { score: 8, reason: 'Search sits at the top on both screens.' },
   },
   evidence: [
     { location: 'desktop top', observation: 'The heading says Inspo.' },
@@ -60,15 +60,16 @@ test('visual review judges both screenshots, suggests features, and becomes stal
   const page = { id: 'inspo', name: 'Inspo', captures };
   const provider = stubProvider(analysis);
   try {
-    const result = await runVisualReview(root, { id: 'fixture' }, page);
+    const result = await runVisualReview(root, { id: 'fixture', guidelines: ['One blue button per screen.'] }, page);
     const content = provider.outbound().messages[0].content;
     assert.equal(content.length, 5);
+    assert.match(content[0].text, /The product's design rules:\n- One blue button per screen\./, 'Looks right is judged against the design rules');
     assert.equal(content[1].text, 'Desktop screenshot (1440 × 900):');
     assert.equal(content[2].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
     assert.equal(content[3].text, 'Mobile screenshot (390 × 844):');
     assert.equal(content[4].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
-    assert.equal(result.review.promptVersion, 'visual-clarity-v3');
-    assert.equal(result.review.analysis.clarityRating, 8);
+    assert.equal(result.review.promptVersion, 'page-answers-v4');
+    assert.equal(result.review.analysis.clarityRating, undefined, 'no overall score');
     assert.deepEqual(result.review.analysis.suggestedFeatures, analysis.suggestedFeatures);
     assert.equal(result.review.usage.reportedCostUsd, 0.001);
     assert.ok(result.review.captures.desktop.sha256);
@@ -118,7 +119,7 @@ test('reviews saved before mobile screenshots are ignored', () => {
 });
 
 test('visual review rejects unsupported numeric precision, missing evidence, and invalid suggested features', () => {
-  assert.throws(() => validateAnalysis({ ...analysis, dimensions: { ...analysis.dimensions, clear: { score: 7.25, reason: 'Not a half point.' } } }), /dimensions/);
+  assert.throws(() => validateAnalysis({ ...analysis, dimensions: { ...analysis.dimensions, ease: { score: 7.25, reason: 'Not a half point.' } } }), /invalid answers/);
   assert.throws(() => validateAnalysis({ ...analysis, evidence: [] }), /evidence/);
   assert.throws(() => validateAnalysis({ ...analysis, suggestedFeatures: undefined }), /suggested features/);
   assert.throws(() => validateAnalysis({ ...analysis, suggestedFeatures: Array.from({ length: 9 }, (_, index) => ({ name: `Feature ${index}`, expected: 'It works.' })) }), /suggested features/);
@@ -143,6 +144,25 @@ test('provider failure keeps an attempt receipt without creating a review', asyn
     const receipt = JSON.parse(readFileSync(join(directory, readdirSync(directory)[0]), 'utf8'));
     assert.equal(receipt.response.error.message, 'Provider unavailable');
     assert.doesNotMatch(JSON.stringify(receipt), /fixture-key/);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;
+    else process.env.OPENROUTER_API_KEY = oldKey;
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('an answer the provider cut short says so instead of failing to parse', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'qa-visual-cut-'));
+  const oldKey = process.env.OPENROUTER_API_KEY;
+  const oldFetch = globalThis.fetch;
+  mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
+  writeFileSync(join(root, 'captures', 'fixture', 'inspo.png'), png);
+  process.env.OPENROUTER_API_KEY = 'fixture-key';
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'error', message: { content: '{\n  "pagePurpose": "This page allows' } }] }), { status: 200 });
+  try {
+    const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo.png', sourceUrl: 'https://example.com/' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
+    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', captures }), /failed partway through its answer/);
   } finally {
     globalThis.fetch = oldFetch;
     if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;

@@ -2,7 +2,7 @@
 // the app and agents add over MCP. Uses a fake model provider; never calls the real one.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -25,9 +25,9 @@ const analysis = {
   pagePurpose: 'Book a swimming lesson.',
   primaryAction: 'Reserve lesson.',
   dimensions: {
-    highlighted: { score: 8, reason: 'The main job is visible above the fold.' },
-    obvious: { score: 8, reason: 'Labels say what will happen.' },
-    clear: { score: 8, reason: 'One clear hierarchy on both screens.' },
+    design: { score: 8, reason: 'One consistent style on both screens.' },
+    purpose: { score: 8, reason: 'The heading says this is where you book a lesson.' },
+    ease: { score: 8, reason: 'The class picker and times sit in reading order.' },
   },
   evidence: [
     { location: 'desktop top', observation: 'The heading says Book a lesson.' },
@@ -79,9 +79,9 @@ try {
     assert.ok(schema.properties.suggestedFeatures, 'suggestedFeatures in schema');
     assert.ok(schema.required.includes('suggestedFeatures'));
   });
-  check('the saved review records both screenshots and the v2 prompt', () => {
+  check('the saved review records both screenshots and the current prompt', () => {
     const { review } = bothResult;
-    assert.equal(review.promptVersion, 'visual-clarity-v3');
+    assert.equal(review.promptVersion, 'page-answers-v4');
     assert.equal(review.captures.desktop.sha256, book.captures.desktop.sha256);
     assert.equal(review.captures.mobile.sha256, book.captures.mobile.sha256);
     assert.equal(desktopOnly.review.captures.mobile, null);
@@ -123,8 +123,9 @@ try {
       assert.equal(current.review.analysis.suggestedFeatures.length, 3);
     });
     const project = await (await fetch(`${url}/api/projects/tidepool`)).json();
-    check('a current v2 review meets the AI review requirement', () => {
-      assert.equal(project.pages.find(item => item.id === 'book').progress.requirements.find(item => item.id === 'ai-review').met, true);
+    check('a current review answers what nobody has judged, and says it was the AI', () => {
+      const purpose = project.pages.find(item => item.id === 'book').progress.answers.find(item => item.id === 'purpose');
+      assert.deepEqual([purpose.status, purpose.parts[0].source, purpose.summary], ['pass', 'ai', analysis.dimensions.purpose.reason]);
     });
     const foreign = await fetch(`${url}/api/projects/tidepool/pages/book/features`, { method: 'POST', headers: { Origin: 'https://evil.example', 'Content-Type': 'application/json' }, body: JSON.stringify({ features: [suggestions[2]] }) });
     check('the add-features API refuses cross-origin requests', () => assert.equal(foreign.status, 403));
@@ -134,17 +135,17 @@ try {
     browser('wait', '700');
     page(`(document.querySelector('[data-page="book"]').click(), true)`);
     browser('wait', '500');
-    page(`(document.querySelector('[data-view="capture"]').click(), true)`);
+    page(`(document.querySelector('[data-answer-row="works"]').click(), true)`);
     browser('wait', '1200');
-    const offered = page(`[...document.querySelectorAll('section[aria-label="Suggested features"] input[name="suggested-feature"]')].map(input => ({ checked: input.checked, text: input.closest('label').textContent }))`);
-    check('See page offers the suggested features that are not listed yet, checked by default', () => {
+    const offered = page(`[...document.querySelectorAll('section[aria-label="Suggested by the AI"] input[name="suggested-feature"]')].map(input => ({ checked: input.checked, text: input.closest('label').textContent }))`);
+    check('Works as expected offers the suggested things people can do that are not listed yet, checked by default', () => {
       assert.equal(offered.length, 2, JSON.stringify(offered));
       assert.ok(offered.every(item => item.checked));
       assert.ok(offered[0].text.includes('Pick a swimmer age group'));
       assert.ok(offered[0].text.includes('filters the times'), 'shows the expected behavior');
       assert.ok(!offered.some(item => /reserve a lesson for a swimmer/i.test(item.text)));
     });
-    page(`(() => { const boxes = document.querySelectorAll('section[aria-label="Suggested features"] input[name="suggested-feature"]'); boxes[1].checked = false; document.querySelector('button[data-action="add-suggested-features"]').click(); return true; })()`);
+    page(`(() => { const boxes = document.querySelectorAll('section[aria-label="Suggested by the AI"] input[name="suggested-feature"]'); boxes[1].checked = false; document.querySelector('button[data-action="add-suggested-features"]').click(); return true; })()`);
     browser('wait', '1000');
     const saved = JSON.parse(readFileSync(manifestFile, 'utf8')).pages.find(item => item.id === 'book').features;
     check('adding keeps only the checked suggestions, with expected behavior, attributed to you', () => {
@@ -154,10 +155,8 @@ try {
       assert.equal(added.addedBy, 'person');
       assert.ok(!saved.some(item => item.name === 'Reserve a time slot'));
     });
-    page(`(document.querySelector('[data-view="review"]').click(), true)`);
-    browser('wait', '500');
-    check('the added feature appears in My review', () => {
-      assert.ok(page(`document.querySelector('section[aria-label="Page review"]').textContent`).includes('Pick a swimmer age group'));
+    check('the added thing appears under Things you can do here', () => {
+      assert.ok(page(`[...document.querySelectorAll('[data-thing] .thing-name')].map(item => item.textContent)`).includes('Pick a swimmer age group'));
     });
     const errors = browser('errors').trim();
     check('no page errors were thrown', () => assert.ok(!/error/i.test(errors) || /no errors/i.test(errors), errors));

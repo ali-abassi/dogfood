@@ -1,69 +1,15 @@
-import { readJson, visualEndpoint } from './api.mjs';
+import { readJson } from './api.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
-import { plural } from './format.mjs';
-import { activePage, defaultView, state, visiblePages } from './state.mjs';
-import { idleOnboarding, submitOnboarding } from './views/add-project.mjs';
+import { answerIds, state, visiblePages, activePage } from './state.mjs';
+import { agentPrompt, idleOnboarding, submitOnboarding } from './views/add-project.mjs';
+import { saveAnswer, saveQuestions, saveThings } from './views/answer.mjs';
 import { handleFindingButton, resolveFinding, saveFinding } from './views/issues.mjs';
 import { scanAllPages } from './views/overview.mjs';
 import { pageOptionsMarkup } from './views/page.mjs';
-import { saveReview } from './views/review.mjs';
-import { addAuditRow, addConnectionRow, closeAuditEditor, openAuditEditor, removeAuditRow, saveAudit } from './views/safety.mjs';
 import { addProjectSuggestions, openProjectSuggestions, reloadProjectSuggestions, updateProjectSuggestionsButton } from './views/suggestions.mjs';
-import { remainingSuggestions } from './views/see-page.mjs';
 import { runQa } from './views/tests.mjs';
-
-function visualRunAllowed() {
-  return state.visual.key && !state.visual.loading && !state.visual.running;
-}
-
-async function runVisualReview() {
-  const key = state.visual.key;
-  if (!visualRunAllowed()) return;
-  state.visual = { ...state.visual, running: true, error: '' };
-  render();
-  let result = null;
-  let error = '';
-  try {
-    result = await readJson(visualEndpoint(key), { method: 'POST' });
-  } catch (failure) { error = failure.message; }
-  finishVisualReview(key, result, error);
-}
-
-function finishVisualReview(key, result, error) {
-  if (state.visual.key !== key) return;
-  state.visual = { ...state.visual, running: false, result: result || state.visual.result, error };
-  if (result) void reloadProjectSuggestions();
-  if (state.view === 'capture') render();
-}
-
-function checkedSuggestions(page) {
-  const remaining = remainingSuggestions(page, state.visual.result?.review);
-  return [...document.querySelectorAll('input[name="suggested-feature"]:checked')].map(box => remaining[Number(box.value)]).filter(item => item);
-}
-
-async function addSuggestedFeatures(button) {
-  const page = activePage();
-  const checked = checkedSuggestions(page);
-  if (!checked.length) return;
-  button.disabled = true;
-  try {
-    state.project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/features`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ features: checked.map(item => ({ name: item.name, expected: item.expected })) }),
-    });
-    state.message = `Added ${plural(checked.length, 'feature', 'features')} to ${page.name}`;
-    await reloadProjectSuggestions();
-  } catch (error) { state.message = error.message; }
-  render();
-}
-
-function updateSuggestedButton() {
-  const button = document.querySelector('[data-action="add-suggested-features"]');
-  if (!button) return;
-  const count = document.querySelectorAll('input[name="suggested-feature"]:checked').length;
-  button.textContent = `Add ${plural(count, 'feature', 'features')}`;
-  button.disabled = count === 0;
-}
+import { addSuggestedFeatures, runVisualReview, updateSuggestedButton } from './views/visual.mjs';
+import { addThing } from './views/works.mjs';
 
 async function scanActivePage() {
   const page = activePage();
@@ -77,23 +23,16 @@ async function scanActivePage() {
     await reloadProjectSuggestions();
     state.scan = { key, running: false, error: '' };
     state.visual.key = '';
+    state.message = 'Checked the page';
   } catch (error) { state.scan = { key, running: false, error: error.message }; }
   render();
 }
 
 function selectPage(id) {
-  state.pageId = id;
-  state.view = defaultView(activePage());
-  state.browseOpen = false;
-  state.query = '';
-  state.filter = 'all';
-  state.editing = false;
-  state.auditEditing = false;
-  state.findingForm = null;
-  state.removingPage = null;
-  state.message = '';
+  closeEditors();
+  Object.assign(state, { pageId: id, view: 'report', browseOpen: false, query: '', filter: 'all', message: '' });
   render();
-  document.querySelector('#selected-page-heading')?.focus();
+  document.querySelector('#selected-page-heading')?.focus({ preventScroll: true });
 }
 
 function openRemovePage() {
@@ -128,11 +67,8 @@ function selectOverview() {
 }
 
 function selectFilter(filter) {
-  state.filter = filter;
-  state.editing = false;
-  state.auditEditing = false;
-  state.findingForm = null;
-  state.message = '';
+  closeEditors();
+  Object.assign(state, { filter, message: '' });
   render();
 }
 
@@ -149,7 +85,7 @@ function closePages() {
   document.querySelector('.page-menu-toggle')?.focus();
 }
 
-const editorSelector = '#review-form, #audit-form, #finding-form, #resolution-form, #remove-page-form';
+const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form';
 let keyboardInput = false;
 
 // Programmatic focus is for keyboard users; after a mouse click it would leave a stray ring.
@@ -158,7 +94,7 @@ function restoreFocus(selector) {
 }
 
 function closeEditors() {
-  Object.assign(state, { editing: false, auditEditing: false, findingForm: null, removingPage: null });
+  Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null });
 }
 
 // An unchanged editor closes quietly; one with changes asks to save or discard at the form itself.
@@ -201,16 +137,61 @@ function openAddProject() {
   document.querySelector('#product-url')?.focus();
 }
 
+// Opens one inline editor, closing any other, and puts the cursor in its first field.
+function openEditor(flag, selector) {
+  closeEditors();
+  state[flag] = true;
+  render();
+  document.querySelector(selector)?.focus({ preventScroll: true });
+}
+
+function closeEditor(flag, selector) {
+  state[flag] = false;
+  render();
+  restoreFocus(selector);
+}
+
+// Back leaves the answer and returns to the report with the reader's place kept.
+function backToReport() {
+  if (blockOpenFormNavigation()) return;
+  const from = state.view;
+  closeEditors();
+  Object.assign(state, { view: 'report', message: '' });
+  render();
+  restoreFocus(`[data-answer-row="${from}"]`);
+}
+
+function openScreens() {
+  if (blockOpenFormNavigation()) return;
+  Object.assign(state, { view: 'screens', screensDevice: 'desktop', message: '' });
+  render();
+  restoreFocus('#answer-heading');
+}
+
+async function copyAgentPrompt() {
+  try {
+    await navigator.clipboard.writeText(agentPrompt);
+    state.copied = true;
+  } catch { state.message = 'Select the sentence and copy it.'; }
+  render();
+  restoreFocus('[data-action="copy-agent-prompt"]');
+}
+
 const buttonActions = new Map([
   ['open-pages', openPages],
   ['close-pages', closePages],
-  ['edit', () => { state.editing = true; state.findingForm = null; render(); }],
-  ['cancel', () => { state.editing = false; state.message = ''; render(); }],
-  ['audit-edit', openAuditEditor],
-  ['audit-cancel', closeAuditEditor],
-  ['remove-row', removeAuditRow],
-  ['add-check', button => addAuditRow(button.dataset.key)],
-  ['add-connection', addConnectionRow],
+  ['back-to-report', backToReport],
+  ['view-screens', openScreens],
+  ['screens-device', button => { state.screensDevice = button.dataset.screensDevice; render(); restoreFocus(`[data-screens-device="${state.screensDevice}"]`); }],
+  ['edit-answer', () => openEditor('answerEditing', '#answer-form input[name="status"]')],
+  ['cancel-answer', () => closeEditor('answerEditing', '[data-action="edit-answer"]')],
+  ['answer-questions', () => openEditor('questionsEditing', '#questions-form select')],
+  ['cancel-questions', () => closeEditor('questionsEditing', '[data-action="answer-questions"]')],
+  ['edit-things', () => openEditor('thingsEditing', '#things-form select')],
+  ['cancel-things', () => closeEditor('thingsEditing', '[data-action="edit-things"]')],
+  ['add-thing', () => openEditor('addingThing', '#thing-name')],
+  ['cancel-add-thing', () => closeEditor('addingThing', '[data-action="add-thing"]')],
+  ['copy-agent-prompt', copyAgentPrompt],
   ['run-qa', runQa],
   ['run-visual', runVisualReview],
   ['add-suggested-features', addSuggestedFeatures],
@@ -219,7 +200,6 @@ const buttonActions = new Map([
   ['cancel-project-suggestions', selectOverview],
   ['scan', scanActivePage],
   ['scan-all', scanAllPages],
-  ['screenshot-device', button => { state.screenshotDevice = button.dataset.screenshotDevice; render(); }],
   ['add-project', openAddProject],
   ['remove-page', openRemovePage],
   ['cancel-remove-page', () => { state.removingPage = null; render(); }],
@@ -232,11 +212,11 @@ function navigationRequested(button) {
 }
 
 function selectView(name) {
-  state.view = name;
-  if (name === 'capture') state.visual.key = '';
-  state.message = '';
+  if (!answerIds.includes(name)) return;
+  closeEditors();
+  Object.assign(state, { view: name, message: '' });
   render();
-  restoreFocus(`[data-view="${name}"]`);
+  restoreFocus('#answer-heading');
 }
 
 function handleNavigationButton(button) {
@@ -275,10 +255,12 @@ function handlePageFilter(select) {
 }
 
 const formHandlers = new Map([
-  ['review-form', saveReview],
+  ['answer-form', saveAnswer],
+  ['questions-form', saveQuestions],
+  ['things-form', saveThings],
+  ['add-thing-form', addThing],
   ['finding-form', saveFinding],
   ['resolution-form', resolveFinding],
-  ['audit-form', saveAudit],
   ['add-project-form', submitOnboarding],
   ['remove-page-form', submitRemovePage],
 ]);

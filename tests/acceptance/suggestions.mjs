@@ -23,7 +23,7 @@ function seedReview(pageId, suggestions, stale = false) {
   const hash = device => (captures[device].sha256 ? { sha256: stale ? 'f'.repeat(64) : captures[device].sha256 } : null);
   const directory = join(data, 'visual-reviews/tidepool', pageId);
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, '2026-09-25T00-00-00.000Z-seed.json'), JSON.stringify({ promptVersion: 'visual-clarity-v2', captures: { desktop: hash('desktop'), mobile: hash('mobile') }, analysis: { dimensions: { highlighted: { score: 8, reason: 'The main job is visible.' }, obvious: { score: 8, reason: 'Labels say what happens.' }, clear: { score: 8, reason: 'One clear hierarchy.' } }, suggestedFeatures: suggestions } }));
+  writeFileSync(join(directory, '2026-09-25T00-00-00.000Z-seed.json'), JSON.stringify({ promptVersion: 'page-answers-v4', captures: { desktop: hash('desktop'), mobile: hash('mobile') }, analyzedAt: '2026-09-25T00:00:00.000Z', analysis: { dimensions: { design: { score: 8, reason: 'One consistent style.' }, purpose: { score: 8, reason: 'The heading says what the page is for.' }, ease: { score: 8, reason: 'The main job is easy to find.' } }, suggestedFeatures: suggestions } }));
 }
 seedReview('home', [
   { name: 'Book a lesson button', expected: 'Opens the booking page.' },
@@ -67,13 +67,13 @@ try {
   browser('open', url);
   browser('set', 'viewport', '1440', '900');
   browser('wait', '800');
-  check('the overview says how many suggested features are waiting', () => {
-    assert.match(text('[data-suggestions-waiting]'), /4 suggested features waiting on 2 pages/);
+  check('the overview says how many suggested things are waiting', () => {
+    assert.match(text('[data-suggestions-waiting]'), /The AI suggested 4 things people can do on 2 pages/);
   });
   evaluate(`(document.querySelector('[data-action="review-suggestions"]').click(), true)`);
   browser('wait', '600');
   const offered = evaluate(`[...document.querySelectorAll('section[aria-label="Review suggested features"] [data-suggestion-page]')].map(group => ({ page: group.dataset.suggestionPage, text: group.textContent, boxes: [...group.querySelectorAll('input[name="project-suggestion"]')].map(box => box.checked) }))`);
-  check('the review lists suggestions by page, all checked, without ones already listed', () => {
+  check('SG-1 the review lists suggestions by page, all checked, without ones already listed', () => {
     assert.deepEqual(offered.map(item => [item.page, item.boxes]), [['home', [true, true]], ['classes', [true, true]]]);
     assert.ok(offered[0].text.includes('Weekly timetable') && offered[0].text.includes('Shows every class time this week.'));
     assert.ok(!/learn why to choose Tidepool/i.test(offered[0].text));
@@ -82,16 +82,16 @@ try {
     assert.match(offered[1].text, /older screenshots/i);
     assert.doesNotMatch(offered[0].text, /older screenshots/i);
   });
-  check('the add button counts the checked suggestions and is the view\'s one blue action', () => {
-    assert.match(text('button[data-action="add-project-suggestions"]'), /Add 4 features/);
+  check('SG-1 the add button counts the checked suggestions and is the view\'s one blue action', () => {
+    assert.match(text('button[data-action="add-project-suggestions"]'), /Add 4 things/);
     assert.equal(evaluate(`document.querySelector('button[data-action="add-project-suggestions"]').classList.contains('save-button')`), true);
   });
   evaluate(`(() => { const box = document.querySelectorAll('[data-suggestion-page="home"] input[name="project-suggestion"]')[1]; box.checked = false; box.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
-  check('unchecking updates the count', () => assert.match(text('button[data-action="add-project-suggestions"]'), /Add 3 features/));
+  check('unchecking updates the count', () => assert.match(text('button[data-action="add-project-suggestions"]'), /Add 3 things/));
   evaluate(`(document.querySelector('button[data-action="add-project-suggestions"]').click(), true)`);
   browser('wait', '900');
   const saved = JSON.parse(readFileSync(manifestFile, 'utf8'));
-  check('adding saves only the checked suggestions, with expected behavior, attributed to you', () => {
+  check('SG-3 adding saves only the checked suggestions, with expected behavior, attributed to you', () => {
     const names = id => saved.pages.find(item => item.id === id).features.map(feature => feature.name);
     assert.ok(names('home').includes('Book a lesson button'));
     assert.ok(!names('home').includes('Weekly timetable'));
@@ -99,13 +99,17 @@ try {
     const added = saved.pages.find(item => item.id === 'classes').features.find(feature => feature.name === 'Age filter');
     assert.deepEqual([added.expected, added.addedBy, added.status], ['Choosing an age shows only matching classes.', 'person', 'untested']);
   });
-  check('what was left unchecked is still offered afterwards', () => {
-    assert.match(text('[data-suggestions-waiting]') || text('section[aria-label="Review suggested features"]'), /1 suggested feature|Weekly timetable/);
+  check('SG-3 what was left unchecked is still offered afterwards', () => {
+    assert.match(text('[data-suggestions-waiting]') || text('section[aria-label="Review suggested features"]'), /suggested 1 thing|Weekly timetable/);
   });
   browser('set', 'viewport', '390', '844');
   evaluate(`(document.querySelector('[data-action="review-suggestions"]')?.click(), true)`);
   browser('wait', '500');
-  check('the review fits a phone screen', () => assert.equal(evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'), true));
+  check('SG-2 the review fits a phone screen and its Add button stays reachable', () => {
+    assert.equal(evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'), true);
+    const add = evaluate(`(() => { const button = document.querySelector('button[data-action="add-project-suggestions"]'); if (!button) return 'no review'; const box = button.getBoundingClientRect(); return box.bottom <= innerHeight && box.top >= 0; })()`);
+    assert.ok(add === true || add === 'no review', String(add));
+  });
   const errors = browser('errors').trim();
   check('no page errors were thrown', () => assert.ok(!/error/i.test(errors) || /no errors/i.test(errors), errors));
 
