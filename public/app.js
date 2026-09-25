@@ -9,7 +9,10 @@ const checkNames = {
 const statusNames = { blocked: 'Blocked', untested: 'Untested', in_review: 'In review', pass: 'Pass', needs_work: 'Needs work', open: 'Open', resolved: 'Resolved' };
 const tierNames = { source: 'Source-based', automated: 'Automated', mock: 'Mock', real: 'Real browser', longitudinal: 'Longitudinal' };
 const auditNames = { security: 'Security', scraping: 'Automated copying', seo: 'Search visibility' };
-const state = { projects: [], project: null, pageId: null, view: 'tests', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, qa: { key: '', version: 0, runs: [], loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
+const requirementViews = { capture: 'capture', features: 'review', checks: 'review', audit: 'risk', connections: 'risk', tests: 'tests', 'ai-review': 'capture', issues: 'findings' };
+const requirementShortNames = { capture: 'Capture', features: 'Features', checks: 'Quality', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
+const requirementActions = { capture: 'See page', features: 'My review', checks: 'My review', audit: 'Safety & search', connections: 'Safety & search', tests: 'Run checks', 'ai-review': 'See page', issues: 'Issues' };
+const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -18,8 +21,8 @@ function escapeHtml(value) {
 function safeHttpUrl(value) {
   try {
     const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? escapeHtml(url.href) : '#';
-  } catch { return '#'; }
+    return url.protocol === 'http:' || url.protocol === 'https:' ? escapeHtml(url.href) : '';
+  } catch { return ''; }
 }
 
 function safeCapturePath(value) {
@@ -27,35 +30,25 @@ function safeCapturePath(value) {
 }
 
 function dateLabel(value) {
-  return new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
-
-function hasNeedsWork(page) {
-  return page.findings.some(item => item.status === 'open') || Object.values(page.checks).some(item => item.status === 'needs_work') || auditRows(page).some(item => item.status === 'needs_work') || page.qa.latest?.status === 'failed';
-}
-
-function allChecksPass(page) {
-  return Object.values(page.checks).every(item => item.status === 'pass') && page.features.every(item => item.status === 'pass') && auditRows(page).every(item => item.status === 'pass');
-}
-
-function hasReview(page) {
-  return reviewedChecks(page) > 0 || page.features.some(item => item.status !== 'untested') || auditRows(page).some(item => item.status !== 'untested');
-}
-
-function auditRows(page) {
-  return Object.values(page.audit).flat();
-}
-
-function pageStatus(page) {
-  if (page.capture.state !== 'rendered') return 'blocked';
-  if (hasNeedsWork(page)) return 'needs_work';
-  if (allChecksPass(page)) return 'pass';
-  if (hasReview(page)) return 'in_review';
-  return 'untested';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function reviewedChecks(page) {
   return Object.values(page.checks).filter(item => item.status !== 'untested').length;
+}
+
+function authorName(by) {
+  if (by === 'person') return 'you';
+  if (by.startsWith('agent:')) return by.slice(6);
+  return by;
+}
+
+function verdictByMarkup(by, at, action = '') {
+  if (!by) return '';
+  const date = dateLabel(at);
+  const prefix = action ? `${escapeHtml(action)} by` : 'By';
+  return `<small class="verdict-by">${prefix} ${escapeHtml(authorName(by))}${date ? ` · ${escapeHtml(date)}` : ''}</small>`;
 }
 
 function matchesSearch(page) {
@@ -64,21 +57,18 @@ function matchesSearch(page) {
   return [page.name, page.group, ...page.features.map(item => item.name)].join(' ').toLowerCase().includes(query);
 }
 
-function hasUntestedChecks(page) {
-  return reviewedChecks(page) < Object.keys(checkNames).length || page.features.some(item => item.status === 'untested') || auditRows(page).some(item => item.status === 'untested');
-}
-
 function matchesPage(page) {
   if (!matchesSearch(page)) return false;
-  if (state.filter === 'needs') return ['needs_work', 'blocked'].includes(pageStatus(page));
-  if (state.filter === 'reviewed') return hasReview(page);
-  if (state.filter === 'untested') return hasUntestedChecks(page);
+  const status = page.progress.status;
+  if (state.filter === 'needs') return ['needs_work', 'blocked'].includes(status);
+  if (state.filter === 'reviewed') return status !== 'untested';
+  if (state.filter === 'untested') return status === 'untested';
   return true;
 }
 
 function visiblePages() {
   const pages = state.project.pages.filter(matchesPage);
-  if (state.sort === 'needs') return pages.sort((a, b) => Number(pageStatus(b) === 'needs_work') - Number(pageStatus(a) === 'needs_work'));
+  if (state.sort === 'needs') return pages.sort((a, b) => Number(['needs_work', 'blocked'].includes(b.progress.status)) - Number(['needs_work', 'blocked'].includes(a.progress.status)));
   if (state.sort === 'least') return pages.sort((a, b) => reviewedChecks(a) - reviewedChecks(b));
   return pages;
 }
@@ -88,6 +78,7 @@ function activePage() {
 }
 
 function ensureSelection() {
+  if (state.view === 'overview') return;
   if (state.project.pages.some(page => page.id === state.pageId)) return;
   state.pageId = state.project.pages[0]?.id ?? null;
   state.view = defaultView(activePage());
@@ -109,14 +100,19 @@ function menuSelectMarkup(id, label, value, options) {
 
 function pageOptionMarkup(page) {
   const selected = page.id === state.pageId;
-  const status = pageStatus(page);
-  return `<button type="button" class="page-option ${selected ? 'selected' : ''}" data-page="${escapeHtml(page.id)}" ${selected ? 'aria-current="page"' : ''}><span>${escapeHtml(page.name)}</span><span class="menu-status status-${status}" role="img" aria-label="${statusNames[status]}" title="${statusNames[status]}"></span></button>`;
+  const status = page.progress.status;
+  const label = statusNames[status] || status;
+  return `<button type="button" class="page-option ${selected ? 'selected' : ''}" data-page="${escapeHtml(page.id)}" ${selected ? 'aria-current="page"' : ''}><span>${escapeHtml(page.name)}</span><span class="menu-status status-${escapeHtml(status)}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"></span></button>`;
+}
+
+function groupedPages(pages) {
+  const groups = [...new Set(pages.map(page => page.group))];
+  return groups.map(group => ({ group, pages: pages.filter(page => page.group === group) }));
 }
 
 function pageOptionsMarkup(pages) {
   if (!pages.length) return '<p class="page-no-results" role="status">No pages match. Try another search or filter.</p>';
-  const groups = [...new Set(pages.map(page => page.group))];
-  return groups.map(group => `<div class="page-group"><p>${escapeHtml(group)}</p>${pages.filter(page => page.group === group).map(pageOptionMarkup).join('')}</div>`).join('');
+  return groupedPages(pages).map(({ group, pages: items }) => `<div class="page-group"><p>${escapeHtml(group)}</p>${items.map(pageOptionMarkup).join('')}</div>`).join('');
 }
 
 function projectPickerMarkup() {
@@ -126,15 +122,21 @@ function projectPickerMarkup() {
 
 function sidebarMarkup() {
   const pages = visiblePages();
+  const overviewSelected = state.view === 'overview';
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project pages">
       <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
         ${projectPickerMarkup()}
         <h2 class="sr-only">Pages</h2>
         <label class="search-field"><span class="sr-only">Search pages or features</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or features" value="${escapeHtml(state.query)}"></label>
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Untested'], ['reviewed', 'Reviewed']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least reviewed']])}</div>
-        <nav class="page-list" aria-label="Pages">${pageOptionsMarkup(pages)}</nav>
-        <a class="source-link" href="${safeHttpUrl(state.project.source.url)}" target="_blank" rel="noopener noreferrer">Open product ↗</a>
+        <nav class="page-list" aria-label="Pages"><button type="button" class="page-option overview-option ${overviewSelected ? 'selected' : ''}" data-overview ${overviewSelected ? 'aria-current="page"' : ''}>Overview</button><div class="page-groups">${pageOptionsMarkup(pages)}</div></nav>
+        ${externalLinkMarkup(state.project.source.url, 'Open product ↗', 'source-link')}
   </aside>`;
+}
+
+function externalLinkMarkup(value, label, className = '') {
+  const url = safeHttpUrl(value);
+  return url ? `<a class="${escapeHtml(className)}" href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : '';
 }
 
 function captureImageMarkup(page, capture, imagePath) {
@@ -154,17 +156,31 @@ function capturePresentation(capture, imagePath) {
   return { label, evidence: captureEvidence(capture, imagePath), fullLink };
 }
 
+function captureImagePath(capture) {
+  return capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
+}
+
+function captureScrollHint(capture, imagePath) {
+  return imagePath && capture.fullPage ? ' · Scroll inside the image to see the rest' : '';
+}
+
+function captureDateLabel(capture) {
+  if (capture.state !== 'rendered') return 'Not captured';
+  return dateLabel(capture.capturedAt) || 'Not captured';
+}
+
 function captureMarkup(page) {
   const capture = page.capture;
-  const imagePath = capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
+  const imagePath = captureImagePath(capture);
   const image = captureImageMarkup(page, capture, imagePath);
   const { label, evidence, fullLink } = capturePresentation(capture, imagePath);
-  const scrollHint = imagePath && capture.fullPage ? ' · Scroll inside the image to see the rest' : '';
+  const scrollHint = captureScrollHint(capture, imagePath);
+  const originalPage = externalLinkMarkup(capture.sourceUrl, 'Open original page ↗');
   return `<section class="capture-column" aria-label="Page screenshot">
     <div class="capture-heading"><h3>${label}</h3>${fullLink}</div>
-    <p class="capture-meta">${escapeHtml(dateLabel(capture.capturedAt))}${scrollHint}</p>
+    <p class="capture-meta">${escapeHtml(captureDateLabel(capture))}${scrollHint}</p>
     <div class="capture-panel" ${imagePath ? 'role="region" tabindex="0" aria-label="Screenshot preview; scroll to see the rest"' : ''}><div class="capture-image">${image}</div></div>
-    <div class="capture-caption"><details><summary>About this screenshot</summary><p>${evidence}</p></details><a href="${safeHttpUrl(capture.sourceUrl)}" target="_blank" rel="noopener noreferrer">Open original page ↗</a></div>
+    <div class="capture-caption"><details><summary>About this screenshot</summary><p>${evidence}</p></details>${originalPage}</div>
   </section>`;
 }
 
@@ -203,10 +219,15 @@ function visualRunButton(canRun) {
   return `<button type="button" class="save-button qa-run-button visual-run-button" data-action="run-visual" ${disabled ? 'disabled' : ''}>${state.visual.running ? 'Reviewing image…' : 'Ask AI to review image'}</button>`;
 }
 
+function visualContentVisible(canRun, result) {
+  return canRun || Boolean(result?.review);
+}
+
 function visualContentMarkup(canRun) {
   if (state.visual.loading) return '<p class="visual-empty" role="status">Reading the latest visual review…</p>';
-  if (!canRun && !state.visual.result?.review) return '';
-  return visualResultMarkup(state.visual.result || { review: null, stale: false });
+  const result = state.visual.result;
+  if (!visualContentVisible(canRun, result)) return '';
+  return visualResultMarkup(result ?? { review: null, stale: false });
 }
 
 function visualReviewMarkup(page) {
@@ -219,18 +240,18 @@ function visualReviewMarkup(page) {
 }
 
 function featureMarkup(feature) {
-  return `<li class="feature"><div><strong>${escapeHtml(feature.name)}</strong>${feature.note ? `<p>${escapeHtml(feature.note)}</p>` : ''}</div>${statusPill(feature.status)}</li>`;
+  return `<li class="feature"><div><strong>${escapeHtml(feature.name)}</strong>${feature.note ? `<p>${escapeHtml(feature.note)}</p>` : ''}${verdictByMarkup(feature.by, feature.at)}</div>${statusPill(feature.status)}</li>`;
 }
 
 function checkMarkup(key, entry) {
   const [name, question] = checkNames[key];
-  return `<div class="check"><div class="check-heading"><strong>${name}</strong>${statusPill(entry.status)}</div><p class="check-question">${question}</p>${entry.note ? `<p class="check-note">${escapeHtml(entry.note)}</p>` : ''}</div>`;
+  return `<div class="check"><div class="check-heading"><strong>${escapeHtml(name)}</strong>${statusPill(entry.status)}</div><p class="check-question">${escapeHtml(question)}</p>${entry.note ? `<p class="check-note">${escapeHtml(entry.note)}</p>` : ''}${verdictByMarkup(entry.by, entry.at)}</div>`;
 }
 
 function auditChecklistMarkup(key, rows) {
   const checked = rows.filter(row => row.status !== 'untested').length;
-  const items = rows.map(row => `<div class="audit-item"><div class="check-heading"><strong>${escapeHtml(row.question)}</strong>${statusPill(row.status)}</div>${row.note ? `<p class="check-note">${escapeHtml(row.note)}</p>` : ''}</div>`).join('');
-  return `<details class="audit-disclosure" ${key === 'security' ? 'open' : ''}><summary><span>${auditNames[key]}</span><small>${checked} / ${rows.length} reviewed</small></summary><div class="audit-list">${items}</div></details>`;
+  const items = rows.map(row => `<div class="audit-item"><div class="check-heading"><strong>${escapeHtml(row.question)}</strong>${statusPill(row.status)}</div>${row.note ? `<p class="check-note">${escapeHtml(row.note)}</p>` : ''}${verdictByMarkup(row.by, row.at)}</div>`).join('');
+  return `<details class="audit-disclosure" ${key === 'security' ? 'open' : ''}><summary><span>${escapeHtml(auditNames[key])}</span><small>${checked} / ${rows.length} reviewed</small></summary><div class="audit-list">${items}</div></details>`;
 }
 
 function connectionMarkup(row) {
@@ -244,11 +265,21 @@ function auditMarkup(page) {
   return `<section class="inspector-section audit-section"><div class="section-heading"><h3>Security, search & data</h3><span>Page checklist</span></div>${sections}${connections}${editor}</section>`;
 }
 
+function qaRunLabel(status) {
+  return { passed: 'Saved-example checks passed', failed: 'Some checks failed', error: 'Checks could not run' }[status] || 'Run unavailable';
+}
+
+function qaRunFailureMarkup(run) {
+  if (run.cases?.length || !run.failures?.length) return '';
+  return `<ul class="qa-failures">${run.failures.map(item => `<li><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.detail)}</p></li>`).join('')}</ul>`;
+}
+
+function qaRunErrorMarkup(error) {
+  return error ? `<p class="form-error" role="alert">${escapeHtml(error)}</p>` : '';
+}
+
 function qaRunMarkup(run) {
-  const label = { passed: 'Saved-example checks passed', failed: 'Some checks failed', error: 'Checks could not run' }[run.status] || 'Run unavailable';
-  const failures = !run.cases?.length && run.failures?.length ? `<ul class="qa-failures">${run.failures.map(item => `<li><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.detail)}</p></li>`).join('')}</ul>` : '';
-  const error = run.error ? `<p class="form-error" role="alert">${escapeHtml(run.error)}</p>` : '';
-  return `<div class="qa-result"><div class="qa-result-heading"><strong>${label}</strong><span>${escapeHtml(dateLabel(run.finishedAt))}</span></div><p>${run.passed} of ${run.total} checks passed using saved examples.</p>${qaCasesMarkup(run)}${failures}${error}<details class="technical-details"><summary>Run details</summary><small>Checkout revision: ${escapeHtml(run.revision || 'unavailable')} · ${checkoutStateLabel(run)}</small></details></div>`;
+  return `<div class="qa-result"><div class="qa-result-heading"><strong>${escapeHtml(qaRunLabel(run.status))}</strong><span>${escapeHtml(dateLabel(run.finishedAt))}</span></div><p>${escapeHtml(run.passed)} of ${escapeHtml(run.total)} checks passed using saved examples.</p>${qaCasesMarkup(run)}${qaRunFailureMarkup(run)}${qaRunErrorMarkup(run.error)}<details class="technical-details"><summary>Run details</summary><small>Checkout revision: ${escapeHtml(run.revision || 'unavailable')} · ${escapeHtml(checkoutStateLabel(run))}</small></details></div>`;
 }
 
 function checkoutStateLabel(run) {
@@ -352,8 +383,9 @@ function findingActionMarkup(finding) {
 
 function findingMarkup(finding) {
   const resolution = finding.resolution ? `<p class="resolution-note"><strong>Last retest:</strong> ${escapeHtml(finding.resolution)} <small>· ${escapeHtml(dateLabel(finding.resolvedAt))}</small></p>` : '';
+  const resolvedBy = verdictByMarkup(finding.resolvedBy, finding.resolvedAt, 'Resolved');
   const form = state.findingForm === finding.id ? resolutionFormMarkup(finding) : '';
-  return `<li class="finding"><span class="severity">${escapeHtml(finding.severity)}</span><div class="finding-body"><div class="finding-title"><strong>${escapeHtml(finding.title)}</strong>${statusPill(finding.status)}</div><p>${escapeHtml(finding.detail)}</p><small>${escapeHtml(finding.id)} · ${findingEvidenceMarkup(finding)}</small>${resolution}${findingActionMarkup(finding)}${form}</div></li>`;
+  return `<li class="finding"><span class="severity">${escapeHtml(finding.severity)}</span><div class="finding-body"><div class="finding-title"><strong>${escapeHtml(finding.title)}</strong>${statusPill(finding.status)}</div><p>${escapeHtml(finding.detail)}</p><small>${escapeHtml(finding.id)} · ${findingEvidenceMarkup(finding)}</small>${verdictByMarkup(finding.by, finding.at, 'Opened')}${resolution}${resolvedBy}${findingActionMarkup(finding)}${form}</div></li>`;
 }
 
 function resolutionFormMarkup(finding) {
@@ -392,7 +424,97 @@ function reviewMarkup(page) {
 
 function pageHeaderMarkup(page) {
   const guidance = page.qa.tests.length ? 'Start by running checks, then inspect the page and save your review.' : 'Inspect this page and save what you found.';
-  return `<div class="page-heading"><div><p class="page-route">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1><p class="page-guidance">${guidance}</p></div><div class="page-verdict"><small>Checklist status</small>${statusPill(pageStatus(page))}</div></div>`;
+  return `<div class="page-heading"><div><p class="page-route">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1><p class="page-guidance">${escapeHtml(guidance)}</p></div><div class="page-verdict"><small>Checklist status</small>${statusPill(page.progress.status)}</div></div>`;
+}
+
+function relativeCaptureAge(capture) {
+  if (capture.state !== 'rendered' || !capture.capturedAt) return 'Not captured';
+  const timestamp = new Date(capture.capturedAt).getTime();
+  if (Number.isNaN(timestamp)) return 'Capture time unavailable';
+  const elapsedDays = Math.round((Date.now() - timestamp) / 86_400_000);
+  const relativeDays = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(-elapsedDays, 'day');
+  return `Captured ${relativeDays}`;
+}
+
+function plural(count, singular, pluralForm) {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+
+function openIssueCount(page) {
+  return plural(page.findings.filter(item => item.status === 'open').length, 'open issue', 'open issues');
+}
+
+function isBlockingIssue(item) {
+  return item.status === 'open' && ['P0', 'P1'].includes(item.severity);
+}
+
+function overviewMetricsMarkup() {
+  const pages = state.project.pages;
+  const complete = pages.filter(page => page.progress.complete).length;
+  const needsWork = pages.filter(page => page.progress.status === 'needs_work').length;
+  const blocking = pages.flatMap(page => page.findings).filter(isBlockingIssue).length;
+  const screenshots = pages.filter(page => page.progress.requirements.some(item => item.id === 'capture' && !item.met)).length;
+  return `<div class="overview-metrics" aria-label="Project metrics">
+    <div class="overview-metric" data-metric="complete"><strong>${escapeHtml(complete)} of ${escapeHtml(pages.length)}</strong><span> pages complete</span></div>
+    <div class="overview-metric" data-metric="needs-work"><strong>${escapeHtml(needsWork)}</strong><span> ${needsWork === 1 ? 'page needs work' : 'pages need work'}</span></div>
+    <div class="overview-metric" data-metric="blocking-issues"><strong>${escapeHtml(blocking)}</strong><span> open P0/P1 ${blocking === 1 ? 'issue' : 'issues'}</span></div>
+    <div class="overview-metric" data-metric="screenshots"><strong>${escapeHtml(screenshots)}</strong><span> ${screenshots === 1 ? 'page needs a' : 'pages need a'} validated screenshot</span></div>
+  </div>`;
+}
+
+// Rows show short names so 20+ pages stay scannable; the full label stays available to screen readers.
+function overviewRequirementsMarkup(page) {
+  const unmet = page.progress.requirements.filter(item => !item.met);
+  if (!unmet.length) return 'QA complete';
+  const names = unmet.map(item => `<span title="${escapeHtml(item.label)}">${escapeHtml(requirementShortNames[item.id] || item.label)}<span class="sr-only">: ${escapeHtml(item.label)}</span></span>`);
+  return `Missing: ${names.join(' · ')}`;
+}
+
+function overviewPageMarkup(page) {
+  const status = page.progress.status;
+  return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(status)}"><button type="button" data-page="${escapeHtml(page.id)}">
+    <span class="overview-status">${statusPill(status)}</span>
+    <span class="overview-identity"><strong>${escapeHtml(page.name)}</strong><code>${escapeHtml(page.route)}</code></span>
+    <span class="overview-open-issues">${escapeHtml(openIssueCount(page))}</span>
+    <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.capture))}</span>
+    <span class="overview-requirements">${overviewRequirementsMarkup(page)}</span>
+  </button></div>`;
+}
+
+function overviewGroupMarkup({ group, pages }) {
+  return `<section class="overview-group" aria-label="${escapeHtml(group)} pages"><h3>${escapeHtml(group)}</h3>${pages.map(overviewPageMarkup).join('')}</section>`;
+}
+
+function overviewMarkup() {
+  const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
+  const pages = groups ? `<div class="overview-groups">${groups}</div>` : '<p class="overview-empty">No pages have been added to this project.</p>';
+  return `<section class="overview-content" aria-label="Project overview">
+    <header class="overview-heading"><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></header>
+    ${overviewMetricsMarkup()}
+    <section class="overview-pages" aria-label="Pages"><h2>Pages</h2>${pages}</section>
+  </section>`;
+}
+
+function requirementDetailMarkup(requirement) {
+  if (requirement.met) return '<p class="completion-met">Requirement met.</p>';
+  const view = requirementViews[requirement.id] || 'review';
+  const action = requirementActions[requirement.id] || 'Open';
+  return `<p>${escapeHtml(requirement.missing)}</p><button type="button" class="completion-action" data-view="${escapeHtml(view)}">Open ${escapeHtml(action)}</button>`;
+}
+
+function requirementChipMarkup(requirement) {
+  const met = String(requirement.met);
+  const shortName = requirementShortNames[requirement.id] || requirement.label;
+  const mark = requirement.met ? '✓' : '•';
+  return `<details class="completion-chip ${requirement.met ? 'met' : 'unmet'}" data-requirement="${escapeHtml(requirement.id)}" data-met="${escapeHtml(met)}">
+    <summary><span class="completion-mark" aria-hidden="true">${mark}</span><span>${escapeHtml(shortName)}</span></summary>
+    <div class="completion-detail"><strong>${escapeHtml(requirement.label)}</strong>${requirementDetailMarkup(requirement)}</div>
+  </details>`;
+}
+
+function qaCompletionMarkup(page) {
+  const message = page.progress.complete ? '<p>This page’s QA is complete.</p>' : '<p>Expand a requirement to see what remains.</p>';
+  return `<section class="qa-completion" aria-label="QA completion"><div class="completion-heading"><h2>QA completion</h2>${message}</div><div class="completion-chips">${page.progress.requirements.map(requirementChipMarkup).join('')}</div></section>`;
 }
 
 function viewButton(name, label, short, suffix = '') {
@@ -413,13 +535,16 @@ function activeViewMarkup(page) {
 }
 
 function toolbarMarkup(page) {
-  return `<div class="toolbar"><button type="button" class="page-menu-toggle" data-action="open-pages">Pages</button>${page ? viewNavigationMarkup(page) : ''}</div>`;
+  const navigation = state.view !== 'overview' && page ? viewNavigationMarkup(page) : '';
+  const toolbarClass = state.view === 'overview' ? 'toolbar overview-toolbar' : 'toolbar';
+  return `<div class="${toolbarClass}"><button type="button" class="page-menu-toggle" data-action="open-pages">Pages</button>${navigation}</div>`;
 }
 
 function pageContentMarkup(page) {
+  if (state.view === 'overview') return overviewMarkup();
   if (!page) return '<div class="workspace-empty"><h2>No pages yet</h2><p>No pages have been added to this project.</p></div>';
   const primary = state.view === 'capture' ? visualReviewMarkup(page) : activeViewMarkup(page);
-  return `${pageHeaderMarkup(page)}<div class="view-grid ${state.view === 'capture' ? 'capture-view' : ''}">${primary}${captureMarkup(page)}</div>`;
+  return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}<div class="view-grid ${state.view === 'capture' ? 'capture-view' : ''}">${primary}${captureMarkup(page)}</div>`;
 }
 
 function workspaceMarkup() {
@@ -473,6 +598,10 @@ async function runVisualReview() {
   try {
     result = await readJson(visualEndpoint(key), { method: 'POST' });
   } catch (failure) { error = failure.message; }
+  finishVisualReview(key, result, error);
+}
+
+function finishVisualReview(key, result, error) {
   if (state.visual.key !== key) return;
   state.visual = { ...state.visual, running: false, result: result || state.visual.result, error };
   if (state.view === 'capture') render();
@@ -491,30 +620,56 @@ function qaEndpoint(key) {
   return `/api/projects/${projectId}/pages/${pageId}/qa-runs`;
 }
 
+function currentQaRequest(key, version) {
+  return state.qa.key === key && state.qa.version === version;
+}
+
+function finishQaLoad(key, version, response) {
+  if (!currentQaRequest(key, version)) return false;
+  state.qa = { ...state.qa, runs: response.runs, plan: response.plan, planError: response.planError, loading: false };
+  return true;
+}
+
+function failQaLoad(key, version, error) {
+  if (!currentQaRequest(key, version)) return false;
+  state.qa = { ...state.qa, loading: false, error: error.message };
+  return true;
+}
+
 async function loadQaRuns(key) {
   const version = state.qa.version;
   try {
     const response = await readJson(qaEndpoint(key));
-    if (state.qa.key !== key || state.qa.version !== version) return;
-    state.qa = { ...state.qa, runs: response.runs, plan: response.plan, planError: response.planError, loading: false };
+    if (!finishQaLoad(key, version, response)) return;
   } catch (error) {
-    if (state.qa.key !== key || state.qa.version !== version) return;
-    state.qa = { ...state.qa, loading: false, error: error.message };
+    if (!failQaLoad(key, version, error)) return;
   }
   render();
 }
 
+function qaRunAllowed() {
+  return !state.qa.running && !state.qa.loading && state.qa.plan.length > 0;
+}
+
+function finishQaRun(key, result) {
+  if (state.project.id === result.project.id) state.project = result.project;
+  if (state.qa.key === key) state.qa = { ...state.qa, running: false, runs: [result.run, ...state.qa.runs].slice(0, 5) };
+}
+
+function failQaRun(key, error) {
+  if (state.qa.key === key) state.qa = { ...state.qa, running: false, error: error.message };
+}
+
 async function runQa() {
   const key = state.qa.key;
-  if (state.qa.running || state.qa.loading || !state.qa.plan.length) return;
+  if (!qaRunAllowed()) return;
   state.qa = { ...state.qa, version: state.qa.version + 1, running: true, error: '' };
   render();
   try {
     const result = await readJson(qaEndpoint(key), { method: 'POST' });
-    if (state.project.id === result.project.id) state.project = result.project;
-    if (state.qa.key === key) state.qa = { ...state.qa, running: false, runs: [result.run, ...state.qa.runs].slice(0, 5) };
+    finishQaRun(key, result);
   } catch (error) {
-    if (state.qa.key === key) state.qa = { ...state.qa, running: false, error: error.message };
+    failQaRun(key, error);
   }
   render();
 }
@@ -532,8 +687,8 @@ async function readJson(url, options) {
 
 async function loadProject(id) {
   state.project = await readJson(`/api/projects/${encodeURIComponent(id)}`);
-  state.pageId = state.project.pages[0]?.id ?? null;
-  state.view = defaultView(activePage());
+  state.pageId = null;
+  state.view = 'overview';
   state.query = '';
   state.filter = 'all';
   state.sort = 'navigation';
@@ -678,21 +833,27 @@ async function reopenFinding(id) {
   } catch (error) { state.message = error.message; render(); }
 }
 
-function handleFindingButton(button) {
-  const action = button.dataset.findingAction;
-  if (action === 'reopen') { button.disabled = true; return reopenFinding(button.dataset.findingId); }
-  if (action === 'cancel') {
-    const previous = state.findingForm;
-    state.findingForm = null;
-    state.message = '';
-    render();
-    return focusFindingAction(previous);
-  }
-  state.findingForm = action === 'new' ? 'new' : button.dataset.findingId;
+function cancelFindingForm() {
+  const previous = state.findingForm;
+  state.findingForm = null;
+  state.message = '';
+  render();
+  focusFindingAction(previous);
+}
+
+function openFindingForm(id) {
+  state.findingForm = id;
   state.editing = false;
   state.auditEditing = false;
   render();
-  document.querySelector(state.findingForm === 'new' ? '#finding-title' : '#retest-note')?.focus();
+  document.querySelector(id === 'new' ? '#finding-title' : '#retest-note')?.focus();
+}
+
+function handleFindingButton(button) {
+  const action = button.dataset.findingAction;
+  if (action === 'reopen') { button.disabled = true; return reopenFinding(button.dataset.findingId); }
+  if (action === 'cancel') return cancelFindingForm();
+  openFindingForm(action === 'new' ? 'new' : button.dataset.findingId);
 }
 
 function focusFindingAction(id) {
@@ -713,6 +874,14 @@ function selectPage(id) {
   state.message = '';
   render();
   document.querySelector('#selected-page-heading')?.focus();
+}
+
+function selectOverview() {
+  state.view = 'overview';
+  state.browseOpen = false;
+  state.message = '';
+  render();
+  document.querySelector('[data-overview]')?.focus({ preventScroll: true });
 }
 
 function selectFilter(filter) {
@@ -773,7 +942,7 @@ const buttonActions = new Map([
 ]);
 
 function navigationRequested(button) {
-  return button.dataset.page || button.dataset.view;
+  return button.dataset.page || button.dataset.view || button.dataset.overview !== undefined;
 }
 
 function selectView(name) {
@@ -785,6 +954,7 @@ function selectView(name) {
 }
 
 function handleNavigationButton(button) {
+  if (button.dataset.overview !== undefined) { selectOverview(); return true; }
   if (button.dataset.page) { selectPage(button.dataset.page); return true; }
   if (!button.dataset.view) return false;
   selectView(button.dataset.view);
@@ -795,6 +965,11 @@ function handleButton(button) {
   if (navigationRequested(button) && blockOpenFormNavigation()) return;
   if (handleNavigationButton(button)) return;
   buttonActions.get(button.dataset.action)?.(button);
+}
+
+function renderSidebarPageList() {
+  const list = document.querySelector('.page-groups');
+  if (list) list.innerHTML = pageOptionsMarkup(visiblePages());
 }
 
 function removeAuditRow(button) {
@@ -860,12 +1035,8 @@ app.addEventListener('keydown', event => {
 app.addEventListener('input', event => {
   if (event.target.id !== 'page-search') return;
   if (blockOpenFormNavigation()) { event.target.value = state.query; return; }
-  const cursor = event.target.selectionStart;
   state.query = event.target.value;
-  render();
-  const input = document.querySelector('#page-search');
-  input.focus();
-  input.setSelectionRange(cursor, cursor);
+  renderSidebarPageList();
 });
 
 app.addEventListener('submit', event => {

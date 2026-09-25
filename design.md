@@ -1,6 +1,6 @@
 # dogfood design system
 
-Revision 2, 2026-09-25. Supersedes the warm-canvas, green-action system of revision 1.
+Revision 3, 2026-09-25. Supersedes the warm-canvas, green-action system of revision 1.
 
 ## Product and register
 
@@ -20,14 +20,16 @@ For people checking a product page by page, dogfood feels like a first-party mac
 | **User-stated:** the owner's Apple-clean design default for their products (2026-09-22) and its token file | #f5f5f7 canvas, white 12px groups, SF Pro 400–600, one blue pill per view, system colours only for state, a 4/8/12/16/24/32 scale. | A neutral field lets product content and state carry all the colour, so status reads instantly. | The tokens, radii, weights, and one-primary-action rule. | Depart: QA adds a status dot to every sidebar row, because page state is its core content; the capture panel shows the product's own colours. |
 | The owner's reference implementation of that default, rendered at 1440 × 900 on 2026-09-25 | A full-height grey sidebar with rounded grey selection; large 32px title; content in white groups; one blue "Start" pill. | The sidebar owns navigation, so the content column can hold one object at a time. | Sidebar treatment and group rhythm. | Depart: QA puts sibling views in a toolbar segmented control, not in the page body, and pairs the evidence group with a sticky screenshot column. |
 | [Apple HIG: Sidebars](https://developer.apple.com/design/human-interface-guidelines/sidebars) | Sidebars sit on the leading side for top-level collections; group hierarchy with sections; let people hide the sidebar. | Familiar placement means no learning cost. | Sectioned page groups in a leading source list; a Pages sheet replaces the sidebar on phones. | Avoid SF Symbols copies; QA uses text and state dots rather than an icon per row. |
+| [Linear — Refero Styles](https://styles.refero.design/style/90ce5883-bb24-4466-93f7-801cd617b0d1), rendered preview inspected 2026-09-25 | Dense task rows sit beside a narrow source list on a dark canvas; white text and small state marks carry the reading order. | Compact rows make many related objects scannable without turning each into a card. | Use grouped rows with a clear name, route, and state. | Avoid its dark palette, lime accent, and task-specific panels; dogfood keeps its Apple light/dark tokens and groups pages by site section, with completion details that open to their resolving view. |
 
 ## System
 
 ### Composition
 
-- Desktop: 256px sidebar (brand, project, search, show and sort, page list, product link) and a content column with an opaque sticky toolbar holding the segmented view control.
-- Content: route in mono, a 28px page title, one line of guidance, and the page status on the right; then the active view's group beside a sticky screenshot column. See page uses the full width.
-- Phone (≤760px): the sidebar becomes a full-screen Pages sheet with a Done button; the segmented control takes its own full-width row with short labels ("Checks, Page, Review, Safety, Issues") while accessible names stay complete.
+- Desktop: 256px sidebar (brand, project, search, show and sort, Overview, grouped page list, product link) and a content column with an opaque sticky toolbar holding the segmented page-view control.
+- Project overview opens by default. Its content starts with the project name and four metrics, then lists every page in site order under the same groups used by the sidebar. Each page row carries server status, open-issue count, capture age, and unmet requirement labels.
+- A page shows its route in mono, a 28px title, one line of guidance, and server status on the right. A single compact row of requirement chips sits directly below the heading; each chip expands to its full requirement, missing evidence, and the view that resolves it. The active page view follows, beside the sticky screenshot column. See page uses the full width.
+- Phone (≤760px): the sidebar becomes a full-screen Pages sheet with a Done button; overview metrics become two columns and page rows stack their metadata. The segmented control takes its own full-width row with short labels ("Checks, Page, Review, Safety, Issues") while accessible names stay complete. Requirement chips remain a single horizontal row that can scroll and expand.
 
 ### Typography
 
@@ -62,6 +64,9 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 - Primary action: one blue pill per view (Run checks, Ask AI to review image, Review this page, Edit checks & connections, Save). Secondary: grey pill (Cancel). Tertiary: blue text (Resolve, Add issue, View full size).
 - Status: pill with a dot and text; sidebar rows show the dot alone with the status as the accessible name and tooltip.
+- Overview uses one four-cell metrics group and grouped page rows. Each row is one page-opening button; completion is shown by requirement labels and a "QA complete" state, never a per-page score.
+- QA completion uses state-marked requirement chips. Opening an unmet chip reveals its server-provided missing text and a tertiary button for the corresponding page view. Verdict attribution appears as small metadata under the evidence note; issue attribution distinguishes opening from resolution.
+- A blocked capture shows its reason and "Not captured" age when its timestamp is absent; it has no screenshot or original-page link.
 - Disclosures show a chevron that rotates when open.
 
 ### Brand
@@ -79,3 +84,4 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **User-stated, 2026-09-25:** QA (now dogfood) becomes a public repository with a clean logo and a design "like a Mac app, clean, crisp, purposeful". This revision implements that direction.
 - **Agent-selected working policy, 2026-09-25:** Pages without selected tests open on My review, because an empty runner is not a useful first view. Pages with tests open on Run checks.
 - **Agent-selected working policy, 2026-09-25:** The bundled demo is a fictional product so the public repository ships no private product data.
+- **Agent-selected working policy, 2026-09-25:** Open the project overview first and keep page requirements in compact expandable chips below each page heading. This makes page status and remaining QA visible immediately while keeping detailed evidence and resolving views one activation away.
