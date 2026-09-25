@@ -159,23 +159,98 @@
       "captures": {
         "desktop": {
           "path": "/captures/tidepool/home.png",
-          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/index.html",
-          "capturedAt": "2026-09-25T16:13:16Z",
+          "sourceUrl": "http://127.0.0.1:4380/",
           "viewport": "1440 × 900",
-          "tier": "real",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:01.953Z",
+          "tier": "automated",
           "state": "rendered",
           "fullPage": true,
           "pixelWidth": 1440,
           "pixelHeight": 900,
-          "actor": "Signed-out visitor",
-          "sha256": "0ef3d89d57f84ade0de9b634e77f65a80a804851119e4ceb91e96db954e5ebe7"
+          "sha256": "d5ada657e2f90a1dba4440f52715c85a7c9652c8605601b54579394f4fee32e0"
         },
         "mobile": {
-          "state": "blocked",
-          "reason": "Not captured yet."
+          "path": "/captures/tidepool/home-mobile.png",
+          "sourceUrl": "http://127.0.0.1:4380/",
+          "viewport": "390 × 844",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:01.968Z",
+          "tier": "automated",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "sha256": "a8d66dfcce2ad22f4cfd16bc727559e2a3406aa996a45280ee5b80f8c1e7a5a5"
         }
       },
-      "scan": null
+      "scan": {
+        "scannedAt": "2026-09-25T18:54:01.968Z",
+        "sourceUrl": "http://127.0.0.1:4380/",
+        "actor": "Signed-out visitor",
+        "captureSha256": {
+          "desktop": "d5ada657e2f90a1dba4440f52715c85a7c9652c8605601b54579394f4fee32e0",
+          "mobile": "a8d66dfcce2ad22f4cfd16bc727559e2a3406aa996a45280ee5b80f8c1e7a5a5"
+        },
+        "viewports": {
+          "desktop": {
+            "loadMs": 7,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": false,
+            "seo": {
+              "title": "",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": null,
+              "h1Count": 0
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          },
+          "mobile": {
+            "loadMs": 9,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": false,
+            "seo": {
+              "title": "",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": null,
+              "h1Count": 0
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          }
+        }
+      }
     },
     {
       "id": "classes",
@@ -321,23 +396,98 @@
       "captures": {
         "desktop": {
           "path": "/captures/tidepool/classes.png",
-          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/classes.html",
-          "capturedAt": "2026-09-25T16:13:16Z",
+          "sourceUrl": "http://127.0.0.1:4380/classes.html",
           "viewport": "1440 × 900",
-          "tier": "real",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:07.824Z",
+          "tier": "automated",
           "state": "rendered",
           "fullPage": true,
           "pixelWidth": 1440,
           "pixelHeight": 900,
-          "actor": "Signed-out visitor",
-          "sha256": "108149b3133757feae034d102126f2acc60852133757e45486fdfd1e29956839"
+          "sha256": "b63cf485c9e97e495e69642c519ddbf2980966202194a397de47ba2b636194a7"
         },
         "mobile": {
-          "state": "blocked",
-          "reason": "Not captured yet."
+          "path": "/captures/tidepool/classes-mobile.png",
+          "sourceUrl": "http://127.0.0.1:4380/classes.html",
+          "viewport": "390 × 844",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:07.850Z",
+          "tier": "automated",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 462,
+          "pixelHeight": 1013,
+          "sha256": "47e638d7794b17e9168ff548c3a2d694db72aade7dc4ddeba2bd475ac75c61d4"
         }
       },
-      "scan": null
+      "scan": {
+        "scannedAt": "2026-09-25T18:54:07.850Z",
+        "sourceUrl": "http://127.0.0.1:4380/classes.html",
+        "actor": "Signed-out visitor",
+        "captureSha256": {
+          "desktop": "b63cf485c9e97e495e69642c519ddbf2980966202194a397de47ba2b636194a7",
+          "mobile": "47e638d7794b17e9168ff548c3a2d694db72aade7dc4ddeba2bd475ac75c61d4"
+        },
+        "viewports": {
+          "desktop": {
+            "loadMs": 10,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": false,
+            "seo": {
+              "title": "Classes · Tidepool",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": "en",
+              "h1Count": 1
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          },
+          "mobile": {
+            "loadMs": 6,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": true,
+            "seo": {
+              "title": "Classes · Tidepool",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": "en",
+              "h1Count": 1
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          }
+        }
+      }
     },
     {
       "id": "book",
@@ -506,23 +656,98 @@
       "captures": {
         "desktop": {
           "path": "/captures/tidepool/book.png",
-          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/book.html",
-          "capturedAt": "2026-09-25T16:13:16Z",
+          "sourceUrl": "http://127.0.0.1:4380/book.html",
           "viewport": "1440 × 900",
-          "tier": "real",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:14.004Z",
+          "tier": "automated",
           "state": "rendered",
           "fullPage": true,
           "pixelWidth": 1440,
           "pixelHeight": 900,
-          "actor": "Signed-out visitor",
-          "sha256": "6830772367ef04c6125ac7a8a991dc8b3b4117a0d14f564188ee71d0d03d6b39"
+          "sha256": "ae8ec37f1e74d71976b04a3b1f1dc3f673834bf13c10b5c7bac353b2ff8ef644"
         },
         "mobile": {
-          "state": "blocked",
-          "reason": "Not captured yet."
+          "path": "/captures/tidepool/book-mobile.png",
+          "sourceUrl": "http://127.0.0.1:4380/book.html",
+          "viewport": "390 × 844",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:14.024Z",
+          "tier": "automated",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 427,
+          "pixelHeight": 1016,
+          "sha256": "8f0a83eb23e0d9d757859ba50f8deb7d0836677a73a520bb60a8277bc9e9bb4f"
         }
       },
-      "scan": null
+      "scan": {
+        "scannedAt": "2026-09-25T18:54:14.024Z",
+        "sourceUrl": "http://127.0.0.1:4380/book.html",
+        "actor": "Signed-out visitor",
+        "captureSha256": {
+          "desktop": "ae8ec37f1e74d71976b04a3b1f1dc3f673834bf13c10b5c7bac353b2ff8ef644",
+          "mobile": "8f0a83eb23e0d9d757859ba50f8deb7d0836677a73a520bb60a8277bc9e9bb4f"
+        },
+        "viewports": {
+          "desktop": {
+            "loadMs": 7,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": false,
+            "seo": {
+              "title": "Book · Tidepool",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": "en",
+              "h1Count": 1
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          },
+          "mobile": {
+            "loadMs": 9,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": true,
+            "seo": {
+              "title": "Book · Tidepool",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": "en",
+              "h1Count": 1
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          }
+        }
+      }
     },
     {
       "id": "account",
@@ -662,23 +887,98 @@
       "captures": {
         "desktop": {
           "path": "/captures/tidepool/account.png",
-          "sourceUrl": "https://github.com/ali-abassi/dogfood/blob/main/demo/site/account.html",
-          "capturedAt": "2026-09-25T16:13:16Z",
+          "sourceUrl": "http://127.0.0.1:4380/account.html",
           "viewport": "1440 × 900",
-          "tier": "real",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:19.814Z",
+          "tier": "automated",
           "state": "rendered",
           "fullPage": true,
           "pixelWidth": 1440,
           "pixelHeight": 900,
-          "actor": "Signed-out visitor",
-          "sha256": "256ec18520aa20899b1694c57e6a483cc9360ecc7df41b8886f9f5c8148f72a0"
+          "sha256": "0d2ebc9b428eb8d408f78206ebd776ef2758dcec8b98c54e054d77b24fb81baf"
         },
         "mobile": {
-          "state": "blocked",
-          "reason": "Not captured yet."
+          "path": "/captures/tidepool/account-mobile.png",
+          "sourceUrl": "http://127.0.0.1:4380/account.html",
+          "viewport": "390 × 844",
+          "actor": "Signed-out visitor",
+          "capturedAt": "2026-09-25T18:54:19.829Z",
+          "tier": "automated",
+          "state": "rendered",
+          "fullPage": true,
+          "pixelWidth": 429,
+          "pixelHeight": 844,
+          "sha256": "a49aed33f202c3c38444a48c508b49c3d781ce74691f802801fca2a3e77501b6"
         }
       },
-      "scan": null
+      "scan": {
+        "scannedAt": "2026-09-25T18:54:19.829Z",
+        "sourceUrl": "http://127.0.0.1:4380/account.html",
+        "actor": "Signed-out visitor",
+        "captureSha256": {
+          "desktop": "0d2ebc9b428eb8d408f78206ebd776ef2758dcec8b98c54e054d77b24fb81baf",
+          "mobile": "a49aed33f202c3c38444a48c508b49c3d781ce74691f802801fca2a3e77501b6"
+        },
+        "viewports": {
+          "desktop": {
+            "loadMs": 7,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": false,
+            "seo": {
+              "title": "Account · Tidepool",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": "en",
+              "h1Count": 1
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          },
+          "mobile": {
+            "loadMs": 9,
+            "consoleErrors": [],
+            "pageErrors": [],
+            "failedRequests": [],
+            "requests": [],
+            "horizontalOverflow": true,
+            "seo": {
+              "title": "Account · Tidepool",
+              "description": null,
+              "canonical": null,
+              "robots": null,
+              "lang": "en",
+              "h1Count": 1
+            },
+            "accessibility": {
+              "imagesWithoutAlt": 0,
+              "unlabeledFields": 0,
+              "unnamedButtons": 0
+            },
+            "headers": {
+              "content-security-policy": null,
+              "strict-transport-security": null,
+              "x-frame-options": null,
+              "x-content-type-options": "nosniff",
+              "referrer-policy": null
+            }
+          }
+        }
+      }
     },
     {
       "id": "admin",

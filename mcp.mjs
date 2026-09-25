@@ -194,6 +194,7 @@ const definitions = [
         name: { type: 'string', description: 'Human-readable page name.' },
         group: { type: 'string', description: 'Navigation group such as Public or Account.' },
         route: { type: 'string', description: 'Route checked within the product.' },
+        url: { type: 'string', description: 'Optional full page URL when the route alone does not locate it, for example https://app.example/#/billing in a hash-routed app. Scans open this URL.' },
         features: { type: 'array', items: objectSchema({ id: { type: 'string' }, name: { type: 'string' } }, ['id', 'name']) },
         tests: { type: 'array', items: objectSchema({ id: { type: 'string' }, label: { type: 'string' }, file: { type: 'string' }, reason: { type: 'string' } }, ['id', 'label', 'file', 'reason']) },
         untestedNote: { type: 'string', description: 'A clear boundary that this page QA does not cover.' },

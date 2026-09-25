@@ -1,23 +1,32 @@
-# Current outcome — dogfood: agents complete page QA, people see it
+# Current outcome — mobile and desktop evidence, measured pages, one-step onboarding
 
-Previous outcome (public repository with a macOS design) shipped in `bd5bc25`.
+Previous outcome (rename to dogfood, completion gate, MCP server, overview) shipped through `69d81e1`.
 
-- **User-stated, 2026-09-25:** Rename the project to **dogfood**, an AI QA system (repository, folder, and app). Review and polish it: clean code.
-- **User-stated, 2026-09-25:** People see QA visually: every page, the metrics that matter, a full-page screenshot, and a button to have AI validate things. Agents running QA fill in the details through an MCP server; a page's QA is not complete until the required steps are done.
-- **User-stated, 2026-09-25:** AI Social Team is the active project using dogfood; re-capture its pages. Push verified work to `main`.
+- **User-stated, 2026-09-25:** every page shows its mobile and desktop view. Review whether the sections track the right things in enough detail. Make onboarding a new project as easy as possible.
+
+## Review findings that shaped this outcome (observed 2026-09-25)
+
+- Only a desktop screenshot existed per page; no mobile evidence.
+- Nothing was measured: every verdict was a typed note, while errors, failed requests, load time, search tags, security headers, and accessibility basics are free to collect from the page itself.
+- Connections were mapped from source code, which produced unusable entries (a JavaScript template string as an endpoint).
+- Accessibility was not tracked at all.
+- Features were names only, with no statement of what "works" means.
+- Onboarding meant hand-writing about 130 lines of JSON per page and taking screenshots yourself.
 
 ## Scope (agent-selected)
 
-1. Rename: GitHub `ali-abassi/dogfood`, local `~/dogfood`, `DOGFOOD_DATA` / `DOGFOOD_PORT`, app and docs.
-2. Clean code: one shared schema for the server, checker, and MCP; one domain store behind both the HTTP server and the MCP server; no duplicated rules.
-3. Completion gate: a page's QA is complete only when every required step has evidence (see `lib/completion.mjs`). The gate is mechanical and identical in the app, the API, the MCP server, and the checker.
-4. MCP server: agents list projects, register pages, attach captures, record verdicts, connections, and issues, run focused tests, and read what remains before QA can be complete.
-5. Capture validity: reject screenshots whose content fills only part of the image (the device-pixel-ratio defect in the 2026-09-24 AI Social Team captures), then re-capture AI Social Team.
-6. Overview: a project view showing every page's status, completion, open issues, and capture age.
+1. Manifest version 2: desktop and mobile captures, a scan record per page, an accessibility checklist, optional expected behavior per feature, optional page URL.
+2. A scanner (agent-browser, desktop 1440 × 900 and mobile 390 × 844, both at scale 1) that measures the page and adds observed API calls to the connection map. Measured problems mark the page as needing work; a fresh scan is a completion requirement.
+3. Onboarding from a URL through `npm run onboard`, the app's Add project form, or `dogfood_onboard_project`; rescans through `npm run scan`, the See page, or `dogfood_scan_page`.
+4. UI: both screenshots side by side, scan results, Add project, a first-run welcome instead of an error.
 
 ## Acceptance
 
-- `npm test` and `npm run check` pass from a clean clone; `npm run demo` still opens the Tidepool demo with no install step.
-- An MCP client can drive one demo page from untested to complete, and every missing step is refused or listed until then.
-- AI Social Team captures pass the validity rule and match the live site at 1440 × 900.
-- The public repository contains no files from `data/`, no local paths, and no credentials.
+- Scanner proof: a fixture site with known defects is onboarded from its URL, and every defect is measured (16 checks).
+- UI proof: both screenshots, scan results, Add project with progress, the welcome state, and phone layout (14 checks); the earlier UI and MCP proofs still pass.
+- AI Social Team is rescanned signed in, with desktop and mobile evidence for every page.
+
+## Not yet covered
+
+- Feature lists and expected behavior are still written by people or agents; the scan does not propose them.
+- The AI review reads only the desktop screenshot.
