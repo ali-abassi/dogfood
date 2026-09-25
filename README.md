@@ -32,9 +32,15 @@ Open <http://127.0.0.1:4321>. The demo is **Tidepool**, a fictional swim school 
 
 ## Use it on your project
 
-1. Create `data/projects/<id>.json`. Copy the shape of [`demo/projects/tidepool.json`](demo/projects/tidepool.json): one entry per page with its route, screenshot, features, checks, and gaps.
-2. Save full-page PNG screenshots to `data/captures/<id>/<page>.png`. Any tool works; for example `agent-browser screenshot --full`.
-3. Run `node scripts/check-projects.mjs` to validate the manifest, then `npm start`.
+Add a project from the app's **Add project** form, the CLI, or an MCP call:
+
+```sh
+npm run onboard -- https://site.example
+```
+
+Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registers them, and records a validated full-page desktop and mobile screenshot plus measured page facts. It can scan up to 50 pages. Install the browser once with `npm i -g agent-browser`. To scan signed-in pages, pass a Chrome profile such as `Default` with `npm run onboard -- https://site.example --profile Default` or the `browserProfile` field in the app or MCP tool. Rescan every page with `npm run scan -- <project-id>`, or list page IDs to scan only those pages.
+
+Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.
 
 `data/` is git-ignored, so your projects, screenshots, runs, and reviews stay on your machine. Set `DOGFOOD_DATA` to keep them elsewhere, and `DOGFOOD_PORT` to change the port.
 
@@ -48,16 +54,18 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 ### Agents (MCP)
 
-Run `node mcp.mjs` as a dependency-free stdio MCP server so an agent can register pages, collect QA evidence, run focused tests, and see exactly what remains before completion. Register it with Claude Code using `claude mcp add --scope user dogfood -- node /absolute/path/to/dogfood/mcp.mjs`.
+Run `node mcp.mjs` as a dependency-free stdio MCP server so an agent can onboard projects, collect QA evidence, run focused tests, and see exactly what remains before completion. Register it with Claude Code using `claude mcp add --scope user dogfood -- node /absolute/path/to/dogfood/mcp.mjs`.
 
 Page-writing tools return that page's status, completion state, and remaining requirements; issue creation also returns the new issue ID. Project creation returns a compact project summary.
 
 - `dogfood_projects` — list projects and completed page counts.
+- `dogfood_onboard_project` — find and scan every same-site page from one URL.
+- `dogfood_scan_page` — rescan a registered page at desktop and mobile sizes.
 - `dogfood_create_project` — create a project with its URL, environment, checkout, and guidelines.
 - `dogfood_register_page` — register a page, its features, tests, and untested boundary.
 - `dogfood_page` — read a page and its derived QA progress.
 - `dogfood_next` — list incomplete pages in site order with missing evidence.
-- `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker.
+- `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker; prefer `dogfood_scan_page` for both devices and measured facts.
 - `dogfood_record_verdicts` — record partial feature, quality, and checklist verdicts with evidence.
 - `dogfood_set_connections` — map the page request and its API/data exchanges.
 - `dogfood_set_checklist` — edit checklist questions while preserving connections.
@@ -72,13 +80,13 @@ A page is not complete until `dogfood_complete` accepts it; agents must call it 
 ## How it works
 
 - `server.mjs` is a dependency-free Node server bound to `127.0.0.1`. It rejects cross-origin writes and serves the app and its API.
-- `lib/` holds everything the server and agents share: `schema.mjs` (the manifest vocabulary), `store.mjs` (every validated read and write), `completion.mjs` (when a page's QA is complete), `capture.mjs` (screenshot validity), `test-runs.mjs`, and `visual-review.mjs`.
+- `lib/` holds everything the server and agents share: `schema.mjs` (the manifest vocabulary), `store.mjs` (every validated read and write), `completion.mjs` (when a page's QA is complete), `capture.mjs` (screenshot validity), `scans.mjs` (validating measured facts), `scanner.mjs`, `discover.mjs`, and `onboard.mjs` (the browser side of scanning and onboarding), `test-runs.mjs`, and `visual-review.mjs`.
 - `public/` is the interface: plain HTML, CSS, and JavaScript with light and dark themes.
 - `npm test` runs the store, server, and review tests; `npm run check` validates syntax and the demo manifest.
 
 ### When is a page's QA complete?
 
-A page is complete only when every applicable requirement has evidence: a validated full-page screenshot, a verdict for every feature, all five quality questions, the security, copying, and search checklists, at least one mapped connection, passing focused tests (when the page has any), an AI review of the current screenshot, and no open P0 or P1 issue. A page passes only when its QA is complete and every verdict is Pass.
+A page is complete only when every applicable requirement has evidence: validated full-page desktop and mobile screenshots, a scan that matches them, a verdict for every listed feature, all five quality questions, the security, copying, search, and accessibility checklists, at least one mapped connection, passing focused tests (when the page has any), an AI review of the current desktop screenshot, and no open P0 or P1 issue. Problems a scan measures (uncaught errors, failed requests, sideways scrolling) mark the page as needing work. A page passes only when its QA is complete and every verdict is Pass.
 
 ## License
 

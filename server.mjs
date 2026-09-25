@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { join, relative } from 'node:path';
 import { capturesDir, dataDir, root } from './lib/paths.mjs';
 import { capturePathPattern } from './lib/schema.mjs';
+import { onboard, onboardingPlan } from './lib/onboard.mjs';
 import { currentReview, startReview } from './lib/reviews.mjs';
+import { scanPage } from './lib/scanner.mjs';
 import { createFinding, listProjects, projectView, readProject, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
@@ -13,6 +16,7 @@ const localHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 const localOrigins = new Set([...localHosts].map(host => `http://${host}`));
 // Edits made in the app are attributed to the person using it; agents write through the MCP server.
 const person = 'person';
+const onboardingJobs = new Map();
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
@@ -41,25 +45,53 @@ async function startTests(projectId, pageId) {
   return { run, project: projectView(project) };
 }
 
+async function scanProjectPage(projectId, pageId) {
+  await scanPage(projectId, pageId);
+  return projectView(readProject(projectId));
+}
+
+function onboardingJob(id) {
+  const job = onboardingJobs.get(id);
+  if (!job) throw Object.assign(new Error('Onboarding job not found.'), { status: 404 });
+  return job;
+}
+
+// Onboarding scans every page, so it runs in the background and the app polls its progress.
+// Pages that fail are reported in `failed`; the job still finishes with its project.
+function startOnboarding(input) {
+  const plan = onboardingPlan(input);
+  const id = randomUUID();
+  const job = { status: 'running', total: null, scanned: 0, current: '', projectId: null, failed: [], error: '' };
+  onboardingJobs.set(id, job);
+  onboard(plan, progress => Object.assign(job, progress)).then(
+    result => Object.assign(job, { status: 'done', total: result.pageCount, scanned: result.scanned, current: '', projectId: result.project, failed: result.failed }),
+    error => Object.assign(job, { status: 'failed', error: error.message }),
+  );
+  return { job: id };
+}
+
 const pagePath = '/api/projects/([a-z0-9-]+)/pages/([a-z0-9-]+)';
 const withBody = handler => async (params, request) => projectView(handler(...params, await requestJson(request), person));
 const routes = [
+  ['POST', '/api/onboard', (params, request) => requestJson(request).then(startOnboarding), 202],
+  ['GET', '/api/onboard/([a-f0-9-]+)', ([id]) => onboardingJob(id)],
   ['GET', '/api/projects', () => listProjects()],
   ['GET', '/api/projects/([a-z0-9-]+)', ([id]) => projectView(readProject(id))],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],
   ['POST', `${pagePath}/visual-review`, params => startReview(...params)],
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],
   ['POST', `${pagePath}/qa-runs`, params => startTests(...params)],
+  ['POST', `${pagePath}/scan`, params => scanProjectPage(...params)],
   ['PUT', `${pagePath}/review`, withBody(saveReview)],
   ['PUT', `${pagePath}/audit`, withBody(saveAudit)],
   ['POST', `${pagePath}/findings`, withBody(createFinding)],
   ['PUT', `${pagePath}/findings/([A-Za-z0-9-]+)`, withBody(updateFinding)],
-].map(([method, pattern, handler]) => ({ method, pattern: new RegExp(`^${pattern}$`), handler }));
+].map(([method, pattern, handler, status = 200]) => ({ method, pattern: new RegExp(`^${pattern}$`), handler, status }));
 
-function apiResponse(request, pathname) {
+async function apiResponse(request, pathname) {
   for (const route of routes) {
     const match = request.method === route.method && pathname.match(route.pattern);
-    if (match) return route.handler(match.slice(1), request);
+    if (match) return { status: route.status, body: await route.handler(match.slice(1), request) };
   }
   return null;
 }
@@ -84,8 +116,8 @@ async function handleRequest(request, response) {
   const rejection = rejectedRequest(request);
   if (rejection) return send(response, 403, { error: rejection });
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  const data = await apiResponse(request, pathname);
-  if (data) return send(response, 200, data);
+  const api = await apiResponse(request, pathname);
+  if (api) return send(response, api.status, api.body);
   const asset = request.method === 'GET' && staticFile(pathname);
   if (asset) return send(response, 200, readFileSync(asset.path), asset.type);
   return send(response, 404, { error: 'Not found' });

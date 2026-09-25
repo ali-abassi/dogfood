@@ -8,6 +8,8 @@
   "scripts": {
     "start": "node server.mjs",
     "mcp": "node mcp.mjs",
+    "onboard": "node scripts/onboard.mjs",
+    "scan": "node scripts/scan.mjs",
     "demo": "DOGFOOD_DATA=demo node server.mjs",
     "check": "for f in server.mjs mcp.mjs lib/*.mjs public/app.js; do node --check $f || exit 1; done && DOGFOOD_DATA=demo node scripts/check-projects.mjs",
     "test": "node --test scripts/*.test.mjs"

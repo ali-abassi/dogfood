@@ -1,5 +1,7 @@
 import { createInterface } from 'node:readline';
 import { readFileSync } from 'node:fs';
+import { onboardProject } from './lib/onboard.mjs';
+import { scanPage } from './lib/scanner.mjs';
 import {
   createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
   recordVerdicts, registerPage, saveAudit, setConnections, updateFinding,
@@ -133,12 +135,34 @@ async function runPageTests({ project, page }) {
   return { run };
 }
 
+async function scanRegisteredPage({ project, page }) {
+  await scanPage(project, page);
+  return pageOutcomeFrom(readProject(project), page);
+}
+
 async function reviewPage({ project, page, confirmUsage }) {
   if (confirmUsage !== true) throw new Error('This review sends the screenshot to a model provider and spends usage; pass confirmUsage: true to continue.');
   return startReview(project, page);
 }
 
 const definitions = [
+  {
+    name: 'dogfood_onboard_project',
+    description: 'Create a project from one HTTP(S) URL, discover same-site pages from rendered links and the sitemap, then scan each page into validated desktop and mobile evidence. Prefer this over manual project and page registration.',
+    inputSchema: objectSchema({
+      url: { type: 'string', description: 'HTTP or HTTPS URL of the product to onboard.' },
+      name: { type: 'string', description: 'Optional project name; its slug becomes the project ID.' },
+      id: { type: 'string', description: 'Optional project ID seed used when name is not provided.' },
+      browserProfile: { type: 'string', description: 'Optional Chrome profile name such as Default for signed-in scans.' },
+    }, ['url']),
+    run: onboardProject,
+  },
+  {
+    name: 'dogfood_scan_page',
+    description: 'Rescan one registered page at desktop and mobile sizes, save validated screenshots and measured facts, and return its compact QA outcome. Prefer this over recording captures by hand.',
+    inputSchema: objectSchema(projectPageProperties, projectPageRequired),
+    run: scanRegisteredPage,
+  },
   {
     name: 'dogfood_projects',
     description: 'List registered dogfood projects with page totals and the number whose evidence-based QA completion gate is satisfied.',
