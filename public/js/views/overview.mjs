@@ -79,7 +79,7 @@ export function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
   const pages = groups ? `<div class="overview-groups">${groups}</div>` : '<p class="overview-empty">No pages have been added to this project.</p>';
   return `<section class="overview-content" aria-label="Project overview">
-    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></div>${scanAllButtonMarkup()}</header>
+    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${overviewMetricsMarkup()}

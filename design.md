@@ -72,6 +72,7 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - QA completion uses state-marked requirement chips. Opening an unmet chip reveals its server-provided missing text and a tertiary button for the corresponding page view. Verdict attribution appears as small metadata under the evidence note; issue attribution distinguishes opening from resolution.
 - A blocked capture shows its reason and "Not captured" age when its timestamp is absent; it has no screenshot or original-page link.
 - Suggested features: the AI review lists the things a person can do or see on the page, each with one sentence of expected behavior; each is a checked-by-default checkbox, and one grey "Add N features" pill adds the checked ones.
+- Destructive actions are rare and red: "Remove page…" is red text in the page heading and opens an inline form with a red "Remove page" pill; the reason is required and kept on record. "Download report" is a grey pill beside the overview's Scan all.
 - Disclosures show a chevron that rotates when open.
 
 ### Brand

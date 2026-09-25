@@ -86,9 +86,32 @@ function selectPage(id) {
   state.editing = false;
   state.auditEditing = false;
   state.findingForm = null;
+  state.removingPage = null;
   state.message = '';
   render();
   document.querySelector('#selected-page-heading')?.focus();
+}
+
+function openRemovePage() {
+  state.removingPage = state.pageId;
+  render();
+  document.querySelector('#remove-reason')?.focus();
+}
+
+// Removal needs a reason on record; on success the page is gone, so the overview opens.
+async function submitRemovePage(form) {
+  const page = activePage();
+  try {
+    state.project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/remove`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: new FormData(form).get('reason') }),
+    });
+    Object.assign(state, { removingPage: null, pageId: null, view: 'overview', message: `Removed ${page.name}` });
+    render();
+  } catch (error) {
+    const box = form.querySelector('#remove-page-error');
+    box.hidden = false;
+    box.textContent = error.message;
+  }
 }
 
 function selectOverview() {
@@ -154,6 +177,8 @@ const buttonActions = new Map([
   ['scan-all', scanAllPages],
   ['screenshot-device', button => { state.screenshotDevice = button.dataset.screenshotDevice; render(); }],
   ['add-project', openAddProject],
+  ['remove-page', openRemovePage],
+  ['cancel-remove-page', () => { state.removingPage = null; render(); }],
   ['cancel-add-project', () => { state.view = 'overview'; render(); }],
 ]);
 
@@ -210,6 +235,7 @@ const formHandlers = new Map([
   ['resolution-form', resolveFinding],
   ['audit-form', saveAudit],
   ['add-project-form', submitOnboarding],
+  ['remove-page-form', submitRemovePage],
 ]);
 
 export function registerEvents() {

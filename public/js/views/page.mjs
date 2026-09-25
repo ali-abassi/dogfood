@@ -48,9 +48,15 @@ export function captureMarkup(page) {
   </section>`;
 }
 
+// Removing a page is rare and needs a reason on record, so it hides behind an inline form.
+function removePageMarkup(page) {
+  if (state.removingPage !== page.id) return '';
+  return `<form id="remove-page-form" class="finding-form remove-page-form"><label for="remove-reason">Why should ${escapeHtml(page.name)} not be in this project?</label><textarea id="remove-reason" name="reason" rows="2" required minlength="12" maxlength="400" placeholder="For example: a duplicate of Home, or a route that redirects."></textarea><div id="remove-page-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="danger-button" type="submit">Remove page</button><button class="text-button" type="button" data-action="cancel-remove-page">Cancel</button></div></form>`;
+}
+
 export function pageHeaderMarkup(page) {
   const guidance = page.qa.tests.length ? 'Start by running checks, then inspect the page and save your review.' : 'Inspect this page and save what you found.';
-  return `<div class="page-heading"><div><p class="page-route">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1><p class="page-guidance">${escapeHtml(guidance)}</p></div><div class="page-verdict"><small>Checklist status</small>${statusPill(page.progress.status)}</div></div>`;
+  return `<div class="page-heading"><div><p class="page-route">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1><p class="page-guidance">${escapeHtml(guidance)}</p></div><div class="page-verdict"><small>Checklist status</small>${statusPill(page.progress.status)}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${removePageMarkup(page)}`;
 }
 
 function requirementDetailMarkup(requirement) {
