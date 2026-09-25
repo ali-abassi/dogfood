@@ -84,13 +84,16 @@ function qaControlMarkup() {
   return `${qaRunButtonMarkup()}<div class="qa-run-state" role="status">${progress}</div>${error}`;
 }
 
+// A page without focused tests needs one sentence and its untested boundary, not three headings.
+function noTestsMarkup(page) {
+  return `<section class="content-panel qa-section" aria-label="Automated page checks"><h3>No focused tests for this page</h3><p class="qa-gap">${escapeHtml(page.qa.note)}</p></section>`;
+}
+
 export function qaMarkup(page) {
-  const count = page.qa.tests.length;
-  const title = count ? 'Run the page checks' : 'No automated checks yet';
-  const intro = count ? 'These checks use saved examples. They cannot prove the live page is ready.' : 'The missing work is listed below.';
-  const control = count ? `<div class="qa-control">${qaControlMarkup()}</div>` : '';
-  const evidence = count ? `<div class="qa-evidence"><div class="section-heading"><h4>Last run</h4><span>Saved examples</span></div>${qaHistoryMarkup(page)}</div>` : '';
-  return `<section class="content-panel qa-section" aria-label="Automated page checks"><div class="qa-heading"><div><h3>${title}</h3><p>${intro}</p></div>${control}</div>${evidence}<div class="qa-plan"><div class="section-heading"><h4>Checks and gaps</h4></div>${qaPlanMarkup(page)}</div></section>`;
+  if (!page.qa.tests.length) return noTestsMarkup(page);
+  const control = `<div class="qa-control">${qaControlMarkup()}</div>`;
+  const evidence = `<div class="qa-evidence"><div class="section-heading"><h4>Last run</h4><span>Saved examples</span></div>${qaHistoryMarkup(page)}</div>`;
+  return `<section class="content-panel qa-section" aria-label="Automated page checks"><div class="qa-heading"><div><h3>Run the page checks</h3><p>These checks use saved examples. They cannot prove the live page is ready.</p></div>${control}</div>${evidence}<div class="qa-plan"><div class="section-heading"><h4>Checks and gaps</h4></div>${qaPlanMarkup(page)}</div></section>`;
 }
 
 export function syncQaState() {

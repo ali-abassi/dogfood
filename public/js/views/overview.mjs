@@ -43,7 +43,7 @@ function overviewPageMarkup(page) {
   const changed = page.progress.changedSinceReview ? '<span class="overview-changed" data-changed-since-review>Changed since review</span>' : '';
   return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(status)}"><button type="button" data-page="${escapeHtml(page.id)}">
     <span class="overview-status">${statusPill(status)}</span>
-    <span class="overview-identity"><strong>${escapeHtml(page.name)}</strong><code>${escapeHtml(page.route)}</code></span>
+    <span class="overview-identity"><strong title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</strong><code title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</code></span>
     <span class="overview-open-issues">${escapeHtml(openIssueCount(page))}</span>
     <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.captures.desktop))}</span>
     <span class="overview-requirements">${changed}${scanProblems}${overviewRequirementsMarkup(page)}</span>

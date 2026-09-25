@@ -124,7 +124,7 @@ function selectOverview() {
   state.browseOpen = false;
   state.message = '';
   render();
-  document.querySelector('[data-overview]')?.focus({ preventScroll: true });
+  restoreFocus('[data-overview]');
 }
 
 function selectFilter(filter) {
@@ -149,11 +149,47 @@ function closePages() {
   document.querySelector('.page-menu-toggle')?.focus();
 }
 
+const editorSelector = '#review-form, #audit-form, #finding-form, #resolution-form, #remove-page-form';
+let keyboardInput = false;
+
+// Programmatic focus is for keyboard users; after a mouse click it would leave a stray ring.
+function restoreFocus(selector) {
+  if (keyboardInput) document.querySelector(selector)?.focus({ preventScroll: true });
+}
+
+function closeEditors() {
+  Object.assign(state, { editing: false, auditEditing: false, findingForm: null, removingPage: null });
+}
+
+// An unchanged editor closes quietly; one with changes asks to save or discard at the form itself.
 function blockOpenFormNavigation() {
-  if (!document.querySelector('#review-form, #audit-form, #finding-form, #resolution-form')) return false;
-  state.message = 'Save or cancel the open form before changing pages or views.';
-  document.querySelector('.save-message').textContent = state.message;
+  const form = document.querySelector(editorSelector);
+  if (!form) return false;
+  if (form.dataset.dirty !== 'true') {
+    closeEditors();
+    render();
+    return false;
+  }
+  showUnsavedPrompt(form);
   return true;
+}
+
+function showUnsavedPrompt(form) {
+  if (!form.querySelector('.unsaved-prompt')) {
+    form.insertAdjacentHTML('afterbegin', '<div class="unsaved-prompt" role="alert"><span>You have unsaved changes.</span><button type="submit" class="unsaved-save">Save changes</button><button type="button" class="text-button" data-action="discard-changes">Discard</button></div>');
+  }
+  form.scrollIntoView({ block: 'nearest' });
+  form.querySelector('.unsaved-save')?.focus({ preventScroll: true });
+}
+
+function discardChanges() {
+  closeEditors();
+  state.message = 'Discarded your changes.';
+  render();
+}
+
+function markDirty(target) {
+  if (target.form?.matches(editorSelector)) target.form.dataset.dirty = 'true';
 }
 
 function openAddProject() {
@@ -188,6 +224,7 @@ const buttonActions = new Map([
   ['remove-page', openRemovePage],
   ['cancel-remove-page', () => { state.removingPage = null; render(); }],
   ['cancel-add-project', () => { state.view = 'overview'; render(); }],
+  ['discard-changes', discardChanges],
 ]);
 
 function navigationRequested(button) {
@@ -199,7 +236,7 @@ function selectView(name) {
   if (name === 'capture') state.visual.key = '';
   state.message = '';
   render();
-  document.querySelector(`[data-view="${name}"]`)?.focus({ preventScroll: true });
+  restoreFocus(`[data-view="${name}"]`);
 }
 
 function handleNavigationButton(button) {
@@ -261,6 +298,7 @@ export function registerEvents() {
   });
 
   app.addEventListener('change', event => {
+    markDirty(event.target);
     if (event.target.id === 'project-select') return handleProjectSelection(event.target);
     if (event.target.id === 'page-filter') return handlePageFilter(event.target);
     if (event.target.id === 'page-sort') return handlePageSort(event.target);
@@ -270,10 +308,12 @@ export function registerEvents() {
   app.addEventListener('keydown', event => {
     if (event.key === 'Escape' && state.browseOpen && matchMedia('(max-width: 760px)').matches) closePages();
   });
+  document.addEventListener('keydown', () => { keyboardInput = true; }, true);
+  document.addEventListener('pointerdown', () => { keyboardInput = false; }, true);
 
   app.addEventListener('input', event => {
+    markDirty(event.target);
     if (event.target.id !== 'page-search') return;
-    if (blockOpenFormNavigation()) { event.target.value = state.query; return; }
     state.query = event.target.value;
     renderSidebarPageList();
   });

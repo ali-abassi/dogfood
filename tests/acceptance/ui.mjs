@@ -117,8 +117,9 @@ try {
   });
   check('the page shows its QA completion with every applicable requirement', () => {
     const requirements = page(`[...document.querySelectorAll('section[aria-label="QA completion"] [data-requirement]')].map(item => ({ id: item.dataset.requirement, met: item.dataset.met }))`);
-    assert.deepEqual(requirements.map(item => item.id), book.progress.requirements.map(item => item.id));
-    assert.deepEqual(requirements.map(item => item.met), book.progress.requirements.map(item => String(item.met)));
+    // Unmet requirements are listed first (see docs/design/interface-contract.md), so compare as a set.
+    const pairs = list => list.map(item => `${item.id}:${item.met}`).sort();
+    assert.deepEqual(pairs(requirements), pairs(book.progress.requirements.map(item => ({ id: item.id, met: String(item.met) }))));
   });
   check('an unmet requirement shows why and links to the view that resolves it', () => {
     const missing = book.progress.requirements.find(item => !item.met);

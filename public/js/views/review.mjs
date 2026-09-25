@@ -4,8 +4,9 @@ import { activePage, checkNames, reviewedChecks, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
 function featureMarkup(feature) {
-  const expected = feature.expected ? `<p class="feature-expected">Expected: ${escapeHtml(feature.expected)}</p>` : '';
-  return `<li class="feature"><div><strong>${escapeHtml(feature.name)}</strong>${expected}${feature.note ? `<p>${escapeHtml(feature.note)}</p>` : ''}${verdictByMarkup(feature.by, feature.at)}</div>${statusPill(feature.status)}</li>`;
+  const expected = feature.expected ? `<p class="feature-expected"><span>Expected</span> ${escapeHtml(feature.expected)}</p>` : '';
+  const evidence = feature.note ? `<p class="check-note">${escapeHtml(feature.note)}</p>` : '';
+  return `<li class="feature"><div><strong>${escapeHtml(feature.name)}</strong>${expected}${evidence}${verdictByMarkup(feature.by, feature.at)}</div>${statusPill(feature.status)}</li>`;
 }
 
 function checkMarkup(key, entry) {
