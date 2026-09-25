@@ -40,6 +40,8 @@ const analysis = {
 
 const data = mkdtempSync(join(tmpdir(), 'dogfood-ai2-'));
 cpSync(join(repo, 'demo'), data, { recursive: true });
+// The suite seeds its own AI reviews; the demo's real ones would otherwise be newer.
+rmSync(join(data, 'visual-reviews'), { recursive: true, force: true });
 const manifestFile = join(data, 'projects/tidepool.json');
 const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
 const book = manifest.pages.find(item => item.id === 'book');
