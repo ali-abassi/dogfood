@@ -166,7 +166,7 @@ try {
     const { job } = await started.json();
     let status;
     for (let waited = 0; waited < 300_000; waited += 1000) {
-      status = await (await fetch(`${url}/api/onboard/${job}`)).json();
+      status = await (await fetch(`${url}/api/jobs/${job}`)).json();
       if (status.status !== 'running') break;
       await new Promise(done => setTimeout(done, 1000));
     }

@@ -1,32 +1,22 @@
-# Current outcome — mobile and desktop evidence, measured pages, one-step onboarding
+# Current outcome — know what changed since you last checked
 
-Previous outcome (rename to dogfood, completion gate, MCP server, overview) shipped through `69d81e1`.
+Previous outcomes (mobile and desktop evidence, measured scans, one-step onboarding, AI review v2 with suggested features, tamper-evidence, MCP guidance) shipped through `e84c3fb`.
 
-- **User-stated, 2026-09-25:** every page shows its mobile and desktop view. Review whether the sections track the right things in enough detail. Make onboarding a new project as easy as possible.
-
-## Review findings that shaped this outcome (observed 2026-09-25)
-
-- Only a desktop screenshot existed per page; no mobile evidence.
-- Nothing was measured: every verdict was a typed note, while errors, failed requests, load time, search tags, security headers, and accessibility basics are free to collect from the page itself.
-- Connections were mapped from source code, which produced unusable entries (a JavaScript template string as an endpoint).
-- Accessibility was not tracked at all.
-- Features were names only, with no statement of what "works" means.
-- Onboarding meant hand-writing about 130 lines of JSON per page and taking screenshots yourself.
+- **User-stated, 2026-09-25:** "Continue, you own this project." Ali is focused on dogfood the tool.
+- **Agent-selected objective, 2026-09-25:** after a deploy, the question a QA owner asks is *what changed, and which of my verdicts are now out of date?* dogfood already rescans pages; it now compares each scan with the previous one and says so.
 
 ## Scope (agent-selected)
 
-1. Manifest version 2: desktop and mobile captures, a scan record per page, an accessibility checklist, optional expected behavior per feature, optional page URL.
-2. A scanner (agent-browser, desktop 1440 × 900 and mobile 390 × 844, both at scale 1) that measures the page and adds observed API calls to the connection map. Measured problems mark the page as needing work; a fresh scan is a completion requirement.
-3. Onboarding from a URL through `npm run onboard`, the app's Add project form, or `dogfood_onboard_project`; rescans through `npm run scan`, the See page, or `dogfood_scan_page`.
-4. UI: both screenshots side by side, scan results, Add project, a first-run welcome instead of an error.
+1. Protect what exists: the acceptance suites live in `tests/acceptance/` (they only lived in a temporary folder), `npm run lint` enforces complexity 5, and GitHub CI runs the unit tests, checks, lint, and the MCP suite on every push. Done in `02cc4d9`.
+2. Each scan compares every screenshot with the one it replaced (pixel share and size) and stores a diff image. A page is "changed since review" when it was reviewed and a later scan found it looks different; the flag stays until the page is reviewed again. Done in `b0baab0` and `e84c3fb`.
+3. Scan all pages from the overview (a background job), `npm run scan`, and `dogfood_scan_project`; the overview counts and marks pages changed since review; See page shows previous, current, and diff images.
+
+## Decisions
+
+- A change is a size change or more than 0.5% of pixels differing by more than a small tolerance, so clocks and anti-aliasing do not flag every rescan.
+- "Changed since review" is informational (orange), not a completion gate: dynamic pages change a little on every scan, and gating on it would make completion churn. Revisit if people miss real regressions.
 
 ## Acceptance
 
-- Scanner proof: a fixture site with known defects is onboarded from its URL, and every defect is measured (16 checks).
-- UI proof: both screenshots, scan results, Add project with progress, the welcome state, and phone layout (14 checks); the earlier UI and MCP proofs still pass.
-- AI Social Team is rescanned signed in, with desktop and mobile evidence for every page.
-
-## Not yet covered
-
-- Feature lists and expected behavior are still written by people or agents; the scan does not propose them.
-- The AI review reads only the desktop screenshot.
+- `tests/acceptance/changes.mjs`: a fixture site is onboarded, reviewed, changed, and rescanned; the job reports the changed page, only the reviewed changed page is flagged, the images load, and the overview, filter, See page, and MCP agree.
+- Every earlier suite still passes; CI is green.

@@ -27,8 +27,8 @@ For people checking a product page by page, dogfood feels like a first-party mac
 ### Composition
 
 - Desktop: 256px sidebar (brand, project, search, show and sort, Overview, grouped page list, product link) and a content column with an opaque sticky toolbar holding the segmented page-view control.
-- Project overview opens by default. Its content starts with the project name and four metrics, then lists every page in site order under the same groups used by the sidebar. Each page row carries server status, open-issue count, capture age, and unmet requirement labels.
-- See page puts the desktop screenshot (wide) and the mobile screenshot (a 248px phone column) side by side, then the scan results, then the AI review. Other page views keep one sticky screenshot column with a Desktop/Mobile segmented toggle.
+- Project overview opens by default. Its content starts with the project name and a Scan all pages pill, then five metrics (the fifth counts pages changed since review), then lists every page in site order under the same groups used by the sidebar. Each page row carries server status, open-issue count, capture age, a "Changed since review" marker when its verdicts are out of date, and unmet requirement labels.
+- See page puts the desktop screenshot (wide) and the mobile screenshot (a 248px phone column) side by side, then the visual changes (per device, the changed-pixel share with previous, current, and diff images), then the scan results, then the AI review. Other page views keep one sticky screenshot column with a Desktop/Mobile segmented toggle.
 - Scan results lead with measured problems in the red state tint, then two device columns of compact label/value rows: load time, errors, failed requests, API calls, sideways scrolling, search tags, security headers (a missing one says "Missing"), and accessibility counts. Lists longer than five entries fold behind a disclosure.
 - Add project is a single narrow group: the product URL, an optional name, an optional Chrome profile for signed-in pages, one blue "Add and scan" pill, then live progress ("Scanning 3 of 12 · Pricing"). With no projects, the same group is centred on the canvas as the welcome ("Add your first project").
 - A page shows its route in mono, a 28px title, one line of guidance, and server status on the right. A single compact row of requirement chips sits directly below the heading; each chip expands to its full requirement, missing evidence, and the view that resolves it. The active page view follows, beside the sticky screenshot column. See page uses the full width.
@@ -65,9 +65,10 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 ### Components
 
-- Primary action: one blue pill per view (Run checks, Ask AI to review image, Review this page, Edit checks & connections, Save, Add and scan). Secondary: grey pill (Cancel, Scan again). Tertiary: blue text (Resolve, Add issue, View full size).
+- Primary action: one blue pill per view (Run checks, Ask AI to review image, Review this page, Edit checks & connections, Save, Add and scan, Scan all pages). Secondary: grey pill (Cancel, Scan again). Tertiary: blue text (Resolve, Add issue, View full size).
+- Visual changes: per device with a comparison, the changed-pixel share (or size change) with previous, current, and diff images side by side, each captioned and opening full size; pages changed since review lead with a recheck prompt.
 - Status: pill with a dot and text; sidebar rows show the dot alone with the status as the accessible name and tooltip.
-- Overview uses one four-cell metrics group and grouped page rows. Each row is one page-opening button; completion is shown by requirement labels and a "QA complete" state, never a per-page score.
+- Overview uses one five-cell metrics group and grouped page rows. Each row is one page-opening button; completion is shown by requirement labels and a "QA complete" state, never a per-page score.
 - QA completion uses state-marked requirement chips. Opening an unmet chip reveals its server-provided missing text and a tertiary button for the corresponding page view. Verdict attribution appears as small metadata under the evidence note; issue attribution distinguishes opening from resolution.
 - A blocked capture shows its reason and "Not captured" age when its timestamp is absent; it has no screenshot or original-page link.
 - Suggested features: the AI review lists the things a person can do or see on the page, each with one sentence of expected behavior; each is a checked-by-default checkbox, and one grey "Add N features" pill adds the checked ones.
@@ -92,3 +93,4 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **User-stated, 2026-09-25:** every page shows its mobile and desktop view, and onboarding a new project must be as easy as possible.
 - **Agent-selected working policy, 2026-09-25:** See page shows both screenshots at once, because comparing the two layouts is the point; Scan again stays a grey pill so the AI review remains the view's one primary action; onboarding asks only for a URL, and the welcome state replaces the old "no projects" error so the first run starts working instead of failing.
 - **Agent-selected working policy, 2026-09-25:** The AI review reads both screenshots and proposes the page's features, because onboarding leaves every feature list empty and judging both screens keeps the suggestions honest; adding them stays one explicit click so a person approves each feature before it becomes a QA requirement.
+- **Agent-selected working policy, 2026-09-25:** visual changes are orange and informational, because dynamic pages change a little on every scan; "Changed since review" prompts a recheck without failing the page.

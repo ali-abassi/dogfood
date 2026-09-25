@@ -17,7 +17,7 @@ const scanAccessibilityNames = { imagesWithoutAlt: 'Images without alt', unlabel
 const requirementViews = { capture: 'capture', scan: 'capture', features: 'review', checks: 'review', audit: 'risk', connections: 'risk', tests: 'tests', 'ai-review': 'capture', issues: 'findings' };
 const requirementShortNames = { capture: 'Screenshots', scan: 'Scan', features: 'Features', checks: 'Quality', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
 const requirementActions = { capture: 'See page', scan: 'See page', features: 'My review', checks: 'My review', audit: 'Safety & search', connections: 'Safety & search', tests: 'Run checks', 'ai-review': 'See page', issues: 'Issues' };
-const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, screenshotDevice: 'desktop', scan: { key: '', running: false, error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
+const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, screenshotDevice: 'desktop', scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -32,6 +32,10 @@ function safeHttpUrl(value) {
 
 function safeCapturePath(value) {
   return /^\/captures\/[a-z0-9-]+\/[a-z0-9-]+(?:-mobile)?\.png$/.test(value) ? escapeHtml(value) : '';
+}
+
+function safeServedImagePath(value) {
+  return /^\/captures\/[a-z0-9-]+\/(?:(?:history|diffs)\/)?[a-z0-9-]+\.png$/.test(value) ? escapeHtml(value) : '';
 }
 
 function dateLabel(value) {
@@ -62,13 +66,17 @@ function matchesSearch(page) {
   return [page.name, page.group, ...page.features.map(item => item.name)].join(' ').toLowerCase().includes(query);
 }
 
+const pageFilters = {
+  needs: page => ['needs_work', 'blocked'].includes(page.progress.status),
+  reviewed: page => page.progress.status !== 'untested',
+  untested: page => page.progress.status === 'untested',
+  changed: page => page.progress.changedSinceReview === true,
+};
+
 function matchesPage(page) {
   if (!matchesSearch(page)) return false;
-  const status = page.progress.status;
-  if (state.filter === 'needs') return ['needs_work', 'blocked'].includes(status);
-  if (state.filter === 'reviewed') return status !== 'untested';
-  if (state.filter === 'untested') return status === 'untested';
-  return true;
+  const predicate = pageFilters[state.filter];
+  return predicate ? predicate(page) : true;
 }
 
 function visiblePages() {
@@ -134,7 +142,7 @@ function sidebarMarkup() {
         <button type="button" class="add-project-button" data-action="add-project">+ Add project</button>
         <h2 class="sr-only">Pages</h2>
         <label class="search-field"><span class="sr-only">Search pages or features</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or features" value="${escapeHtml(state.query)}"></label>
-        <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Untested'], ['reviewed', 'Reviewed']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least reviewed']])}</div>
+        <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Untested'], ['reviewed', 'Reviewed'], ['changed', 'Changed since review']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least reviewed']])}</div>
         <nav class="page-list" aria-label="Pages"><button type="button" class="page-option overview-option ${overviewSelected ? 'selected' : ''}" data-overview ${overviewSelected ? 'aria-current="page"' : ''}>Overview</button><div class="page-groups">${pageOptionsMarkup(pages)}</div></nav>
         ${externalLinkMarkup(state.project.source.url, 'Open product ↗', 'source-link')}
   </aside>`;
@@ -281,8 +289,43 @@ function scanResultsMarkup(page) {
   </section>`;
 }
 
+function changePercent(change) {
+  return `${(change.changedShare * 100).toFixed(1)}% of pixels changed`;
+}
+
+function changeSummary(device, change) {
+  const size = change.sizeChanged ? 'size changed, ' : '';
+  return `${deviceNames[device]}: ${size}${changePercent(change)}`;
+}
+
+function changeFigureMarkup(page, device, kind, path, caption) {
+  const image = safeServedImagePath(path);
+  if (!image) return '';
+  const alt = `${caption} ${device} screenshot of ${page.name}`;
+  return `<figure class="change-figure"><a href="${image}" target="_blank" rel="noopener"><img data-change-image="${escapeHtml(kind)}" src="${image}" alt="${escapeHtml(alt)}" loading="lazy"></a><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+}
+
+function changeDeviceMarkup(page, device) {
+  const change = page.scan.changes[device];
+  const figures = [
+    changeFigureMarkup(page, device, 'previous', change.previousPath, 'Previous'),
+    changeFigureMarkup(page, device, 'current', page.captures[device].path, 'Current'),
+    changeFigureMarkup(page, device, 'diff', change.diffPath, 'Difference'),
+  ].join('');
+  return `<div class="change-device"><h3>${escapeHtml(changeSummary(device, change))}</h3><div class="change-images">${figures}</div></div>`;
+}
+
+function visualChangesMarkup(page) {
+  const lead = page.progress.changedSinceReview ? '<p class="visual-stale" role="status">Changed since review — recheck the verdicts.</p>' : '';
+  const changes = page.scan?.changes;
+  const changedDevices = ['desktop', 'mobile'].filter(device => changes?.[device]);
+  if (!changedDevices.length) return `<section class="visual-changes content-panel" aria-label="Visual changes"><h2>Visual changes</h2>${lead}<p class="visual-empty">No earlier scan to compare yet.</p></section>`;
+  if (!changedDevices.some(device => changes[device].changed)) return `<section class="visual-changes content-panel" aria-label="Visual changes"><h2>Visual changes</h2>${lead}<p class="visual-empty">No visual change since the previous scan.</p></section>`;
+  return `<section class="visual-changes content-panel" aria-label="Visual changes"><h2>Visual changes</h2>${lead}${changedDevices.map(device => changeDeviceMarkup(page, device)).join('')}</section>`;
+}
+
 function seePageMarkup(page) {
-  return `<div class="see-page-content"><section class="capture-gallery" aria-label="Page screenshots">${captureFrameMarkup(page, 'desktop')}${captureFrameMarkup(page, 'mobile')}</section>${scanResultsMarkup(page)}${visualReviewMarkup(page)}</div>`;
+  return `<div class="see-page-content"><section class="capture-gallery" aria-label="Page screenshots">${captureFrameMarkup(page, 'desktop')}${captureFrameMarkup(page, 'mobile')}</section>${visualChangesMarkup(page)}${scanResultsMarkup(page)}${visualReviewMarkup(page)}</div>`;
 }
 
 const clarityDimensions = { purpose: 'Purpose', nextAction: 'Next action', hierarchy: 'Hierarchy', copy: 'Copy' };
@@ -574,11 +617,13 @@ function overviewMetricsMarkup() {
   const needsWork = pages.filter(page => page.progress.status === 'needs_work').length;
   const blocking = pages.flatMap(page => page.findings).filter(isBlockingIssue).length;
   const scans = pages.filter(page => page.progress.requirements.some(item => ['capture', 'scan'].includes(item.id) && !item.met)).length;
+  const changed = pages.filter(page => page.progress.changedSinceReview).length;
   return `<div class="overview-metrics" aria-label="Project metrics">
     <div class="overview-metric" data-metric="complete"><strong>${escapeHtml(complete)} of ${escapeHtml(pages.length)}</strong><span> pages complete</span></div>
     <div class="overview-metric" data-metric="needs-work"><strong>${escapeHtml(needsWork)}</strong><span> ${needsWork === 1 ? 'page needs work' : 'pages need work'}</span></div>
     <div class="overview-metric" data-metric="blocking-issues"><strong>${escapeHtml(blocking)}</strong><span> open P0/P1 ${blocking === 1 ? 'issue' : 'issues'}</span></div>
     <div class="overview-metric" data-metric="scans"><strong>${escapeHtml(scans)}</strong><span> ${scans === 1 ? 'page needs a scan' : 'pages need a scan'}</span></div>
+    <div class="overview-metric" data-metric="changed"><strong>${escapeHtml(changed)}</strong><span> ${changed === 1 ? 'page changed since review' : 'pages changed since review'}</span></div>
   </div>`;
 }
 
@@ -594,12 +639,13 @@ function overviewPageMarkup(page) {
   const status = page.progress.status;
   const scanProblemCount = page.progress.scanProblems.length;
   const scanProblems = scanProblemCount ? `<span class="overview-scan-problems" data-scan-problems="${escapeHtml(scanProblemCount)}">${escapeHtml(plural(scanProblemCount, 'scan problem', 'scan problems'))}</span>` : '';
+  const changed = page.progress.changedSinceReview ? '<span class="overview-changed" data-changed-since-review>Changed since review</span>' : '';
   return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(status)}"><button type="button" data-page="${escapeHtml(page.id)}">
     <span class="overview-status">${statusPill(status)}</span>
     <span class="overview-identity"><strong>${escapeHtml(page.name)}</strong><code>${escapeHtml(page.route)}</code></span>
     <span class="overview-open-issues">${escapeHtml(openIssueCount(page))}</span>
     <span class="overview-capture-age">${escapeHtml(relativeCaptureAge(page.captures.desktop))}</span>
-    <span class="overview-requirements">${scanProblems}${overviewRequirementsMarkup(page)}</span>
+    <span class="overview-requirements">${changed}${scanProblems}${overviewRequirementsMarkup(page)}</span>
   </button></div>`;
 }
 
@@ -613,11 +659,33 @@ function integrityNoticeMarkup() {
   return '<p class="integrity-notice" role="status">This project’s manifest was edited outside dogfood since dogfood last saved it, so those edits skipped validation and attribution. Run <code>npm run check</code> to see what changed hands.</p>';
 }
 
+// "3 of 12 · Pricing": the page being scanned now, counted from 1.
+function scanPosition({ scanned, total, current }) {
+  return current ? `${scanned + 1} of ${total} · ${current}` : `${scanned} of ${total}`;
+}
+
+function scanAllLabel() {
+  if (!state.scanAll.running) return 'Scan all pages';
+  if (state.scanAll.total === null) return 'Scanning…';
+  return `Scanning ${scanPosition(state.scanAll)}`;
+}
+
+function scanAllButtonMarkup() {
+  const disabled = state.scanAll.running ? 'disabled' : '';
+  return `<button type="button" class="save-button" data-action="scan-all" ${disabled}>${escapeHtml(scanAllLabel())}</button>`;
+}
+
+function scanAllNoticeMarkup() {
+  if (!state.scanAll.error) return '';
+  return `<p class="form-error" role="alert">${escapeHtml(state.scanAll.error)}</p>`;
+}
+
 function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
   const pages = groups ? `<div class="overview-groups">${groups}</div>` : '<p class="overview-empty">No pages have been added to this project.</p>';
   return `<section class="overview-content" aria-label="Project overview">
-    <header class="overview-heading"><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></header>
+    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></div>${scanAllButtonMarkup()}</header>
+    ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${overviewMetricsMarkup()}
     <section class="overview-pages" aria-label="Pages"><h2>Pages</h2>${pages}</section>
@@ -707,8 +775,7 @@ function addProjectFormMarkup(welcome) {
 
 function onboardingProgressText() {
   if (state.onboarding.total === null) return 'Finding pages…';
-  const current = state.onboarding.current ? ` · ${escapeHtml(state.onboarding.current)}` : '';
-  return `Scanning ${escapeHtml(state.onboarding.scanned)} of ${escapeHtml(state.onboarding.total)}${current}`;
+  return `Scanning ${escapeHtml(scanPosition(state.onboarding))}`;
 }
 
 function welcomeMarkup() {
@@ -905,6 +972,7 @@ async function loadProject(id) {
   state.auditEditing = false;
   state.findingForm = null;
   state.scan = { key: '', running: false, error: '' };
+  state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
   state.onboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
   state.projectDraft = { url: '', name: '', browserProfile: '' };
   state.qa.key = '';
@@ -1157,6 +1225,7 @@ const buttonActions = new Map([
   ['run-visual', runVisualReview],
   ['add-suggested-features', addSuggestedFeatures],
   ['scan', scanActivePage],
+  ['scan-all', scanAllPages],
   ['screenshot-device', button => { state.screenshotDevice = button.dataset.screenshotDevice; render(); }],
   ['add-project', openAddProject],
   ['cancel-add-project', () => { state.view = 'overview'; render(); }],
@@ -1203,7 +1272,7 @@ async function submitOnboarding(form) {
 
 // Polls the onboarding job once a second until it finishes, then opens the new project.
 async function followOnboarding(job) {
-  const status = await readJson(`/api/onboard/${encodeURIComponent(job)}`);
+  const status = await readJson(`/api/jobs/${encodeURIComponent(job)}`);
   if (status.status === 'failed') throw new Error(status.error || 'Onboarding failed.');
   if (status.status === 'done') return openOnboardedProject(status.projectId);
   Object.assign(state.onboarding, { total: status.total, scanned: status.scanned, current: status.current });
@@ -1215,6 +1284,33 @@ async function followOnboarding(job) {
 async function openOnboardedProject(id) {
   state.projects = await readJson('/api/projects');
   await loadProject(id);
+}
+
+// Polls the scan-all job once a second, then reloads the project and reports what changed.
+async function followScanAll(job) {
+  const status = await readJson(`/api/jobs/${encodeURIComponent(job)}`);
+  if (status.status === 'failed') throw new Error(status.error || 'Scan all pages failed.');
+  if (status.status === 'done') return status;
+  Object.assign(state.scanAll, { total: status.total, scanned: status.scanned, current: status.current });
+  render();
+  await new Promise(done => setTimeout(done, 1000));
+  return followScanAll(job);
+}
+
+async function scanAllPages() {
+  if (state.scanAll.running) return;
+  state.scanAll = { running: true, total: null, scanned: 0, current: '', error: '' };
+  render();
+  try {
+    const { job } = await readJson(`/api/projects/${state.project.id}/scan`, { method: 'POST' });
+    const status = await followScanAll(job);
+    state.project = await readJson(`/api/projects/${encodeURIComponent(state.project.id)}`);
+    state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
+    state.message = `Scanned ${plural(status.total, 'page', 'pages')}; ${status.changed.length} changed`;
+  } catch (error) {
+    state.scanAll = { running: false, total: null, scanned: 0, current: '', error: error.message };
+  }
+  render();
 }
 
 async function scanActivePage() {

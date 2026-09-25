@@ -6,7 +6,7 @@ import { capturesDir, dataDir, root } from './lib/paths.mjs';
 import { servedImagePattern } from './lib/schema.mjs';
 import { onboard, onboardingPlan } from './lib/onboard.mjs';
 import { currentReview, startReview } from './lib/reviews.mjs';
-import { scanPage } from './lib/scanner.mjs';
+import { scanPage, scanProject } from './lib/scanner.mjs';
 import { addFeatures, createFinding, listProjects, projectView, readProject, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
@@ -16,7 +16,7 @@ const localHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 const localOrigins = new Set([...localHosts].map(host => `http://${host}`));
 // Edits made in the app are attributed to the person using it; agents write through the MCP server.
 const person = 'person';
-const onboardingJobs = new Map();
+const jobs = new Map();
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
@@ -50,9 +50,9 @@ async function scanProjectPage(projectId, pageId) {
   return projectView(readProject(projectId));
 }
 
-function onboardingJob(id) {
-  const job = onboardingJobs.get(id);
-  if (!job) throw Object.assign(new Error('Onboarding job not found.'), { status: 404 });
+function backgroundJob(id) {
+  const job = jobs.get(id);
+  if (!job) throw Object.assign(new Error('Job not found.'), { status: 404 });
   return job;
 }
 
@@ -62,9 +62,29 @@ function startOnboarding(input) {
   const plan = onboardingPlan(input);
   const id = randomUUID();
   const job = { status: 'running', total: null, scanned: 0, current: '', projectId: null, failed: [], error: '' };
-  onboardingJobs.set(id, job);
+  jobs.set(id, job);
   onboard(plan, progress => Object.assign(job, progress)).then(
     result => Object.assign(job, { status: 'done', total: result.pageCount, scanned: result.scanned, current: '', projectId: result.project, failed: result.failed }),
+    error => Object.assign(job, { status: 'failed', error: error.message }),
+  );
+  return { job: id };
+}
+
+function runningProjectScan(projectId) {
+  return [...jobs].find(([, job]) => job.kind === 'scan' && job.projectId === projectId && job.status === 'running')?.[0];
+}
+
+// Rescanning every page also runs in the background; the job lists what changed visually.
+// A second request while one runs joins it, so two tabs cannot scan the same pages at once.
+function startProjectScan(projectId) {
+  readProject(projectId);
+  const running = runningProjectScan(projectId);
+  if (running) return { job: running };
+  const id = randomUUID();
+  const job = { kind: 'scan', status: 'running', total: null, scanned: 0, current: '', projectId, failed: [], changed: [], error: '' };
+  jobs.set(id, job);
+  scanProject(projectId, progress => Object.assign(job, progress)).then(
+    result => Object.assign(job, { status: 'done', total: result.scanned + result.failed.length, scanned: result.scanned, current: '', projectId, failed: result.failed, changed: result.changed }),
     error => Object.assign(job, { status: 'failed', error: error.message }),
   );
   return { job: id };
@@ -78,9 +98,10 @@ function addPageFeatures(projectId, pageId, input, by) {
 }
 const routes = [
   ['POST', '/api/onboard', (params, request) => requestJson(request).then(startOnboarding), 202],
-  ['GET', '/api/onboard/([a-f0-9-]+)', ([id]) => onboardingJob(id)],
+  ['GET', '/api/jobs/([a-f0-9-]+)', ([id]) => backgroundJob(id)],
   ['GET', '/api/projects', () => listProjects()],
   ['GET', '/api/projects/([a-z0-9-]+)', ([id]) => projectView(readProject(id))],
+  ['POST', '/api/projects/([a-z0-9-]+)/scan', ([id]) => startProjectScan(id), 202],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],
   ['POST', `${pagePath}/visual-review`, params => startReview(...params)],
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],
