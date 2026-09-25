@@ -7,7 +7,8 @@ import { servedImagePattern } from './lib/schema.mjs';
 import { onboard, onboardingPlan } from './lib/onboard.mjs';
 import { currentReview, startReview } from './lib/reviews.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
-import { addFeatures, createFinding, listProjects, projectView, readProject, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
+import { projectReport } from './lib/report.mjs';
+import { addFeatures, createFinding, listProjects, projectView, readProject, removePage, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
 const publicDir = join(root, 'public');
@@ -101,6 +102,8 @@ const routes = [
   ['GET', '/api/projects', () => listProjects()],
   ['GET', '/api/projects/([a-z0-9-]+)', ([id]) => projectView(readProject(id))],
   ['POST', '/api/projects/([a-z0-9-]+)/scan', ([id]) => startProjectScan(id), 202],
+  ['GET', '/api/projects/([a-z0-9-]+)/report', ([id]) => projectReport(id), 200, 'text/markdown; charset=utf-8'],
+  ['POST', `${pagePath}/remove`, withBody((projectId, pageId, input, by) => removePage(projectId, pageId, input.reason, by))],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],
   ['POST', `${pagePath}/visual-review`, params => startReview(...params)],
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],
@@ -111,12 +114,12 @@ const routes = [
   ['PUT', `${pagePath}/audit`, withBody(saveAudit)],
   ['POST', `${pagePath}/findings`, withBody(createFinding)],
   ['PUT', `${pagePath}/findings/([A-Za-z0-9-]+)`, withBody(updateFinding)],
-].map(([method, pattern, handler, status = 200]) => ({ method, pattern: new RegExp(`^${pattern}$`), handler, status }));
+].map(([method, pattern, handler, status = 200, type = 'application/json; charset=utf-8']) => ({ method, pattern: new RegExp(`^${pattern}$`), handler, status, type }));
 
 async function apiResponse(request, pathname) {
   for (const route of routes) {
     const match = request.method === route.method && pathname.match(route.pattern);
-    if (match) return { status: route.status, body: await route.handler(match.slice(1), request) };
+    if (match) return { status: route.status, type: route.type, body: await route.handler(match.slice(1), request) };
   }
   return null;
 }
@@ -145,7 +148,7 @@ async function handleRequest(request, response) {
   if (rejection) return send(response, 403, { error: rejection });
   const pathname = new URL(request.url, 'http://localhost').pathname;
   const api = await apiResponse(request, pathname);
-  if (api) return send(response, api.status, api.body);
+  if (api) return send(response, api.status, api.body, api.type);
   const asset = request.method === 'GET' && staticFile(pathname);
   if (asset) return send(response, 200, readFileSync(asset.path), asset.type);
   return send(response, 404, { error: 'Not found' });
