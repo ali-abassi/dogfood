@@ -18,20 +18,21 @@ function chunk(type, body) {
   return Buffer.concat([length, Buffer.from(type), body, crc]);
 }
 
-// An RGB PNG with dark stripes up to `filledWidth` on a white page, standing in for page content.
-function png(width, height, filledWidth) {
+// An RGB PNG with dark stripes on a white page, standing in for page content. `filled`
+// limits content to the top-left corner; `sidebar` adds a full-height left column.
+function png(width, height, filled, sidebar = false) {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
   header.set([8, 2, 0, 0, 0], 8);
-  const row = x => (x < filledWidth && x % 3 === 0 ? [20, 20, 20] : [255, 255, 255]);
-  const rows = Array.from({ length: height }, () => Buffer.from([0, ...Array.from({ length: width }, (_, x) => row(x)).flat()]));
+  const pixel = (x, y) => ((x < filled && y < filled / 2 && x % 3 === 0) || (sidebar && x < 6) ? [20, 20, 20] : [255, 255, 255]);
+  const rows = Array.from({ length: height }, (_, y) => Buffer.from([0, ...Array.from({ length: width }, (_, x) => pixel(x, y)).flat()]));
   return Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', header), chunk('IDAT', deflateSync(Buffer.concat(rows))), chunk('IEND', Buffer.alloc(0))]);
 }
 
-function screenshot(name, filledWidth) {
+function screenshot(name, filled, sidebar) {
   const file = join(data, name);
-  writeFileSync(file, png(40, 20, filledWidth));
+  writeFileSync(file, png(40, 20, filled, sidebar));
   return file;
 }
 
@@ -45,13 +46,14 @@ test('a page moves from registered to complete only when every requirement has e
   assert.equal(progress().status, 'blocked');
   assert.deepEqual(progress().requirements.map(item => item.id), ['capture', 'features', 'checks', 'audit', 'connections', 'ai-review', 'issues']);
 
-  assert.throws(() => store.recordCapture('shop', 'home', { ...capture, file: screenshot('broken.png', 20) }), /right 45% of the screenshot is blank/);
+  assert.throws(() => store.recordCapture('shop', 'home', { ...capture, file: screenshot('broken.png', 20) }), /fills only the top-left/);
+  store.recordCapture('shop', 'home', { ...capture, file: screenshot('sparse.png', 20, true) });
   store.recordCapture('shop', 'home', { ...capture, file: screenshot('good.png', 40) });
   let page = store.readProject('shop').pages[0];
   assert.match(page.capture.sha256, /^[a-f0-9]{64}$/);
   assert.equal(page.capture.pixelWidth, 40);
   store.recordCapture('shop', 'home', { ...capture, file: screenshot('again.png', 40) });
-  assert.equal(readdirSync(join(data, 'captures/shop/history')).length, 1);
+  assert.equal(readdirSync(join(data, 'captures/shop/history')).length, 2);
 
   assert.throws(() => store.recordVerdicts('shop', 'home', { checks: { clarity: { status: 'pass', note: 'ok' } } }, 'agent:test'), /evidence note/);
   assert.throws(() => store.recordVerdicts('shop', 'home', { features: [{ id: 'missing', status: 'pass', note }] }, 'agent:test'), /does not exist/);
