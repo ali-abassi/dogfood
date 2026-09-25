@@ -64,7 +64,7 @@ function startOnboarding(input) {
   const job = { status: 'running', total: null, scanned: 0, current: '', projectId: null, failed: [], error: '' };
   jobs.set(id, job);
   onboard(plan, progress => Object.assign(job, progress)).then(
-    result => Object.assign(job, { status: 'done', total: result.pageCount, scanned: result.scanned, current: '', projectId: result.project, failed: result.failed }),
+    result => Object.assign(job, { status: 'done', total: result.pageCount, scanned: result.scanned, current: '', projectId: result.project, failed: result.failed, reviewed: result.reviewed, reviewFailed: result.reviewFailed }),
     error => Object.assign(job, { status: 'failed', error: error.message }),
   );
   return { job: id };

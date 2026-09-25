@@ -420,6 +420,7 @@ textarea { resize: vertical; line-height: 1.45; }
 #add-project-form label { display: grid; gap: 4px; color: var(--secondary); font-size: 12.5px; font-weight: 500; }
 #add-project-form input { width: 100%; min-width: 0; padding: 7px 10px; border: .5px solid var(--hairline); border-radius: 8px; background: var(--group); color: var(--ink); font-size: 13.5px; box-shadow: 0 .5px 1px rgb(0 0 0 / .05); }
 #add-project-form input::placeholder { color: var(--tertiary); }
+#add-project-form .capture-choice { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--ink); font-size: 13px; font-weight: 400; }
 .field-optional { color: var(--tertiary); font-weight: 400; }
 .field-hint { margin: -6px 0 0; color: var(--tertiary); font-size: 12px; }
 .onboarding-progress { margin: 16px 0 0; color: var(--secondary); font-size: 13px; }

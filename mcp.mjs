@@ -153,6 +153,10 @@ async function runPageTests({ project, page }) {
   return { run };
 }
 
+function onboardWithOptionalReview({ confirmAiReviewUsage, ...input }) {
+  return onboardProject({ ...input, aiReview: confirmAiReviewUsage === true });
+}
+
 async function scanRegisteredPage({ project, page }) {
   await scanPage(project, page);
   return pageOutcomeFrom(readProject(project), page);
@@ -177,8 +181,9 @@ const definitions = [
       name: { type: 'string', description: 'Optional project name; its slug becomes the project ID.' },
       id: { type: 'string', description: 'Optional project ID seed used when name is not provided.' },
       browserProfile: { type: 'string', description: 'Optional Chrome profile name such as Default for signed-in scans.' },
+      confirmAiReviewUsage: { type: 'boolean', description: 'Optional: true also runs the AI review on every scanned page so each arrives with suggested features. It sends screenshots to a model provider and costs about half a cent per page.' },
     }, ['url']),
-    run: onboardProject,
+    run: onboardWithOptionalReview,
   },
   {
     name: 'dogfood_scan_page',
