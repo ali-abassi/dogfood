@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="QA">
+  <defs>
+    <linearGradient id="qa-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f95ff"/>
+      <stop offset="1" stop-color="#0064e0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#qa-tile)"/>
+  <circle cx="452" cy="452" r="236" fill="none" stroke="#fff" stroke-width="76"/>
+  <path d="M638 638 780 780" stroke="#fff" stroke-width="96" stroke-linecap="round"/>
+  <path d="M352 460 424 532 556 392" fill="none" stroke="#fff" stroke-width="68" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "name": "qa",
+  "version": "0.2.0",
+  "description": "A local, page-by-page QA workspace: every page, its checks, its evidence, and what is still unproven.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "demo": "QA_DATA=demo node server.mjs",
+    "check": "node --check server.mjs && node --check public/app.js && QA_DATA=demo node scripts/check-projects.mjs",
+    "test": "node --test scripts/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

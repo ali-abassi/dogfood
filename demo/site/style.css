@@ -1,0 +1,22 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.55 Georgia, "Times New Roman", serif; color: #13303b; background: #f4fbfb; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 22px 48px; border-bottom: 1px solid #d7ecec; background: #fff; }
+header strong { font-size: 22px; letter-spacing: -.02em; }
+nav a { margin-left: 24px; color: #13303b; text-decoration: none; font-family: system-ui, sans-serif; font-size: 15px; }
+nav a.current { color: #0b7d86; font-weight: 600; }
+main { max-width: 980px; margin: 0 auto; padding: 56px 48px 80px; }
+h1 { margin: 0 0 12px; font-size: 48px; line-height: 1.1; letter-spacing: -.02em; }
+h2 { margin: 48px 0 12px; font-size: 26px; }
+.lede { max-width: 56ch; margin: 0 0 28px; color: #3d5a64; font-size: 19px; }
+.button { display: inline-block; padding: 12px 22px; border-radius: 8px; background: #0b7d86; color: #fff; text-decoration: none; font: 600 15px system-ui, sans-serif; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { padding: 22px; border: 1px solid #d7ecec; border-radius: 12px; background: #fff; }
+.card h3 { margin: 0 0 6px; font-size: 19px; }
+.card p { margin: 0; color: #3d5a64; font-size: 15px; }
+.price { display: block; margin-top: 12px; font: 600 15px system-ui, sans-serif; color: #0b7d86; }
+.slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 28px; }
+.slot { padding: 12px; border: 1px solid #bfe0e0; border-radius: 8px; background: #fff; font: 15px system-ui, sans-serif; text-align: center; }
+label { display: block; margin: 16px 0 6px; font: 600 14px system-ui, sans-serif; }
+input, select { width: 100%; max-width: 420px; padding: 11px 12px; border: 1px solid #bfd7d7; border-radius: 8px; font: 15px system-ui, sans-serif; }
+form .button { margin-top: 22px; border: 0; }
+footer { padding: 28px 48px; border-top: 1px solid #d7ecec; color: #3d5a64; font: 13px system-ui, sans-serif; }
