@@ -1,22 +1,27 @@
-# Current outcome — know what changed since you last checked
+# Current outcome — dogfood owned end to end
 
-Previous outcomes (mobile and desktop evidence, measured scans, one-step onboarding, AI review v2 with suggested features, tamper-evidence, MCP guidance) shipped through `e84c3fb`.
+- **User-stated, 2026-09-25:** "Continue, you own this project." Ali is focused on dogfood the tool, not on any one project's QA progress.
+- **Agent-selected working policy:** pick the next most valuable improvement, record it here, build it (PAL workers on Muse or Claude while Codex is out), verify it with an acceptance suite, push to `main`, and continue.
 
-- **User-stated, 2026-09-25:** "Continue, you own this project." Ali is focused on dogfood the tool.
-- **Agent-selected objective, 2026-09-25:** after a deploy, the question a QA owner asks is *what changed, and which of my verdicts are now out of date?* dogfood already rescans pages; it now compares each scan with the previous one and says so.
+## Shipped under ownership (2026-09-25, through `a1b1bc6`)
 
-## Scope (agent-selected)
-
-1. Protect what exists: the acceptance suites live in `tests/acceptance/` (they only lived in a temporary folder), `npm run lint` enforces complexity 5, and GitHub CI runs the unit tests, checks, lint, and the MCP suite on every push. Done in `02cc4d9`.
-2. Each scan compares every screenshot with the one it replaced (pixel share and size) and stores a diff image. A page is "changed since review" when it was reviewed and a later scan found it looks different; the flag stays until the page is reviewed again. Done in `b0baab0` and `e84c3fb`.
-3. Scan all pages from the overview (a background job), `npm run scan`, and `dogfood_scan_project`; the overview counts and marks pages changed since review; See page shows previous, current, and diff images.
+1. Protection: the acceptance suites live in `tests/acceptance/` (8 suites, 115 checks), `npm run lint` enforces complexity 5, and GitHub CI runs unit tests, checks, lint, and the MCP suite on every push.
+2. Know what changed since you last checked: each scan compares every screenshot with the previous one and stores a diff; pages reviewed before a visual change are flagged "Changed since review" until reviewed again; Scan all pages (app, `npm run scan`, `dogfood_scan_project`). On AI Social Team it caught the phone layout fixes on Schedule and Competitor research.
+3. Onboarding can also run the AI review (opt-in, about half a cent per page) so pages arrive with suggested features.
+4. A Markdown QA report (`npm run report`, `dogfood_report`, Download report in the app) that leads with what needs attention and states what is not proven.
+5. Removing a page registered by mistake, with a reason on record (`dogfood_remove_page`, Remove page… in the app).
+6. The app split from one 1,450-line file into 13 ES modules, with all 32 demo views byte-identical before and after.
+7. The app reopens the last project; unchanged screenshots collapse to one line in Visual changes.
 
 ## Decisions
 
-- A change is a size change or more than 0.5% of pixels differing by more than a small tolerance, so clocks and anti-aliasing do not flag every rescan.
-- "Changed since review" is informational (orange), not a completion gate: dynamic pages change a little on every scan, and gating on it would make completion churn. Revisit if people miss real regressions.
+- "Changed since review" is informational (orange), not a completion gate; revisit if real regressions are missed.
+- A visual change is a size change or more than 0.5% of pixels differing beyond a small tolerance.
+- The AI review and anything else that costs money is always an explicit opt-in.
 
-## Acceptance
+## Next, in order
 
-- `tests/acceptance/changes.mjs`: a fixture site is onboarded, reviewed, changed, and rescanned; the job reports the changed page, only the reviewed changed page is flagged, the images load, and the overview, filter, See page, and MCP agree.
-- Every earlier suite still passes; CI is green.
+1. Review AI-suggested features across a whole project in one pass (onboarding leaves every page's feature list to fill in, one page at a time today).
+2. Refresh the README screenshots to show the overview with changes and the See page's visual changes.
+3. Run the browser acceptance suites in CI (install agent-browser and Chrome on the runner).
+4. Consider evidence age: how old a scan or verdict may be before it no longer counts, if people start relying on stale evidence.
