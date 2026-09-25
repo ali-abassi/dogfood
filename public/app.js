@@ -767,6 +767,7 @@ function addProjectFormMarkup(welcome) {
         <label for="project-name">Name <span class="field-optional">Optional</span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
         <label for="browser-profile">Chrome profile <span class="field-optional">Optional</span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
         <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>
+        <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also ask AI to suggest each page’s features (about half a cent per page)</label>
       </fieldset>
       ${onboardingNoticeMarkup()}
       <div class="form-actions"><button class="save-button" type="submit" ${disabled}>${onboardingButtonText()}</button>${cancel}</div>
@@ -776,7 +777,8 @@ function addProjectFormMarkup(welcome) {
 
 function onboardingProgressText() {
   if (state.onboarding.total === null) return 'Finding pages…';
-  return `Scanning ${escapeHtml(scanPosition(state.onboarding))}`;
+  const verb = state.onboarding.phase === 'review' ? 'Asking AI about' : 'Scanning';
+  return `${verb} ${escapeHtml(scanPosition(state.onboarding))}`;
 }
 
 function welcomeMarkup() {
@@ -1264,7 +1266,8 @@ function isHttpUrl(value) {
 // Only fields the person filled in are sent; the server fills in the rest.
 function onboardingInput(form) {
   const data = new FormData(form);
-  return Object.fromEntries(['url', 'name', 'browserProfile'].map(key => [key, String(data.get(key) ?? '').trim()]).filter(([, value]) => value));
+  const fields = Object.fromEntries(['url', 'name', 'browserProfile'].map(key => [key, String(data.get(key) ?? '').trim()]).filter(([, value]) => value));
+  return data.has('aiReview') ? { ...fields, aiReview: true } : fields;
 }
 
 function failOnboarding(message) {
@@ -1290,7 +1293,7 @@ async function followOnboarding(job) {
   const status = await readJson(`/api/jobs/${encodeURIComponent(job)}`);
   if (status.status === 'failed') throw new Error(status.error || 'Onboarding failed.');
   if (status.status === 'done') return openOnboardedProject(status.projectId);
-  Object.assign(state.onboarding, { total: status.total, scanned: status.scanned, current: status.current });
+  Object.assign(state.onboarding, { phase: status.phase, total: status.total, scanned: status.scanned, current: status.current });
   render();
   await new Promise(done => setTimeout(done, 1000));
   return followOnboarding(job);
