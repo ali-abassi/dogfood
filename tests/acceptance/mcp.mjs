@@ -1,6 +1,6 @@
 // Acceptance: an agent drives dogfood's MCP server from an empty project to a completed page.
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -148,7 +148,7 @@ try {
   const early = await call('dogfood_complete', { project: 'shop', page: 'home' });
   check('complete refuses an unfinished page and names every missing requirement', () => {
     assert.equal(early.isError, true);
-    for (const id of ['capture', 'features', 'checks', 'audit', 'connections', 'ai-review']) assert.match(early.text, new RegExp(id));
+    for (const id of ['capture', 'scan', 'design', 'purpose', 'ease', 'safety', 'speed', 'works']) assert.match(early.text, new RegExp(`- ${id}:`));
   });
 
   const next = (await call('dogfood_next', { project: 'shop' })).json();
@@ -156,7 +156,8 @@ try {
   check('every missing requirement names the tool that resolves it', () => {
     assert.ok(next[0].missing.every(item => typeof item.tool === 'string' && tools.has(item.tool.split(' ')[0])), JSON.stringify(next[0].missing));
     assert.equal(toolFor('capture'), 'dogfood_scan_page');
-    assert.equal(toolFor('checks'), 'dogfood_record_verdicts');
+    assert.match(toolFor('safety'), /^dogfood_record_verdicts /);
+    assert.match(toolFor('design'), /^dogfood_ai_review /);
   });
   check('next returns incomplete pages with their missing requirements', () => {
     assert.equal(next.length, 2);
@@ -183,17 +184,17 @@ try {
     assert.match(page.progress.requirements.find(item => item.id === 'capture').missing, /mobile/);
   });
 
-  const vague = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', checks: { clear: { status: 'pass', note: 'fine' } } });
+  const vague = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', checks: { design: { status: 'pass', note: 'fine' } } });
   check('a verdict without a real evidence note is refused', () => assert.equal(vague.isError, true));
   const verdicts = await call('dogfood_record_verdicts', {
     project: 'shop', page: 'home', agent: 'proof',
-    checks: Object.fromEntries(['connected', 'highlighted', 'obvious', 'accurate', 'clear'].map(key => [key, { status: 'pass', note }])),
+    checks: { purpose: { status: 'pass', note } },
     features: [{ id: 'hero', status: 'pass', note }],
     audit: auditPass(page),
   });
   check('record_verdicts saves partial verdicts', () => assert.equal(verdicts.isError, false, verdicts.text));
   const manifest = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8'));
-  check('verdicts are attributed to the named agent', () => assert.equal(manifest.pages[0].checks.clear.by, 'agent:proof'));
+  check('verdicts are attributed to the named agent', () => assert.equal(manifest.pages[0].checks.purpose.by, 'agent:proof'));
 
   const connections = await call('dogfood_set_connections', { project: 'shop', page: 'home', connections: [{ id: 'page', name: 'Page request', method: 'GET', endpoint: '/', sends: 'Nothing', receives: 'HTML', source: 'Network panel', provenance: 'observed' }] });
   check('set_connections saves the connection map', () => assert.equal(connections.isError, false, connections.text));
@@ -224,11 +225,12 @@ try {
   });
 
   const stillOpen = await call('dogfood_complete', { project: 'shop', page: 'home' });
-  check('complete still refuses while the P1 issue and AI review are missing', () => {
+  check('complete still refuses while a blocking bug is open and nobody has judged Looks right or Easy to use', () => {
     assert.equal(stillOpen.isError, true);
-    assert.match(stillOpen.text, /issues/);
-    assert.match(stillOpen.text, /ai-review/);
-    assert.doesNotMatch(stillOpen.text, /\bchecks\b.*Untested/);
+    assert.match(stillOpen.text, /- issues:/);
+    assert.match(stillOpen.text, /- design:/);
+    assert.match(stillOpen.text, /- ease:/);
+    assert.doesNotMatch(stillOpen.text, /- (purpose|safety|works):/, 'answered answers are not listed');
   });
 
   const resolved = await call('dogfood_resolve_issue', { project: 'shop', page: 'home', agent: 'proof', issue: 'QA-001', note: 'Retested at 390 px; the hero no longer overlaps the button.' });
@@ -239,7 +241,7 @@ try {
   const reviewedCaptures = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8')).pages[0].captures;
   const reviews = join(data, 'visual-reviews/shop/home');
   (await import('node:fs')).mkdirSync(reviews, { recursive: true });
-  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-proof.json'), JSON.stringify({ captures: { desktop: { sha256: reviewedCaptures.desktop.sha256 }, mobile: { sha256: reviewedCaptures.mobile.sha256 } }, analysis: { dimensions: { highlighted: { score: 8, reason: 'The main job is visible.' }, obvious: { score: 8, reason: 'Labels say what happens.' }, clear: { score: 8, reason: 'One clear hierarchy.' } } } }));
+  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-proof.json'), JSON.stringify({ captures: { desktop: { sha256: reviewedCaptures.desktop.sha256 }, mobile: { sha256: reviewedCaptures.mobile.sha256 } }, analysis: { dimensions: { design: { score: 8, reason: 'One consistent style.' }, purpose: { score: 8, reason: 'The heading says what the shop sells.' }, ease: { score: 8, reason: 'The Book button is easy to find.' } } }, analyzedAt: '2026-09-25T00:00:00.000Z' }));
 
   const done = await call('dogfood_complete', { project: 'shop', page: 'home' });
   check('complete accepts the page once every requirement has evidence', () => {
@@ -248,6 +250,15 @@ try {
   });
   const after = (await call('dogfood_projects', {})).json();
   check('project completion count reflects the finished page', () => assert.equal(after.find(item => item.id === 'shop').completePages, 1));
+
+  const once = (...args) => spawnSync(process.execPath, [join(repo, 'mcp.mjs'), ...args], { env: { ...process.env, DOGFOOD_DATA: data }, encoding: 'utf8' });
+  check('one tool can be called from a shell, for agents whose MCP client has not loaded dogfood yet', () => {
+    const listed = once('dogfood_projects');
+    assert.equal(listed.status, 0, listed.stderr);
+    assert.equal(JSON.parse(listed.stdout).find(item => item.id === 'shop').completePages, 1);
+    const refused = once('dogfood_page', '{"project":"shop"}');
+    assert.deepEqual([refused.status, refused.stderr.trim()], [1, 'Missing required arguments: page.']);
+  });
 
   const stdoutOnly = server.stderr();
   check('the server writes nothing but protocol messages to stdout (logs go to stderr)', () => assert.equal(typeof stdoutOnly, 'string'));

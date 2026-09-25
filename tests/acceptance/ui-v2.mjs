@@ -1,5 +1,6 @@
-// Acceptance: desktop and mobile screenshots, scan results, accessibility, expected behavior,
-// Add project, and the first-run welcome in the app (needs agent-browser).
+// Acceptance: screenshots on both devices, what the page check measured (in plain words under the
+// answer it affects), accessibility, expected behavior, adding an app, and the first-run welcome
+// (needs agent-browser).
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -94,65 +95,65 @@ try {
   browser('set', 'viewport', '1440', '900');
   settle();
 
-  check('the overview flags pages with measured scan problems', () => {
-    const problems = page(`document.querySelector('[data-overview-page="book"] [data-scan-problems]')?.dataset.scanProblems`);
-    assert.equal(problems, '3', 'book has one page error, one failed request, and mobile sideways scrolling');
+  const overviewMark = (pageId, answer) => page(`document.querySelector('[data-overview-page="${pageId}"] [data-answer-mark][aria-label^="${answer}:"]')?.getAttribute('aria-label')`);
+  check('the overview shows what the page check found: errors under Works as expected, sideways scrolling under Easy to use', () => {
+    assert.equal(overviewMark('book', 'Works as expected'), 'Works as expected: Needs work');
+    assert.equal(overviewMark('book', 'Easy to use'), 'Easy to use: Needs work');
   });
 
   click('[data-page="book"]');
   settle();
-  click('[data-view="capture"]');
-  settle();
-  check('See page shows the desktop and the mobile screenshot side by side', () => {
-    assert.equal(page(`Boolean(document.querySelector('[data-device="desktop"] img'))`), true);
-    assert.equal(page(`Boolean(document.querySelector('[data-device="mobile"] img'))`), true);
-    const [desktop, mobile] = page(`['desktop', 'mobile'].map(device => document.querySelector('[data-device="' + device + '"]').getBoundingClientRect().width)`);
-    assert.ok(mobile < desktop, 'the mobile screenshot is shown narrower than the desktop one');
+  check('the page shows the computer and the phone screenshot side by side', () => {
+    assert.equal(page(`Boolean(document.querySelector('.report-screen-desktop img'))`), true);
+    assert.equal(page(`Boolean(document.querySelector('.report-screen-mobile img'))`), true);
+    const [desktop, mobile] = page(`['desktop', 'mobile'].map(device => document.querySelector('.report-screen-' + device).getBoundingClientRect().width)`);
+    assert.ok(mobile < desktop, 'the phone screenshot is shown narrower than the computer one');
   });
-  check('See page shows the scan results for both devices', () => {
-    const results = text('section[aria-label="Scan results"]');
-    for (const expected of ['TypeError: slots is undefined', '/api/hold', '503', 'Warning: slot list failed to parse', '/api/slots', 'Book a lesson · Tidepool', 'DENY']) {
-      assert.ok(results.includes(expected), `scan results should show ${expected}`);
-    }
-    assert.match(results, /1\.8\s?s|1,?830\s?ms/, 'load time');
-    assert.match(results, /sideways|horizontal/i, 'mobile overflow');
-    assert.match(results, /content-security-policy|CSP/i, 'a missing security header is named');
+  check('Check again is a quiet link and the report keeps one blue button', () => {
+    assert.equal(page(`Boolean(document.querySelector('.page-heading button[data-action="scan"]'))`), true);
+    assert.ok(page(`document.querySelectorAll('.page-workspace .save-button').length`) <= 1, 'one filled blue button per view');
   });
-  check('Scan again is a secondary action next to the AI review', () => {
-    assert.equal(page(`Boolean(document.querySelector('button[data-action="scan"]'))`), true);
-    assert.equal(page(`document.querySelectorAll('.page-workspace .save-button, .page-workspace .review-button').length`), 1, 'one filled blue button per view');
+  const answerText = (id, selector = `[data-answer-detail="${id}"]`) => {
+    click(`[data-answer-row="${id}"]`);
+    settle();
+    const content = text(selector);
+    click('[data-action="back-to-report"]');
+    settle();
+    return content;
+  };
+  check('the page check\'s measurements appear in plain words under the answer they affect', () => {
+    const works = answerText('works');
+    for (const expected of ['TypeError: slots is undefined', 'https://tidepool.example/api/hold', '503', '/api/slots']) assert.ok(works.includes(expected), `Works as expected should show ${expected}`);
+    const speed = answerText('speed');
+    assert.match(speed, /Load time on a computer\s*1\.8 s/);
+    assert.ok(speed.includes('Book a lesson · Tidepool'), 'the page title');
+    const ease = answerText('ease');
+    assert.match(ease, /Scrolls sideways on a phone\s*Yes/);
+    assert.match(ease, /Buttons without a name\s*1/);
+    const safety = answerText('safety');
+    assert.match(safety, /Cannot be hidden inside another site\s*Yes/, 'x-frame-options: DENY');
+    assert.match(safety, /Limits which scripts can run\s*No/, 'no content security policy');
+  });
+  check('things people can do show what should happen', () => {
+    assert.ok(answerText('works').includes('Lists all four classes with their ages.'));
+  });
+  check('Easy to use includes the accessibility questions', () => {
+    assert.match(answerText('ease'), /keyboard/i);
   });
 
   const rescanned = structuredClone(project);
   stubApi({ 'POST /api/projects/tidepool/pages/book/scan': [200, rescanned] });
-  click('button[data-action="scan"]');
+  click('.page-heading button[data-action="scan"]');
   settle();
-  check('Scan again posts to the page scan API', () => {
+  check('Check again posts to the page scan API', () => {
     const calls = page('window.__calls');
     assert.deepEqual(calls.map(item => item.key), ['POST /api/projects/tidepool/pages/book/scan']);
   });
 
   click('[data-page="home"]');
   settle();
-  click('[data-view="capture"]');
-  settle();
-  check('a page without a mobile screenshot says so and offers a scan', () => {
-    assert.match(text('[data-device="mobile"]'), /Not captured yet/);
-    assert.match(text('section[aria-label="Scan results"]'), /not been scanned|No scan yet/i);
-  });
-
-  click('[data-page="book"]');
-  settle();
-  click('[data-view="review"]');
-  settle();
-  check('features show their expected behavior', () => {
-    assert.ok(text('section[aria-label="Page review"]').includes('Lists all four classes with their ages.'));
-  });
-  click('[data-view="risk"]');
-  settle();
-  check('Safety & search includes the accessibility checklist', () => {
-    assert.match(text('.audit-section'), /Accessibility/);
-    assert.match(text('.audit-section'), /keyboard/i);
+  check('a page without a phone screenshot says why', () => {
+    assert.match(text('.report-screen-mobile'), /Not captured yet/);
   });
 
   click('[data-overview]');
@@ -178,10 +179,15 @@ try {
   browser('set', 'viewport', '390', '844');
   click('[data-page="book"]');
   settle();
-  click('[data-view="capture"]');
-  settle();
-  check('See page with two screenshots and scan results fits a phone screen', () => {
+  check('the report and its answers fit a phone screen', () => {
     assert.equal(page('document.documentElement.scrollWidth <= window.innerWidth + 1'), true);
+    for (const id of ['works', 'speed', 'safety']) {
+      click(`[data-answer-row="${id}"]`);
+      settle();
+      assert.equal(page('document.documentElement.scrollWidth <= window.innerWidth + 1'), true, `${id} scrolls sideways`);
+      click('[data-action="back-to-report"]');
+      settle();
+    }
   });
 
   const emptyUrl = await startServer(empty);

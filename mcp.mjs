@@ -66,15 +66,16 @@ function projectList() {
 }
 
 // The tool an agent calls next for each unmet requirement, so it never has to guess.
+// What resolves each unmet requirement: the screenshots, the page check, the six answers, and blocking bugs.
 const requirementTools = {
   capture: 'dogfood_scan_page',
   scan: 'dogfood_scan_page',
-  features: 'dogfood_ai_review then dogfood_add_features, then dogfood_record_verdicts',
-  checks: 'dogfood_record_verdicts',
-  audit: 'dogfood_record_verdicts',
-  connections: 'dogfood_scan_page or dogfood_set_connections',
-  tests: 'dogfood_run_tests',
-  'ai-review': 'dogfood_ai_review',
+  design: 'dogfood_ai_review or dogfood_record_verdicts with checks.design',
+  purpose: 'dogfood_ai_review or dogfood_record_verdicts with checks.purpose',
+  ease: 'dogfood_ai_review or dogfood_record_verdicts with checks.ease, then the accessibility questions with dogfood_record_verdicts',
+  safety: 'dogfood_record_verdicts with the security and scraping questions',
+  speed: 'dogfood_scan_page for the load time, then dogfood_record_verdicts with the seo questions',
+  works: 'dogfood_add_features for what people can do here, then dogfood_record_verdicts with features after trying each one; dogfood_add_issue for bugs',
   issues: 'dogfood_resolve_issue (after retesting the fix)',
 };
 
@@ -85,6 +86,7 @@ function pageOutcome(page, issue) {
     status: page.progress.status,
     complete: page.progress.complete,
     changedSinceReview: page.progress.changedSinceReview,
+    answers: page.progress.answers.map(({ id, name, status, summary }) => ({ id, name, status, summary })),
     missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTools[id] })),
   };
   return issue ? { ...outcome, issue } : outcome;
@@ -307,7 +309,7 @@ const definitions = [
   },
   {
     name: 'dogfood_record_verdicts',
-    description: 'Record partial evidence-backed verdicts for quality checks, page features, or checklist questions; each changed verdict is attributed to the named agent.',
+    description: 'Record partial evidence-backed verdicts; each changed verdict is attributed to the named agent. checks answers Looks right (design), Clear purpose (purpose), and Easy to use (ease); features are what people can do here (Works as expected); audit questions answer Safe (security, scraping), Fast & findable (seo), and Easy to use (accessibility).',
     inputSchema: objectSchema({
       ...projectPageProperties,
       agent: { type: 'string', description: 'Agent name used to attribute each changed verdict.' },
@@ -368,7 +370,7 @@ const definitions = [
   },
   {
     name: 'dogfood_ai_review',
-    description: 'Request a visual review of the current desktop and mobile screenshots; it returns clarity analysis plus suggested features an agent can add with dogfood_add_features. This sends the images to a model provider and spends usage, so explicit confirmation is required.',
+    description: 'Ask the AI to look at the current desktop and mobile screenshots. It answers Looks right, Clear purpose, and Easy to use (a person\'s or agent\'s verdict still outranks it) and suggests features an agent can add with dogfood_add_features. This sends the images to a model provider and spends usage, so explicit confirmation is required.',
     inputSchema: objectSchema({
       ...projectPageProperties,
       confirmUsage: { type: 'boolean', description: 'Set true to confirm sending the screenshot to a model provider and spending usage.' },
@@ -377,7 +379,7 @@ const definitions = [
   },
   {
     name: 'dogfood_complete',
-    description: 'Check whether every applicable page QA requirement has evidence; an agent must call this before reporting a page’s QA as done.',
+    description: 'Check whether the page\'s screenshots and page check are current, all six answers are answered, and no blocking bug is open; an agent must call this before reporting a page\'s QA as done.',
     inputSchema: objectSchema(projectPageProperties, projectPageRequired),
     run: complete,
   },
@@ -484,7 +486,16 @@ async function main() {
   for await (const line of input) await processLine(line);
 }
 
-main().catch(error => {
+// One call from a shell, for an agent whose MCP client has not loaded dogfood yet:
+//   node mcp.mjs dogfood_next '{"project":"shop"}'
+async function callOnce([name, json = '{}']) {
+  const tool = tools.get(name);
+  if (!tool) throw new Error(`Unknown tool: ${name}. Tools: ${[...tools.keys()].join(', ')}.`);
+  process.stdout.write(`${toolResult(await runTool(tool, JSON.parse(json))).content[0].text}\n`);
+}
+
+const oneShot = process.argv.slice(2);
+(oneShot.length ? callOnce(oneShot) : main()).catch(error => {
   process.stderr.write(`${errorMessage(error)}\n`);
   process.exitCode = 1;
 });

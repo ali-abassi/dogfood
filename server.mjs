@@ -9,7 +9,7 @@ import { currentReview, startReview } from './lib/reviews.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import { projectReport } from './lib/report.mjs';
 import { pendingSuggestions } from './lib/suggestions.mjs';
-import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, removePage, saveAudit, saveReview, updateFinding, validationError } from './lib/store.mjs';
+import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, updateFinding, validationError } from './lib/store.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
 const publicDir = join(root, 'public');
@@ -113,8 +113,7 @@ const routes = [
   ['POST', `${pagePath}/qa-runs`, params => startTests(...params)],
   ['POST', `${pagePath}/scan`, params => scanProjectPage(...params)],
   ['POST', `${pagePath}/features`, withBody(addPageFeatures)],
-  ['PUT', `${pagePath}/review`, withBody(saveReview)],
-  ['PUT', `${pagePath}/audit`, withBody(saveAudit)],
+  ['PATCH', `${pagePath}/verdicts`, withBody(recordVerdicts)],
   ['POST', `${pagePath}/findings`, withBody(createFinding)],
   ['PUT', `${pagePath}/findings/([A-Za-z0-9-]+)`, withBody(updateFinding)],
 ].map(([method, pattern, handler, status = 200, type = 'application/json; charset=utf-8']) => ({ method, pattern: new RegExp(`^${pattern}$`), handler, status, type }));
@@ -141,7 +140,8 @@ function staticFile(pathname) {
 
 function rejectedRequest(request) {
   if (!localHosts.has(request.headers.host)) return 'Local host required.';
-  if (!['PUT', 'POST'].includes(request.method)) return null;
+  // Only reads skip the origin check, so a new write method can never slip past it.
+  if (['GET', 'HEAD'].includes(request.method)) return null;
   if (!localOrigins.has(request.headers.origin)) return 'Local origin required.';
   return null;
 }

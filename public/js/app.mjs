@@ -1,24 +1,30 @@
 import { readJson } from './api.mjs';
 import { registerEvents } from './events.mjs';
 import { escapeHtml } from './format.mjs';
-import { activePage, ensureSelection, isProjectView, state } from './state.mjs';
+import { activePage, answerIds, ensureSelection, isProjectView, state } from './state.mjs';
 import { addProjectFormMarkup, welcomeMarkup } from './views/add-project.mjs';
-import { findingsMarkup } from './views/issues.mjs';
-import { captureMarkup, pageHeaderMarkup, qaCompletionMarkup, sidebarMarkup, toolbarMarkup } from './views/page.mjs';
+import { answerDetailMarkup } from './views/answer.mjs';
 import { overviewMarkup } from './views/overview.mjs';
-import { reviewMarkup } from './views/review.mjs';
-import { auditMarkup } from './views/safety.mjs';
+import { pageHeaderMarkup, sidebarMarkup, toolbarMarkup } from './views/page.mjs';
+import { pageReportMarkup } from './views/report.mjs';
+import { screensMarkup } from './views/screens.mjs';
 import { suggestionsReviewMarkup, syncSuggestionsState } from './views/suggestions.mjs';
-import { seePageMarkup, syncVisualState } from './views/see-page.mjs';
-import { qaMarkup, syncQaState } from './views/tests.mjs';
+import { syncQaState } from './views/tests.mjs';
+import { syncVisualState } from './views/visual.mjs';
+import { worksMarkup } from './views/works.mjs';
 
 export const app = document.querySelector('#app');
 
-function activeViewMarkup(page) {
-  if (state.view === 'review') return reviewMarkup(page);
-  if (state.view === 'risk') return `<section class="inspector content-panel" aria-label="Risk and connections">${auditMarkup(page)}</section>`;
-  if (state.view === 'findings') return `<section class="inspector content-panel" aria-label="Issues">${findingsMarkup(page)}</section>`;
-  return qaMarkup(page);
+// The report is the page's home; each answer and the full screenshots open from it.
+const pageViews = {
+  report: page => `${pageHeaderMarkup(page)}${pageReportMarkup(page)}`,
+  screens: screensMarkup,
+  works: worksMarkup,
+};
+
+function pageViewMarkup(page) {
+  const view = pageViews[state.view] ?? (answerIds.includes(state.view) ? answerDetailMarkup : pageViews.report);
+  return view(page);
 }
 
 function projectViewMarkup() {
@@ -29,14 +35,13 @@ function projectViewMarkup() {
 
 function pageContentMarkup(page) {
   if (isProjectView()) return projectViewMarkup();
-  if (!page) return '<div class="workspace-empty"><h2>No pages yet</h2><p>No pages have been added to this project.</p></div>';
-  if (state.view === 'capture') return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}${seePageMarkup(page)}`;
-  return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}<div class="view-grid">${activeViewMarkup(page)}${captureMarkup(page)}</div>`;
+  if (!page) return '<div class="workspace-empty"><h2>No pages yet</h2><p>Add the app’s address to find its pages.</p></div>';
+  return pageViewMarkup(page);
 }
 
 function workspaceMarkup() {
   const page = activePage();
-  return `<div class="app-window">${sidebarMarkup()}<main class="work-area">${toolbarMarkup(page)}<div class="page-workspace">${pageContentMarkup(page)}</div></main></div>`;
+  return `<div class="app-window">${sidebarMarkup()}<main class="work-area">${toolbarMarkup()}<div class="page-workspace">${pageContentMarkup(page)}</div></main></div>`;
 }
 
 export function render() {
@@ -65,9 +70,7 @@ export async function loadProject(id) {
   state.filter = 'all';
   state.sort = 'navigation';
   state.browseOpen = false;
-  state.editing = false;
-  state.auditEditing = false;
-  state.findingForm = null;
+  Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null });
   state.scan = { key: '', running: false, error: '' };
   state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
   state.onboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
