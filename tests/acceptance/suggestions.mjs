@@ -23,12 +23,12 @@ function seedReview(pageId, suggestions, stale = false) {
   const hash = device => (captures[device].sha256 ? { sha256: stale ? 'f'.repeat(64) : captures[device].sha256 } : null);
   const directory = join(data, 'visual-reviews/tidepool', pageId);
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, '2026-09-25T00-00-00.000Z-seed.json'), JSON.stringify({ promptVersion: 'visual-clarity-v2', captures: { desktop: hash('desktop'), mobile: hash('mobile') }, analysis: { suggestedFeatures: suggestions } }));
+  writeFileSync(join(directory, '2026-09-25T00-00-00.000Z-seed.json'), JSON.stringify({ promptVersion: 'visual-clarity-v2', captures: { desktop: hash('desktop'), mobile: hash('mobile') }, analysis: { dimensions: { highlighted: { score: 8, reason: 'The main job is visible.' }, obvious: { score: 8, reason: 'Labels say what happens.' }, clear: { score: 8, reason: 'One clear hierarchy.' } }, suggestedFeatures: suggestions } }));
 }
 seedReview('home', [
   { name: 'Book a lesson button', expected: 'Opens the booking page.' },
   { name: 'Weekly timetable', expected: 'Shows every class time this week.' },
-  { name: 'headline and value proposition', expected: 'Already listed, so it must not be offered.' },
+  { name: 'learn why to choose Tidepool', expected: 'Already listed, so it must not be offered.' },
 ]);
 seedReview('classes', [
   { name: 'Age filter', expected: 'Choosing an age shows only matching classes.' },
@@ -76,7 +76,7 @@ try {
   check('the review lists suggestions by page, all checked, without ones already listed', () => {
     assert.deepEqual(offered.map(item => [item.page, item.boxes]), [['home', [true, true]], ['classes', [true, true]]]);
     assert.ok(offered[0].text.includes('Weekly timetable') && offered[0].text.includes('Shows every class time this week.'));
-    assert.ok(!/headline and value proposition/i.test(offered[0].text));
+    assert.ok(!/learn why to choose Tidepool/i.test(offered[0].text));
   });
   check('suggestions from a review of older screenshots are marked', () => {
     assert.match(offered[1].text, /older screenshots/i);

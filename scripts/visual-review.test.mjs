@@ -10,10 +10,9 @@ const analysis = {
   pagePurpose: 'A library of archived ads for browsing.',
   primaryAction: 'Search archived ads.',
   dimensions: {
-    purpose: { score: 8, reason: 'The heading names the archive.' },
-    nextAction: { score: 7.5, reason: 'Search is visible near the top.' },
-    hierarchy: { score: 7, reason: 'The image grid dominates the page.' },
-    copy: { score: 9, reason: 'Controls use specific labels.' },
+    highlighted: { score: 8, reason: 'The main job is visible above the fold.' },
+    obvious: { score: 8, reason: 'Labels say what will happen.' },
+    clear: { score: 8, reason: 'One clear hierarchy on both screens.' },
   },
   evidence: [
     { location: 'desktop top', observation: 'The heading says Inspo.' },
@@ -68,7 +67,7 @@ test('visual review judges both screenshots, suggests features, and becomes stal
     assert.equal(content[2].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
     assert.equal(content[3].text, 'Mobile screenshot (390 × 844):');
     assert.equal(content[4].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
-    assert.equal(result.review.promptVersion, 'visual-clarity-v2');
+    assert.equal(result.review.promptVersion, 'visual-clarity-v3');
     assert.equal(result.review.analysis.clarityRating, 8);
     assert.deepEqual(result.review.analysis.suggestedFeatures, analysis.suggestedFeatures);
     assert.equal(result.review.usage.reportedCostUsd, 0.001);
@@ -119,7 +118,7 @@ test('reviews saved before mobile screenshots are ignored', () => {
 });
 
 test('visual review rejects unsupported numeric precision, missing evidence, and invalid suggested features', () => {
-  assert.throws(() => validateAnalysis({ ...analysis, dimensions: { ...analysis.dimensions, purpose: { score: 7.25, reason: 'Not a half point.' } } }), /dimensions/);
+  assert.throws(() => validateAnalysis({ ...analysis, dimensions: { ...analysis.dimensions, clear: { score: 7.25, reason: 'Not a half point.' } } }), /dimensions/);
   assert.throws(() => validateAnalysis({ ...analysis, evidence: [] }), /evidence/);
   assert.throws(() => validateAnalysis({ ...analysis, suggestedFeatures: undefined }), /suggested features/);
   assert.throws(() => validateAnalysis({ ...analysis, suggestedFeatures: Array.from({ length: 9 }, (_, index) => ({ name: `Feature ${index}`, expected: 'It works.' })) }), /suggested features/);

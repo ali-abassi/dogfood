@@ -33,7 +33,7 @@ const site = `http://127.0.0.1:${fixture.address().port}`;
 
 const analysis = {
   pagePurpose: 'A fixture page.', primaryAction: 'Start.',
-  dimensions: Object.fromEntries(['purpose', 'nextAction', 'hierarchy', 'copy'].map(name => [name, { score: 7, reason: 'Visible on both screens.' }])),
+  dimensions: Object.fromEntries(['highlighted', 'obvious', 'clear'].map(name => [name, { score: 7, reason: 'Visible on both screens.' }])),
   evidence: [{ location: 'desktop top', observation: 'A heading.' }, { location: 'mobile middle', observation: 'A button.' }],
   improvements: [],
   suggestedFeatures: [{ name: 'Start button', expected: 'Pressing Start begins the flow.' }],

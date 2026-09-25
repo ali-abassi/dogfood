@@ -62,7 +62,7 @@ const text = selector => evaluate(`document.querySelector(${JSON.stringify(selec
 let server;
 try {
   await run('scripts/onboard.mjs', [`${site}/`, '--name', 'Swim Club']);
-  store.recordVerdicts('swim-club', 'home', { checks: { clarity: { status: 'pass', note: 'Heading and navigation read clearly at 1440 wide.' } } }, 'agent:proof');
+  store.recordVerdicts('swim-club', 'home', { checks: { clear: { status: 'pass', note: 'Heading and navigation read clearly at 1440 wide.' } } }, 'agent:proof');
   release = 2;
 
   const port = await freePort();

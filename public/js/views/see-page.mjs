@@ -165,7 +165,7 @@ export function seePageMarkup(page) {
   return `<div class="see-page-content"><section class="capture-gallery" aria-label="Page screenshots">${captureFrameMarkup(page, 'desktop')}${captureFrameMarkup(page, 'mobile')}</section>${visualChangesMarkup(page)}${scanResultsMarkup(page)}${visualReviewMarkup(page)}</div>`;
 }
 
-const clarityDimensions = { purpose: 'Purpose', nextAction: 'Next action', hierarchy: 'Hierarchy', copy: 'Copy' };
+const clarityDimensions = { highlighted: 'Highlighted', obvious: 'Obvious', clear: 'Clear' };
 
 function visualResultMarkup(result) {
   const { review, stale } = result;

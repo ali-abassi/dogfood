@@ -69,7 +69,7 @@ try {
   const book = project.pages.find(item => item.id === 'book');
   // Seed one attributed verdict so the UI has something to attribute.
   await api('/api/projects/tidepool/pages/home/review', { method: 'PUT', body: JSON.stringify({
-    checks: { ...project.pages[0].checks, optimization: { status: 'pass', note: 'Measured a 0.4 s load on a warm local server.' } },
+    checks: { ...project.pages[0].checks, connected: { status: 'pass', note: 'Booking loads its classes and saves the reservation.' } },
     features: project.pages[0].features,
   }) });
   const seeded = await api('/api/projects/tidepool');
