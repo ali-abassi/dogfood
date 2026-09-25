@@ -9,6 +9,7 @@ import {
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
 import { projectReport } from './lib/report.mjs';
+import { pendingSuggestions } from './lib/suggestions.mjs';
 import { startReview } from './lib/reviews.mjs';
 
 const supportedVersions = new Set(['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']);
@@ -197,6 +198,12 @@ const definitions = [
     description: 'Rescan every page of a project at desktop and mobile sizes, and list which pages changed visually since the previous scan.',
     inputSchema: objectSchema({ project: projectPageProperties.project }, ['project']),
     run: scanEntireProject,
+  },
+  {
+    name: 'dogfood_suggestions',
+    description: 'List the AI review\'s suggested features that pages do not list yet, across the whole project. Add the ones that match the page with dogfood_add_features.',
+    inputSchema: objectSchema({ project: projectPageProperties.project }, ['project']),
+    run: ({ project }) => pendingSuggestions(project),
   },
   {
     name: 'dogfood_report',

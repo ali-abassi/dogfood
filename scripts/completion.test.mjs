@@ -147,6 +147,19 @@ test('a rescan records how each screenshot changed and flags reviews older than 
   assert.equal(page().scan.changes.desktop.changedShare, 0);
 });
 
+test('features are added to many pages in one write, or not at all', () => {
+  store.createProject({ id: 'florist', name: 'Florist', url: 'https://florist.example' });
+  store.registerPage('florist', { id: 'home', name: 'Home', group: 'Public', route: '/' });
+  store.registerPage('florist', { id: 'shop', name: 'Shop', group: 'Public', route: '/shop', features: [{ id: 'cart', name: 'Cart' }] });
+  assert.throws(() => store.addFeaturesToPages('florist', { home: [{ name: 'Hero' }], missing: [{ name: 'X' }] }, 'person'), /does not exist/);
+  assert.equal(store.readProject('florist').pages[0].features.length, 0, 'a bad page aborts the whole batch');
+  store.addFeaturesToPages('florist', { home: [{ name: 'Hero', expected: 'Shows this week\'s bouquets.' }], shop: [{ name: 'cart' }, { name: 'Checkout' }] }, 'person');
+  const [home, shop] = store.readProject('florist').pages;
+  assert.deepEqual(home.features.map(item => [item.name, item.expected, item.addedBy]), [['Hero', 'Shows this week\'s bouquets.', 'person']]);
+  assert.deepEqual(shop.features.map(item => item.name), ['Cart', 'Checkout']);
+  assert.throws(() => store.addFeaturesToPages('florist', {}, 'person'), /at least one/);
+});
+
 test('removing a page keeps an audit trail and needs a reason', () => {
   store.createProject({ id: 'bakery', name: 'Bakery', url: 'https://bakery.example' });
   store.registerPage('bakery', { id: 'home', name: 'Home', group: 'Public', route: '/' });
