@@ -6,17 +6,18 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
-  <img src="docs/screenshot-light.png" alt="dogfood showing the Book a lesson page of the Tidepool demo with two open issues">
+  <img src="docs/screenshot-light.png" alt="dogfood's overview of the Tidepool demo: five pages with their status, 14 AI-suggested features waiting, and two pages changed since their review">
 </picture>
 
 ## Why
 
 "Did we QA it?" usually means someone clicked around. dogfood makes the answer specific, page by page:
 
-- **Every page, one status.** The sidebar lists each page with a status dot: untested, in review, passed, needs work, or blocked.
-- **Criteria, not vibes.** Each page carries its features, five quality questions (functionality, speed, design fit, excess, clarity), and security, scraping, and search checklists. A verdict of Pass or Needs work requires a written evidence note.
-- **Real evidence.** A full-page screenshot per page, focused test runs from your own repo, and an optional AI read of the screenshot.
-- **Honest gaps.** Each page states what remains untested. Passing tests never become an overall score, and an AI rating never changes a verdict.
+- **Every page, one status.** Each page shows untested, in review, passed, needs work, or blocked, and exactly what it still needs before its QA is complete.
+- **Criteria, not vibes.** Each page carries its features with expected behavior, five quality questions, and security, scraping, search, and accessibility checklists. A verdict of Pass or Needs work requires a written evidence note.
+- **Measured evidence.** Desktop and mobile screenshots, a scan of errors, failed requests, API calls, speed, search tags, security headers, and accessibility, focused test runs from your own repo, and an optional AI review that suggests each page's features.
+- **What changed.** Rescan after a deploy and dogfood shows which pages look different and which reviews are now out of date.
+- **Honest gaps.** Passing tests never become an overall score, an AI rating never changes a verdict, and the report says what the evidence does not prove.
 
 ## Try the demo
 
@@ -28,7 +29,9 @@ cd dogfood
 npm run demo
 ```
 
-Open <http://127.0.0.1:4321>. The demo is **Tidepool**, a fictional swim school whose five pages show every state, including two real layout issues on the booking page.
+Open <http://127.0.0.1:4321>. The demo is **Tidepool**, a fictional swim school whose five pages show every state. Its latest deploy fixed the phone layout, so dogfood flags the two reviewed pages that changed and shows what moved:
+
+<img src="docs/screenshot-changes.png" alt="Visual changes on the demo's Classes page: the previous and current mobile screenshots side by side with a diff marking what moved">
 
 ## Use it on your project
 

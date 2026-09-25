@@ -15,7 +15,7 @@ test('the report leads with what needs attention and lists every page and open i
   const report = projectReport('tidepool', new Date('2026-09-26T00:00:00Z'));
   assert.match(report, /^# Tidepool \(demo\): QA report\n\n2026-09-26 · /);
   assert.ok(report.indexOf('## Needs attention') < report.indexOf('## Pages'));
-  assert.match(report, /- Scan on Book a lesson: mobile: the page scrolls sideways/);
+  assert.match(report, /- Classes changed since its review; recheck the verdicts\./);
   assert.match(report, /\*\*1\*\* page needs a scan\./);
   for (const name of ['Home', 'Classes', 'Book a lesson', 'Sign in', 'Staff schedule']) assert.match(report, new RegExp(`\\| ${name} \\|`));
   assert.match(report, /- \*\*P2 TP-001\*\* \(Book a lesson\)/);

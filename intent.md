@@ -19,9 +19,16 @@
 - A visual change is a size change or more than 0.5% of pixels differing beyond a small tolerance.
 - The AI review and anything else that costs money is always an explicit opt-in.
 
-## Next, in order
+## Shipped next (2026-09-26)
 
-1. Review AI-suggested features across a whole project in one pass (onboarding leaves every page's feature list to fill in, one page at a time today).
-2. Refresh the README screenshots to show the overview with changes and the See page's visual changes.
-3. Run the browser acceptance suites in CI (install agent-browser and Chrome on the runner).
-4. Consider evidence age: how old a scan or verdict may be before it no longer counts, if people start relying on stale evidence.
+1. Review AI-suggested features across a whole project in one pass (overview line, Review view, one-request add, `dogfood_suggestions`).
+2. README screenshots from a demo that tells the story: its latest deploy fixed the phone layout, dogfood flags the two reviewed pages that changed, and 14 real AI suggestions are waiting.
+3. Every acceptance suite runs in CI in headless Chrome (9 suites, 127 checks).
+
+## Decided: no evidence age limit for now
+
+Change detection already catches the failure that matters, evidence describing a page that no longer looks like it; a month-old scan of an unchanged page is still true. Age alone is a weak proxy. Revisit if someone relies on an old scan of a page that changed without being rescanned; the change would be a per-project `staleAfterDays` that turns old scans back into a completion requirement.
+
+## Next
+
+- Watch real use (AI Social Team and AI Money Team are live in dogfood) and fix what slows people or agents down.

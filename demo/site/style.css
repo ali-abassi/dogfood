@@ -20,3 +20,12 @@ label { display: block; margin: 16px 0 6px; font: 600 14px system-ui, sans-serif
 input, select { width: 100%; max-width: 420px; padding: 11px 12px; border: 1px solid #bfd7d7; border-radius: 8px; font: 15px system-ui, sans-serif; }
 form .button { margin-top: 22px; border: 0; }
 footer { padding: 28px 48px; border-top: 1px solid #d7ecec; color: #3d5a64; font: 13px system-ui, sans-serif; }
+
+@media (max-width: 600px) {
+  header { flex-wrap: wrap; gap: 8px; padding: 16px 20px; }
+  nav a { margin: 0 16px 0 0; }
+  main { padding: 32px 20px 56px; }
+  h1 { font-size: 36px; }
+  .grid { grid-template-columns: 1fr; }
+  .slots { grid-template-columns: repeat(2, 1fr); }
+}

@@ -162,7 +162,7 @@
           "sourceUrl": "http://127.0.0.1:4380/",
           "viewport": "1440 × 900",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:01.953Z",
+          "capturedAt": "2026-09-25T21:42:16.047Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
@@ -175,7 +175,7 @@
           "sourceUrl": "http://127.0.0.1:4380/",
           "viewport": "390 × 844",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:01.968Z",
+          "capturedAt": "2026-09-25T21:42:16.399Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
@@ -185,7 +185,7 @@
         }
       },
       "scan": {
-        "scannedAt": "2026-09-25T18:54:01.968Z",
+        "scannedAt": "2026-09-25T21:42:16.489Z",
         "sourceUrl": "http://127.0.0.1:4380/",
         "actor": "Signed-out visitor",
         "captureSha256": {
@@ -194,7 +194,7 @@
         },
         "viewports": {
           "desktop": {
-            "loadMs": 7,
+            "loadMs": 12,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
@@ -222,7 +222,7 @@
             }
           },
           "mobile": {
-            "loadMs": 9,
+            "loadMs": 10,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
@@ -249,7 +249,26 @@
               "referrer-policy": null
             }
           }
-        }
+        },
+        "changes": {
+          "desktop": {
+            "previousPath": "/captures/tidepool/history/home-1790372536046.png",
+            "previousSha256": "d5ada657e2f90a1dba4440f52715c85a7c9652c8605601b54579394f4fee32e0",
+            "diffPath": "/captures/tidepool/diffs/home.png",
+            "changedShare": 0,
+            "sizeChanged": false,
+            "changed": false
+          },
+          "mobile": {
+            "previousPath": "/captures/tidepool/history/home-mobile-1790372536398.png",
+            "previousSha256": "a8d66dfcce2ad22f4cfd16bc727559e2a3406aa996a45280ee5b80f8c1e7a5a5",
+            "diffPath": "/captures/tidepool/diffs/home-mobile.png",
+            "changedShare": 0,
+            "sizeChanged": false,
+            "changed": false
+          }
+        },
+        "lastChangedAt": null
       }
     },
     {
@@ -399,7 +418,7 @@
           "sourceUrl": "http://127.0.0.1:4380/classes.html",
           "viewport": "1440 × 900",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:07.824Z",
+          "capturedAt": "2026-09-25T21:42:22.448Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
@@ -412,22 +431,22 @@
           "sourceUrl": "http://127.0.0.1:4380/classes.html",
           "viewport": "390 × 844",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:07.850Z",
+          "capturedAt": "2026-09-25T21:42:22.829Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
-          "pixelWidth": 462,
-          "pixelHeight": 1013,
-          "sha256": "47e638d7794b17e9168ff548c3a2d694db72aade7dc4ddeba2bd475ac75c61d4"
+          "pixelWidth": 390,
+          "pixelHeight": 1158,
+          "sha256": "5b2c2d06a9691591166f4cbdee26624dc04b973902d6114e2573ecc9a4b894e5"
         }
       },
       "scan": {
-        "scannedAt": "2026-09-25T18:54:07.850Z",
+        "scannedAt": "2026-09-25T21:42:22.970Z",
         "sourceUrl": "http://127.0.0.1:4380/classes.html",
         "actor": "Signed-out visitor",
         "captureSha256": {
           "desktop": "b63cf485c9e97e495e69642c519ddbf2980966202194a397de47ba2b636194a7",
-          "mobile": "47e638d7794b17e9168ff548c3a2d694db72aade7dc4ddeba2bd475ac75c61d4"
+          "mobile": "5b2c2d06a9691591166f4cbdee26624dc04b973902d6114e2573ecc9a4b894e5"
         },
         "viewports": {
           "desktop": {
@@ -459,12 +478,12 @@
             }
           },
           "mobile": {
-            "loadMs": 6,
+            "loadMs": 10,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
             "requests": [],
-            "horizontalOverflow": true,
+            "horizontalOverflow": false,
             "seo": {
               "title": "Classes · Tidepool",
               "description": null,
@@ -486,7 +505,26 @@
               "referrer-policy": null
             }
           }
-        }
+        },
+        "changes": {
+          "desktop": {
+            "previousPath": "/captures/tidepool/history/classes-1790372542447.png",
+            "previousSha256": "b63cf485c9e97e495e69642c519ddbf2980966202194a397de47ba2b636194a7",
+            "diffPath": "/captures/tidepool/diffs/classes.png",
+            "changedShare": 0,
+            "sizeChanged": false,
+            "changed": false
+          },
+          "mobile": {
+            "previousPath": "/captures/tidepool/history/classes-mobile-1790372542828.png",
+            "previousSha256": "47e638d7794b17e9168ff548c3a2d694db72aade7dc4ddeba2bd475ac75c61d4",
+            "diffPath": "/captures/tidepool/diffs/classes-mobile.png",
+            "changedShare": 0.4676,
+            "sizeChanged": true,
+            "changed": true
+          }
+        },
+        "lastChangedAt": "2026-09-25T21:42:22.970Z"
       }
     },
     {
@@ -659,7 +697,7 @@
           "sourceUrl": "http://127.0.0.1:4380/book.html",
           "viewport": "1440 × 900",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:14.004Z",
+          "capturedAt": "2026-09-25T21:42:28.888Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
@@ -672,26 +710,26 @@
           "sourceUrl": "http://127.0.0.1:4380/book.html",
           "viewport": "390 × 844",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:14.024Z",
+          "capturedAt": "2026-09-25T21:42:29.266Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
-          "pixelWidth": 427,
-          "pixelHeight": 1016,
-          "sha256": "8f0a83eb23e0d9d757859ba50f8deb7d0836677a73a520bb60a8277bc9e9bb4f"
+          "pixelWidth": 390,
+          "pixelHeight": 1031,
+          "sha256": "c25bbb3f23dd3d4293b30cbd7e3ef4f2bb406ad9268cbc92f225c89fa2f0f198"
         }
       },
       "scan": {
-        "scannedAt": "2026-09-25T18:54:14.024Z",
+        "scannedAt": "2026-09-25T21:42:29.384Z",
         "sourceUrl": "http://127.0.0.1:4380/book.html",
         "actor": "Signed-out visitor",
         "captureSha256": {
           "desktop": "ae8ec37f1e74d71976b04a3b1f1dc3f673834bf13c10b5c7bac353b2ff8ef644",
-          "mobile": "8f0a83eb23e0d9d757859ba50f8deb7d0836677a73a520bb60a8277bc9e9bb4f"
+          "mobile": "c25bbb3f23dd3d4293b30cbd7e3ef4f2bb406ad9268cbc92f225c89fa2f0f198"
         },
         "viewports": {
           "desktop": {
-            "loadMs": 7,
+            "loadMs": 9,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
@@ -719,12 +757,12 @@
             }
           },
           "mobile": {
-            "loadMs": 9,
+            "loadMs": 11,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
             "requests": [],
-            "horizontalOverflow": true,
+            "horizontalOverflow": false,
             "seo": {
               "title": "Book · Tidepool",
               "description": null,
@@ -746,7 +784,26 @@
               "referrer-policy": null
             }
           }
-        }
+        },
+        "changes": {
+          "desktop": {
+            "previousPath": "/captures/tidepool/history/book-1790372548887.png",
+            "previousSha256": "ae8ec37f1e74d71976b04a3b1f1dc3f673834bf13c10b5c7bac353b2ff8ef644",
+            "diffPath": "/captures/tidepool/diffs/book.png",
+            "changedShare": 0,
+            "sizeChanged": false,
+            "changed": false
+          },
+          "mobile": {
+            "previousPath": "/captures/tidepool/history/book-mobile-1790372549265.png",
+            "previousSha256": "8f0a83eb23e0d9d757859ba50f8deb7d0836677a73a520bb60a8277bc9e9bb4f",
+            "diffPath": "/captures/tidepool/diffs/book-mobile.png",
+            "changedShare": 0.4442,
+            "sizeChanged": true,
+            "changed": true
+          }
+        },
+        "lastChangedAt": "2026-09-25T21:42:29.384Z"
       }
     },
     {
@@ -890,7 +947,7 @@
           "sourceUrl": "http://127.0.0.1:4380/account.html",
           "viewport": "1440 × 900",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:19.814Z",
+          "capturedAt": "2026-09-25T21:42:35.259Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
@@ -903,26 +960,26 @@
           "sourceUrl": "http://127.0.0.1:4380/account.html",
           "viewport": "390 × 844",
           "actor": "Signed-out visitor",
-          "capturedAt": "2026-09-25T18:54:19.829Z",
+          "capturedAt": "2026-09-25T21:42:35.612Z",
           "tier": "automated",
           "state": "rendered",
           "fullPage": true,
-          "pixelWidth": 429,
+          "pixelWidth": 390,
           "pixelHeight": 844,
-          "sha256": "a49aed33f202c3c38444a48c508b49c3d781ce74691f802801fca2a3e77501b6"
+          "sha256": "65d5b42519efd655d93f3d906d61ed121c150dcfdef3280705ca1ada229e71aa"
         }
       },
       "scan": {
-        "scannedAt": "2026-09-25T18:54:19.829Z",
+        "scannedAt": "2026-09-25T21:42:35.705Z",
         "sourceUrl": "http://127.0.0.1:4380/account.html",
         "actor": "Signed-out visitor",
         "captureSha256": {
           "desktop": "0d2ebc9b428eb8d408f78206ebd776ef2758dcec8b98c54e054d77b24fb81baf",
-          "mobile": "a49aed33f202c3c38444a48c508b49c3d781ce74691f802801fca2a3e77501b6"
+          "mobile": "65d5b42519efd655d93f3d906d61ed121c150dcfdef3280705ca1ada229e71aa"
         },
         "viewports": {
           "desktop": {
-            "loadMs": 7,
+            "loadMs": 8,
             "consoleErrors": [],
             "pageErrors": [],
             "failedRequests": [],
@@ -955,7 +1012,7 @@
             "pageErrors": [],
             "failedRequests": [],
             "requests": [],
-            "horizontalOverflow": true,
+            "horizontalOverflow": false,
             "seo": {
               "title": "Account · Tidepool",
               "description": null,
@@ -977,7 +1034,26 @@
               "referrer-policy": null
             }
           }
-        }
+        },
+        "changes": {
+          "desktop": {
+            "previousPath": "/captures/tidepool/history/account-1790372555258.png",
+            "previousSha256": "0d2ebc9b428eb8d408f78206ebd776ef2758dcec8b98c54e054d77b24fb81baf",
+            "diffPath": "/captures/tidepool/diffs/account.png",
+            "changedShare": 0,
+            "sizeChanged": false,
+            "changed": false
+          },
+          "mobile": {
+            "previousPath": "/captures/tidepool/history/account-mobile-1790372555611.png",
+            "previousSha256": "a49aed33f202c3c38444a48c508b49c3d781ce74691f802801fca2a3e77501b6",
+            "diffPath": "/captures/tidepool/diffs/account-mobile.png",
+            "changedShare": 0.1807,
+            "sizeChanged": true,
+            "changed": true
+          }
+        },
+        "lastChangedAt": "2026-09-25T21:42:35.705Z"
       }
     },
     {

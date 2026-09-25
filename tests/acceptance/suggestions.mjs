@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 const repo = fileURLToPath(new URL('../..', import.meta.url));
 const data = mkdtempSync(join(tmpdir(), 'dogfood-suggestions-'));
 cpSync(join(repo, 'demo'), data, { recursive: true });
+// The suite seeds its own AI reviews; the demo's real ones would otherwise be newer.
+rmSync(join(data, 'visual-reviews'), { recursive: true, force: true });
 const manifestFile = join(data, 'projects/tidepool.json');
 const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
 const pageById = id => manifest.pages.find(item => item.id === id);
