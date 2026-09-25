@@ -120,6 +120,18 @@ test('a page moves from registered to complete only when every requirement has e
   assert.ok(existsSync(join(data, 'captures/shop/home.png')));
 });
 
+test('suggested features are added once, with unique IDs and expected behavior', () => {
+  store.createProject({ id: 'cafe', name: 'Cafe', url: 'https://cafe.example' });
+  store.registerPage('cafe', { id: 'menu', name: 'Menu', group: 'Public', route: '/menu', features: [{ id: 'order', name: 'Order' }] });
+  store.addFeatures('cafe', 'menu', [{ name: 'Order' }, { name: 'Filter by diet', expected: 'Shows only matching dishes.' }, { name: 'Filter by diet!' }], 'agent:test');
+  const features = store.readProject('cafe').pages[0].features;
+  assert.deepEqual(features.map(item => item.id), ['order', 'filter-by-diet', 'filter-by-diet-2']);
+  assert.equal(features[1].expected, 'Shows only matching dishes.');
+  assert.equal(features[1].status, 'untested');
+  assert.equal(features[1].addedBy, 'agent:test');
+  assert.throws(() => store.addFeatures('cafe', 'menu', [], 'agent:test'), /1–20/);
+});
+
 test('re-registering a page keeps verdicts and evidence for features that remain', () => {
   store.registerPage('shop', { id: 'home', name: 'Home page', group: 'Public', route: '/', features: [{ id: 'hero', name: 'Hero' }, { id: 'footer', name: 'Footer' }] });
   const page = store.readProject('shop').pages[0];
