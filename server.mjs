@@ -19,7 +19,6 @@ const person = 'person';
 const jobs = new Map();
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
-  ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/favicon.svg', ['favicon.svg', 'image/svg+xml']],
   ['/logo.svg', ['logo.svg', 'image/svg+xml']],
@@ -122,11 +121,14 @@ async function apiResponse(request, pathname) {
   return null;
 }
 
+const jsModulePattern = /^\/js\/(?:views\/)?[a-z0-9-]+\.mjs$/;
+
 function staticFile(pathname) {
   if (assets.has(pathname)) {
     const [file, type] = assets.get(pathname);
     return { path: join(publicDir, file), type };
   }
+  if (jsModulePattern.test(pathname)) return { path: join(publicDir, pathname.slice(1)), type: 'text/javascript; charset=utf-8' };
   if (servedImagePattern.test(pathname)) return { path: join(capturesDir, pathname.slice('/captures/'.length)), type: 'image/png' };
   return null;
 }
