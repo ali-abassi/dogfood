@@ -63,13 +63,26 @@ function projectList() {
   }));
 }
 
+// The tool an agent calls next for each unmet requirement, so it never has to guess.
+const requirementTools = {
+  capture: 'dogfood_scan_page',
+  scan: 'dogfood_scan_page',
+  features: 'dogfood_ai_review then dogfood_add_features, then dogfood_record_verdicts',
+  checks: 'dogfood_record_verdicts',
+  audit: 'dogfood_record_verdicts',
+  connections: 'dogfood_scan_page or dogfood_set_connections',
+  tests: 'dogfood_run_tests',
+  'ai-review': 'dogfood_ai_review',
+  issues: 'dogfood_resolve_issue (after retesting the fix)',
+};
+
 function pageOutcome(page, issue) {
   const outcome = {
     page: page.id,
     name: page.name,
     status: page.progress.status,
     complete: page.progress.complete,
-    missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing })),
+    missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTools[id] })),
   };
   return issue ? { ...outcome, issue } : outcome;
 }
@@ -124,7 +137,7 @@ function capture({ project, page, ...input }) {
   return savePage(page, () => recordCapture(project, page, input));
 }
 
-function addIssue({ project, page, agent, severity, title, detail, attachCapture }) {
+function addIssue({ project, page, agent, severity, title, detail, attachCapture = false }) {
   const saved = createFinding(project, page, { severity, title, detail, attachCapture }, byAgent(agent));
   const finding = pageById(saved, page).findings.at(-1);
   return pageOutcomeFrom(saved, page, finding.id);
@@ -288,8 +301,8 @@ const definitions = [
       severity: { type: 'string', enum: severities, description: 'Issue priority.' },
       title: { type: 'string', description: 'Concise issue title.' },
       detail: { type: 'string', description: 'Observed behavior and steps to reproduce.' },
-      attachCapture: { type: 'boolean', description: 'Whether to attach the current desktop screenshot as evidence.' },
-    }, ['project', 'page', 'agent', 'severity', 'title', 'detail', 'attachCapture']),
+      attachCapture: { type: 'boolean', description: 'Optional, default false: attach the current desktop screenshot as evidence.' },
+    }, ['project', 'page', 'agent', 'severity', 'title', 'detail']),
     run: addIssue,
   },
   {
@@ -327,7 +340,12 @@ const definitions = [
 ];
 
 const toolList = definitions.map(({ run, ...tool }) => tool);
-const handlers = new Map(definitions.map(({ name, run }) => [name, run]));
+const tools = new Map(definitions.map(definition => [definition.name, definition]));
+
+// Checked before a tool runs, so an agent learns every missing argument at once.
+function missingArguments(tool, args) {
+  return tool.inputSchema.required.filter(name => args[name] === undefined || args[name] === '');
+}
 
 function rpcError(id, code, message) {
   return { jsonrpc: '2.0', id, error: { code, message } };
@@ -349,12 +367,18 @@ function toolResult(value) {
   return { content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }] };
 }
 
+async function runTool(tool, args) {
+  const missing = missingArguments(tool, args);
+  if (missing.length) throw new Error(`Missing required arguments: ${missing.join(', ')}.`);
+  return tool.run(args);
+}
+
 async function callTool(request) {
   const params = request.params ?? {};
-  const handler = handlers.get(params.name);
-  if (!handler) return rpcError(request.id, -32602, `Unknown tool: ${params.name}`);
+  const tool = tools.get(params.name);
+  if (!tool) return rpcError(request.id, -32602, `Unknown tool: ${params.name}`);
   try {
-    return { jsonrpc: '2.0', id: request.id, result: toolResult(await handler(params.arguments ?? {})) };
+    return { jsonrpc: '2.0', id: request.id, result: toolResult(await runTool(tool, params.arguments ?? {})) };
   } catch (error) {
     return { jsonrpc: '2.0', id: request.id, result: { ...toolResult(errorMessage(error)), isError: true } };
   }
