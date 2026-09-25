@@ -38,7 +38,7 @@ Add a project from the app's **Add project** form, the CLI, or an MCP call:
 npm run onboard -- https://site.example
 ```
 
-Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registers them, and records a validated full-page desktop and mobile screenshot plus measured page facts. It can scan up to 50 pages. Install the browser once with `npm i -g agent-browser`. To scan signed-in pages, pass a Chrome profile such as `Default` with `npm run onboard -- https://site.example --profile Default` or the `browserProfile` field in the app or MCP tool. Rescan every page with `npm run scan -- <project-id>`, or list page IDs to scan only those pages.
+Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registers them, and records a validated full-page desktop and mobile screenshot plus measured page facts. It can scan up to 50 pages. Install the browser once with `npm i -g agent-browser`. To scan signed-in pages, pass a Chrome profile such as `Default` with `npm run onboard -- https://site.example --profile Default` or the `browserProfile` field in the app or MCP tool. Rescan every page with the overview's **Scan all pages** button, `npm run scan -- <project-id>`, or `dogfood_scan_project`; each reports which pages changed visually since the previous scan. A page counts as changed when its screenshot size changed or more than 0.5% of pixels differ (`changeThreshold` in `lib/diff.mjs`). Reviewed pages that changed are marked "Changed since review" so their verdicts get another look; list page IDs to scan only those pages.
 
 Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.
 
@@ -61,6 +61,7 @@ Page-writing tools return that page's status, completion state, and remaining re
 - `dogfood_projects` — list projects and completed page counts.
 - `dogfood_onboard_project` — find and scan every same-site page from one URL.
 - `dogfood_scan_page` — rescan a registered page at desktop and mobile sizes.
+- `dogfood_scan_project` — rescan every page of a project and list which pages changed visually since the previous scan.
 - `dogfood_create_project` — create a project with its URL, environment, checkout, and guidelines.
 - `dogfood_register_page` — register a page, its features, tests, and untested boundary.
 - `dogfood_add_features` — add features to a page, for example ones the AI review suggested; names already listed are skipped.

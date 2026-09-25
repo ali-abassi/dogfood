@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline';
 import { readFileSync } from 'node:fs';
 import { onboardProject } from './lib/onboard.mjs';
-import { scanPage } from './lib/scanner.mjs';
+import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
   addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
   recordVerdicts, registerPage, saveAudit, setConnections, updateFinding,
@@ -82,6 +82,7 @@ function pageOutcome(page, issue) {
     name: page.name,
     status: page.progress.status,
     complete: page.progress.complete,
+    changedSinceReview: page.progress.changedSinceReview,
     missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTools[id] })),
   };
   return issue ? { ...outcome, issue } : outcome;
@@ -157,6 +158,11 @@ async function scanRegisteredPage({ project, page }) {
   return pageOutcomeFrom(readProject(project), page);
 }
 
+async function scanEntireProject({ project }) {
+  const result = await scanProject(project);
+  return { project, scanned: result.scanned, failed: result.failed, changed: result.changed };
+}
+
 async function reviewPage({ project, page, confirmUsage }) {
   if (confirmUsage !== true) throw new Error('This review sends the screenshot to a model provider and spends usage; pass confirmUsage: true to continue.');
   return startReview(project, page);
@@ -179,6 +185,12 @@ const definitions = [
     description: 'Rescan one registered page at desktop and mobile sizes, save validated screenshots and measured facts, and return its compact QA outcome. Prefer this over recording captures by hand.',
     inputSchema: objectSchema(projectPageProperties, projectPageRequired),
     run: scanRegisteredPage,
+  },
+  {
+    name: 'dogfood_scan_project',
+    description: 'Rescan every page of a project at desktop and mobile sizes, and list which pages changed visually since the previous scan.',
+    inputSchema: objectSchema({ project: projectPageProperties.project }, ['project']),
+    run: scanEntireProject,
   },
   {
     name: 'dogfood_projects',

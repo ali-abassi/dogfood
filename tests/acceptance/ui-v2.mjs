@@ -164,13 +164,13 @@ try {
     assert.equal(page(`Boolean(document.querySelector('#add-project-form input[name="name"]'))`), true);
     assert.equal(page(`Boolean(document.querySelector('#add-project-form input[name="browserProfile"]'))`), true);
   });
-  stubApi({ 'POST /api/onboard': [202, { job: 'job-1' }], 'GET /api/onboard/job-1': [200, { status: 'done', total: 5, scanned: 5, current: null, projectId: 'tidepool', error: '' }] });
+  stubApi({ 'POST /api/onboard': [202, { job: 'job-1' }], 'GET /api/jobs/job-1': [200, { status: 'done', total: 5, scanned: 5, current: null, projectId: 'tidepool', error: '' }] });
   page(`(() => { const form = document.querySelector('#add-project-form'); form.querySelector('input[type="url"]').value = 'https://tidepool.example/'; form.querySelector('input[name="name"]').value = 'Tidepool'; form.querySelector('input[name="browserProfile"]').value = 'Default'; form.requestSubmit(); return true; })()`);
   browser('wait', '2500');
   check('submitting Add project starts onboarding, follows its progress, and opens the new project', () => {
     const calls = page('window.__calls');
     assert.deepEqual(calls[0], { key: 'POST /api/onboard', body: { url: 'https://tidepool.example/', name: 'Tidepool', browserProfile: 'Default' } });
-    assert.ok(calls.some(item => item.key === 'GET /api/onboard/job-1'));
+    assert.ok(calls.some(item => item.key === 'GET /api/jobs/job-1'));
     assert.equal(page(`Boolean(document.querySelector('section[aria-label="Project overview"]'))`), true);
     assert.equal(page(`document.querySelector('#project-select')?.value`), 'tidepool');
   });
