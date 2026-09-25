@@ -98,7 +98,7 @@ A page is complete only when every applicable requirement has evidence: validate
 
 - `npm test` runs the unit tests; `npm run check` validates syntax and the demo manifest; `npm run lint` keeps every function at cyclomatic complexity 5 or less.
 - `npm run test:acceptance` runs the end-to-end suites in `tests/acceptance/`. All but the MCP suite drive a real headless browser, so they need agent-browser.
-- CI runs the unit tests, the checks, lint, and the MCP suite on every push.
+- CI runs the unit tests, the checks, lint, and every acceptance suite (in headless Chrome) on every push.
 
 ## License
 
