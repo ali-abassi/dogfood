@@ -16,7 +16,7 @@ export const scanAccessibilityNames = { imagesWithoutAlt: 'Images without alt', 
 export const requirementViews = { capture: 'capture', scan: 'capture', features: 'review', checks: 'review', audit: 'risk', connections: 'risk', tests: 'tests', 'ai-review': 'capture', issues: 'findings' };
 export const requirementShortNames = { capture: 'Screenshots', scan: 'Scan', features: 'Features', checks: 'Quality', audit: 'Safety', connections: 'Connections', tests: 'Tests', 'ai-review': 'AI review', issues: 'Issues' };
 export const requirementActions = { capture: 'See page', scan: 'See page', features: 'My review', checks: 'My review', audit: 'Safety & search', connections: 'Safety & search', tests: 'Run checks', 'ai-review': 'See page', issues: 'Issues' };
-export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, removingPage: null, screenshotDevice: 'desktop', scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
+export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, editing: false, auditEditing: false, findingForm: null, removingPage: null, screenshotDevice: 'desktop', suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
 
 export function reviewedChecks(page) {
   return Object.values(page.checks).filter(item => item.status !== 'untested').length;
@@ -52,8 +52,12 @@ export function activePage() {
   return state.project?.pages.find(page => page.id === state.pageId) ?? null;
 }
 
+export function isProjectView() {
+  return ['overview', 'add-project', 'suggestions'].includes(state.view);
+}
+
 export function ensureSelection() {
-  if (['overview', 'add-project'].includes(state.view)) return;
+  if (isProjectView()) return;
   if (state.project.pages.some(page => page.id === state.pageId)) return;
   state.pageId = state.project.pages[0]?.id ?? null;
   state.view = defaultView(activePage());

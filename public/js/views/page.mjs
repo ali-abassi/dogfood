@@ -1,5 +1,5 @@
 import { escapeHtml, externalLinkMarkup, statusPill } from '../format.mjs';
-import { deviceNames, groupedPages, requirementActions, requirementShortNames, requirementViews, state, statusNames, visiblePages } from '../state.mjs';
+import { deviceNames, groupedPages, isProjectView, requirementActions, requirementShortNames, requirementViews, state, statusNames, visiblePages } from '../state.mjs';
 import { captureFrameMarkup } from './see-page.mjs';
 
 function menuSelectMarkup(id, label, value, options) {
@@ -92,7 +92,7 @@ function viewNavigationMarkup(page) {
 }
 
 export function toolbarMarkup(page) {
-  const navigation = state.view !== 'overview' && state.view !== 'add-project' && page ? viewNavigationMarkup(page) : '';
+  const navigation = !isProjectView() && page ? viewNavigationMarkup(page) : '';
   const toolbarClass = navigation ? 'toolbar' : 'toolbar overview-toolbar';
   return `<div class="${toolbarClass}"><button type="button" class="page-menu-toggle" data-action="open-pages">Pages</button>${navigation}</div>`;
 }

@@ -1,13 +1,14 @@
 import { readJson } from './api.mjs';
 import { registerEvents } from './events.mjs';
 import { escapeHtml } from './format.mjs';
-import { activePage, ensureSelection, state } from './state.mjs';
+import { activePage, ensureSelection, isProjectView, state } from './state.mjs';
 import { addProjectFormMarkup, welcomeMarkup } from './views/add-project.mjs';
 import { findingsMarkup } from './views/issues.mjs';
 import { captureMarkup, pageHeaderMarkup, qaCompletionMarkup, sidebarMarkup, toolbarMarkup } from './views/page.mjs';
 import { overviewMarkup } from './views/overview.mjs';
 import { reviewMarkup } from './views/review.mjs';
 import { auditMarkup } from './views/safety.mjs';
+import { suggestionsReviewMarkup, syncSuggestionsState } from './views/suggestions.mjs';
 import { seePageMarkup, syncVisualState } from './views/see-page.mjs';
 import { qaMarkup, syncQaState } from './views/tests.mjs';
 
@@ -20,9 +21,14 @@ function activeViewMarkup(page) {
   return qaMarkup(page);
 }
 
-function pageContentMarkup(page) {
+function projectViewMarkup() {
   if (state.view === 'overview') return overviewMarkup();
   if (state.view === 'add-project') return addProjectFormMarkup(false);
+  return suggestionsReviewMarkup();
+}
+
+function pageContentMarkup(page) {
+  if (isProjectView()) return projectViewMarkup();
   if (!page) return '<div class="workspace-empty"><h2>No pages yet</h2><p>No pages have been added to this project.</p></div>';
   if (state.view === 'capture') return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}${seePageMarkup(page)}`;
   return `${pageHeaderMarkup(page)}${qaCompletionMarkup(page)}<div class="view-grid">${activeViewMarkup(page)}${captureMarkup(page)}</div>`;
@@ -42,6 +48,7 @@ export function render() {
   ensureSelection();
   syncQaState();
   syncVisualState();
+  syncSuggestionsState();
   app.innerHTML = `${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`;
 }
 

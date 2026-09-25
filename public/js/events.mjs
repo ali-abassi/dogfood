@@ -8,6 +8,7 @@ import { scanAllPages } from './views/overview.mjs';
 import { pageOptionsMarkup } from './views/page.mjs';
 import { saveReview } from './views/review.mjs';
 import { addAuditRow, addConnectionRow, closeAuditEditor, openAuditEditor, removeAuditRow, saveAudit } from './views/safety.mjs';
+import { addProjectSuggestions, openProjectSuggestions, reloadProjectSuggestions, updateProjectSuggestionsButton } from './views/suggestions.mjs';
 import { remainingSuggestions } from './views/see-page.mjs';
 import { runQa } from './views/tests.mjs';
 
@@ -31,6 +32,7 @@ async function runVisualReview() {
 function finishVisualReview(key, result, error) {
   if (state.visual.key !== key) return;
   state.visual = { ...state.visual, running: false, result: result || state.visual.result, error };
+  if (result) void reloadProjectSuggestions();
   if (state.view === 'capture') render();
 }
 
@@ -50,6 +52,7 @@ async function addSuggestedFeatures(button) {
       body: JSON.stringify({ features: checked.map(item => ({ name: item.name, expected: item.expected })) }),
     });
     state.message = `Added ${plural(checked.length, 'feature', 'features')} to ${page.name}`;
+    await reloadProjectSuggestions();
   } catch (error) { state.message = error.message; }
   render();
 }
@@ -71,6 +74,7 @@ async function scanActivePage() {
   try {
     const project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/scan`, { method: 'POST' });
     if (project.id === state.project.id) state.project = project;
+    await reloadProjectSuggestions();
     state.scan = { key, running: false, error: '' };
     state.visual.key = '';
   } catch (error) { state.scan = { key, running: false, error: error.message }; }
@@ -106,6 +110,7 @@ async function submitRemovePage(form) {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: new FormData(form).get('reason') }),
     });
     Object.assign(state, { removingPage: null, pageId: null, view: 'overview', message: `Removed ${page.name}` });
+    await reloadProjectSuggestions();
     render();
   } catch (error) {
     const box = form.querySelector('#remove-page-error');
@@ -173,6 +178,9 @@ const buttonActions = new Map([
   ['run-qa', runQa],
   ['run-visual', runVisualReview],
   ['add-suggested-features', addSuggestedFeatures],
+  ['review-suggestions', openProjectSuggestions],
+  ['add-project-suggestions', addProjectSuggestions],
+  ['cancel-project-suggestions', selectOverview],
   ['scan', scanActivePage],
   ['scan-all', scanAllPages],
   ['screenshot-device', button => { state.screenshotDevice = button.dataset.screenshotDevice; render(); }],
@@ -238,6 +246,11 @@ const formHandlers = new Map([
   ['remove-page-form', submitRemovePage],
 ]);
 
+function handleSuggestionToggle(target) {
+  if (target.name === 'suggested-feature') updateSuggestedButton();
+  if (target.name === 'project-suggestion') updateProjectSuggestionsButton();
+}
+
 export function registerEvents() {
   app.addEventListener('click', event => {
     const button = event.target.closest('button');
@@ -251,7 +264,7 @@ export function registerEvents() {
     if (event.target.id === 'project-select') return handleProjectSelection(event.target);
     if (event.target.id === 'page-filter') return handlePageFilter(event.target);
     if (event.target.id === 'page-sort') return handlePageSort(event.target);
-    if (event.target.name === 'suggested-feature') updateSuggestedButton();
+    handleSuggestionToggle(event.target);
   });
 
   app.addEventListener('keydown', event => {

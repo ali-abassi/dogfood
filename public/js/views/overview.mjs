@@ -2,6 +2,7 @@ import { readJson } from '../api.mjs';
 import { escapeHtml, plural, relativeCaptureAge, scanPosition, statusPill } from '../format.mjs';
 import { groupedPages, requirementShortNames, state } from '../state.mjs';
 import { render } from '../app.mjs';
+import { reloadProjectSuggestions, suggestionsWaitingMarkup } from './suggestions.mjs';
 
 function openIssueCount(page) {
   return plural(page.findings.filter(item => item.status === 'open').length, 'open issue', 'open issues');
@@ -82,6 +83,7 @@ export function overviewMarkup() {
     <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p>${escapeHtml(state.project.description)}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
+    ${suggestionsWaitingMarkup()}
     ${overviewMetricsMarkup()}
     <section class="overview-pages" aria-label="Pages"><h2>Pages</h2>${pages}</section>
   </section>`;
@@ -106,6 +108,7 @@ export async function scanAllPages() {
     const { job } = await readJson(`/api/projects/${state.project.id}/scan`, { method: 'POST' });
     const status = await followScanAll(job);
     state.project = await readJson(`/api/projects/${encodeURIComponent(state.project.id)}`);
+    await reloadProjectSuggestions();
     state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
     state.message = `Scanned ${plural(status.total, 'page', 'pages')}; ${status.changed.length} changed`;
   } catch (error) {
