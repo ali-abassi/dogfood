@@ -46,6 +46,29 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 **See page → Ask AI to review image** sends the saved screenshot to Gemini 3.8 Flash through OpenRouter and saves a page description, a provisional 1–10 clarity estimate, reasons, and suggestions. Set `OPENROUTER_API_KEY` in the server's environment. Each review costs a small amount of provider usage and is tied to the screenshot's hash, so it is marked stale when the screenshot changes.
 
+### Agents (MCP)
+
+Run `node mcp.mjs` as a dependency-free stdio MCP server so an agent can register pages, collect QA evidence, run focused tests, and see exactly what remains before completion. Register it with Claude Code using `claude mcp add --scope user dogfood -- node /absolute/path/to/dogfood/mcp.mjs`.
+
+Page-writing tools return that page's status, completion state, and remaining requirements; issue creation also returns the new issue ID. Project creation returns a compact project summary.
+
+- `dogfood_projects` — list projects and completed page counts.
+- `dogfood_create_project` — create a project with its URL, environment, checkout, and guidelines.
+- `dogfood_register_page` — register a page, its features, tests, and untested boundary.
+- `dogfood_page` — read a page and its derived QA progress.
+- `dogfood_next` — list incomplete pages in site order with missing evidence.
+- `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker.
+- `dogfood_record_verdicts` — record partial feature, quality, and checklist verdicts with evidence.
+- `dogfood_set_connections` — map the page request and its API/data exchanges.
+- `dogfood_set_checklist` — edit checklist questions while preserving connections.
+- `dogfood_add_issue` — record a reproducible issue and optional capture evidence.
+- `dogfood_resolve_issue` — resolve an issue with retest evidence.
+- `dogfood_run_tests` — run the page's configured focused tests.
+- `dogfood_ai_review` — request a screenshot review after confirming provider usage.
+- `dogfood_complete` — check every applicable completion requirement.
+
+A page is not complete until `dogfood_complete` accepts it; agents must call it before reporting page QA as done.
+
 ## How it works
 
 - `server.mjs` is a dependency-free Node server bound to `127.0.0.1`. It rejects cross-origin writes and serves the app and its API.
