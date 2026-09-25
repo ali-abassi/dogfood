@@ -56,7 +56,7 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 Run `node mcp.mjs` as a dependency-free stdio MCP server so an agent can onboard projects, collect QA evidence, run focused tests, and see exactly what remains before completion. Register it with Claude Code using `claude mcp add --scope user dogfood -- node /absolute/path/to/dogfood/mcp.mjs`.
 
-Page-writing tools return that page's status, completion state, and remaining requirements; issue creation also returns the new issue ID. Project creation returns a compact project summary.
+Page-writing tools return that page's status, completion state, and remaining requirements, each naming the tool that resolves it; issue creation also returns the new issue ID. Project creation returns a compact project summary.
 
 - `dogfood_projects` — list projects and completed page counts.
 - `dogfood_onboard_project` — find and scan every same-site page from one URL.
