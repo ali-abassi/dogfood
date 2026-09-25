@@ -1,151 +1,163 @@
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const dataDir = resolve(root, process.env.DOGFOOD_DATA || 'data');
-const directory = join(dataDir, 'projects');
-const statuses = new Set(['untested', 'pass', 'needs_work']);
-const dimensions = ['functionality', 'optimization', 'design', 'excess', 'clarity'];
-const auditKeys = ['security', 'scraping', 'seo'];
+import { join, resolve, sep } from 'node:path';
+import { captureProblem, readCapture } from '../lib/capture.mjs';
+import { dataDir, projectsDir, root } from '../lib/paths.mjs';
+import {
+  auditKeys, captureStates, captureTiers, checkKeys, connectionProvenance, evidenceNote, findingStatuses,
+  httpMethods, idPattern, severities, testFilePattern, verdicts,
+} from '../lib/schema.mjs';
+import { projectView } from '../lib/store.mjs';
 
 function fail(message) { throw new Error(message); }
 
-function hasEvidenceNote(entry) {
-  return entry.status === 'untested' || entry.note.trim().length >= 12;
+// Each rule is [isBroken, message]; rules run in order, so later rules may rely on earlier ones.
+function assertRules(label, rules) {
+  for (const [broken, message] of rules) if (broken()) fail(`${label}: ${message}`);
+}
+
+function isHttpUrl(value) {
+  return URL.canParse(value) && ['http:', 'https:'].includes(new URL(value).protocol);
 }
 
 function checkEntry(entry, label) {
-  if (!entry || !statuses.has(entry.status)) fail(`${label}: invalid review status`);
-  if (typeof entry.note !== 'string') fail(`${label}: evidence note missing`);
-  if (!hasEvidenceNote(entry)) fail(`${label}: verdict needs a specific evidence note`);
-}
-
-function hasCaptureProvenance(capture) {
-  return capture && ['sourceUrl', 'capturedAt', 'viewport', 'actor'].every(key => capture[key]);
-}
-
-function checkCaptureIdentity(capture, label) {
-  if (!hasCaptureProvenance(capture)) fail(`${label}: capture provenance missing`);
-  if (!['rendered', 'blocked'].includes(capture.state)) fail(`${label}: capture state invalid`);
-  if (!['source', 'automated', 'mock', 'real', 'longitudinal'].includes(capture.tier)) fail(`${label}: capture evidence tier invalid`);
-  if (!['http:', 'https:'].includes(new URL(capture.sourceUrl).protocol)) fail(`${label}: source URL must be HTTP(S)`);
+  assertRules(label, [
+    [() => !verdicts.has(entry?.status), 'invalid review status'],
+    [() => typeof entry.note !== 'string', 'evidence note missing'],
+    [() => entry.status !== 'untested' && entry.note.trim().length < evidenceNote.minimum, 'verdict needs a specific evidence note'],
+  ]);
 }
 
 function checkRenderedCapture(capture, project, label) {
-  const expectedPath = new RegExp(`^/captures/${project.id}/[a-z0-9-]+(?:-mobile)?\\.png$`);
-  if (!expectedPath.test(capture.path)) fail(`${label}: capture path invalid`);
-  const file = join(dataDir, capture.path.slice(1));
-  if (!existsSync(file)) fail(`${label}: rendered image missing`);
-  const png = readFileSync(file);
-  if (png.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') fail(`${label}: capture is not PNG`);
-  if (capture.pixelWidth !== png.readUInt32BE(16) || capture.pixelHeight !== png.readUInt32BE(20)) fail(`${label}: capture dimensions do not match image`);
-  if (typeof capture.fullPage !== 'boolean') fail(`${label}: full-page capture status missing`);
+  assertRules(label, [
+    [() => !['sourceUrl', 'capturedAt', 'viewport', 'actor'].every(key => capture[key]), 'capture provenance missing'],
+    [() => !captureTiers.has(capture.tier), 'capture evidence tier invalid'],
+    [() => !isHttpUrl(capture.sourceUrl), 'source URL must be HTTP(S)'],
+    [() => !capture.path?.startsWith(`/captures/${project.id}/`), 'capture path invalid'],
+    [() => typeof capture.fullPage !== 'boolean', 'full-page capture status missing'],
+  ]);
+  const image = readCapture(dataDir, capture.path);
+  assertRules(label, [
+    [() => capture.pixelWidth !== image.width || capture.pixelHeight !== image.height, 'capture dimensions do not match image'],
+    [() => capture.sha256 && capture.sha256 !== image.sha256, 'capture file changed after it was recorded'],
+  ]);
+  const problem = captureProblem(image.bytes);
+  if (problem) fail(`${label}: ${problem}`);
 }
 
 function checkCapture(page, project) {
   const label = `${project.id}/${page.id}`;
-  checkCaptureIdentity(page.capture, label);
+  if (!captureStates.has(page.capture?.state)) fail(`${label}: capture state invalid`);
   if (page.capture.state === 'rendered') return checkRenderedCapture(page.capture, project, label);
   if (!page.capture.reason) fail(`${label}: blocked capture needs a reason`);
 }
 
-function checkFeatures(page, project) {
-  if (!Array.isArray(page.features) || !page.features.length) fail(`${project.id}/${page.id}: feature inventory missing`);
-  const ids = page.features.map(feature => feature.id);
-  if (new Set(ids).size !== ids.length) fail(`${project.id}/${page.id}: duplicate feature IDs`);
-  for (const feature of page.features) checkEntry(feature, `${project.id}/${page.id}/${feature.name}`);
+function checkUniqueIds(rows, label) {
+  if (new Set(rows.map(row => row.id)).size !== rows.length) fail(`${label}: duplicate IDs`);
 }
 
-function checkFindingEvidence(finding, page, label) {
-  if (typeof finding.evidence !== 'string') fail(`${label}: finding evidence field missing`);
-  if (!finding.evidence) return;
-  if (finding.evidence !== page.capture.path?.slice(1)) fail(`${label}: finding evidence belongs to another page`);
-  if (!existsSync(join(dataDir, finding.evidence))) fail(`${label}: finding evidence missing`);
-}
-
-function checkFindingResolution(finding, label) {
-  if (finding.status !== 'resolved') return;
-  if (typeof finding.resolution !== 'string' || finding.resolution.trim().length < 20) fail(`${label}: resolution evidence missing`);
-  if (Number.isNaN(Date.parse(finding.resolvedAt))) fail(`${label}: resolution time invalid`);
+function checkFeatures(page, label) {
+  if (!Array.isArray(page.features)) fail(`${label}: feature inventory missing`);
+  checkUniqueIds(page.features, `${label} features`);
+  for (const feature of page.features) checkEntry(feature, `${label}/${feature.name}`);
 }
 
 function checkFinding(finding, page, label) {
-  if (['id', 'title', 'detail'].some(key => !finding[key])) fail(`${label}: finding content missing`);
-  if (!['P0', 'P1', 'P2', 'P3'].includes(finding.severity)) fail(`${label}: invalid severity`);
-  if (!['open', 'resolved'].includes(finding.status)) fail(`${label}: invalid finding status`);
-  checkFindingResolution(finding, label);
-  checkFindingEvidence(finding, page, label);
-}
-
-function checkFindings(page, project) {
-  if (!Array.isArray(page.findings)) fail(`${project.id}/${page.id}: findings list missing`);
-  page.findings.forEach(finding => checkFinding(finding, page, `${project.id}/${page.id}`));
+  const resolved = finding.status === 'resolved';
+  assertRules(`${label}/${finding.id}`, [
+    [() => ['id', 'title', 'detail'].some(key => !finding[key]), 'finding content missing'],
+    [() => !severities.includes(finding.severity), 'invalid severity'],
+    [() => !findingStatuses.has(finding.status), 'invalid finding status'],
+    [() => resolved && String(finding.resolution ?? '').trim().length < 20, 'resolution evidence missing'],
+    [() => resolved && Number.isNaN(Date.parse(finding.resolvedAt)), 'resolution time invalid'],
+    [() => typeof finding.evidence !== 'string', 'finding evidence field missing'],
+    [() => finding.evidence && finding.evidence !== page.capture.path?.slice(1), 'finding evidence belongs to another page'],
+  ]);
 }
 
 function checkAuditList(rows, label) {
-  if (!Array.isArray(rows) || !rows.length) fail(`${label}: checklist missing`);
-  if (new Set(rows.map(row => row.id)).size !== rows.length) fail(`${label}: duplicate IDs`);
+  assertRules(label, [[() => !Array.isArray(rows) || !rows.length, 'checklist missing']]);
+  checkUniqueIds(rows, label);
   for (const row of rows) {
-    if (!row.id || !row.question) fail(`${label}: checklist item incomplete`);
+    assertRules(label, [[() => !row.id || !row.question, 'checklist item incomplete']]);
     checkEntry(row, `${label}/${row.id}`);
   }
 }
 
+function checkAudit(page, label) {
+  for (const key of auditKeys) checkAuditList(page.audit?.[key], `${label}/${key}`);
+}
+
 function checkConnection(row, label) {
-  if (['id', 'name', 'method', 'endpoint', 'sends', 'receives', 'source'].some(key => !row[key])) fail(`${label}: incomplete connection`);
-  if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(row.method)) fail(`${label}: invalid connection method`);
-  if (!['source', 'observed', 'manual'].includes(row.provenance)) fail(`${label}: invalid connection provenance`);
+  assertRules(`${label}/${row.id}`, [
+    [() => ['id', 'name', 'method', 'endpoint', 'sends', 'receives', 'source'].some(key => !row[key]), 'incomplete connection'],
+    [() => !httpMethods.has(row.method), 'invalid connection method'],
+    [() => !connectionProvenance.has(row.provenance), 'invalid connection provenance'],
+  ]);
 }
 
-function checkAudit(page, project) {
-  for (const key of auditKeys) checkAuditList(page.audit?.[key], `${project.id}/${page.id}/${key}`);
-  if (!Array.isArray(page.connections) || !page.connections.length) fail(`${project.id}/${page.id}: connections missing`);
-  if (new Set(page.connections.map(row => row.id)).size !== page.connections.length) fail(`${project.id}/${page.id}: duplicate connection IDs`);
-  for (const row of page.connections) checkConnection(row, `${project.id}/${page.id}`);
+function checkConnections(page, label) {
+  if (!Array.isArray(page.connections)) fail(`${label}: connections list missing`);
+  checkUniqueIds(page.connections, `${label} connections`);
+  for (const row of page.connections) checkConnection(row, label);
 }
 
-function checkPageTest(test, checkout, label) {
-  if (!test.id || !test.label || !/^src\/[a-zA-Z0-9/_-]+\.test\.tsx?$/.test(test.file)) fail(`${label}: invalid focused test`);
-  if (typeof test.reason !== 'string' || test.reason.trim().length < 12) fail(`${label}: focused test needs a reason`);
-  const file = join(checkout, test.file);
-  if (!existsSync(file) || !realpathSync(file).startsWith(`${checkout}${sep}`)) fail(`${label}: focused test missing or outside checkout`);
+function checkFocusedTest(test, checkout, label) {
+  const file = join(checkout, String(test.file));
+  assertRules(`${label}/${test.id}`, [
+    [() => !test.id || !test.label || !testFilePattern.test(test.file), 'invalid focused test'],
+    [() => String(test.reason ?? '').trim().length < 12, 'focused test needs a reason'],
+    [() => !existsSync(file) || !realpathSync(file).startsWith(`${checkout}${sep}`), 'focused test missing or outside checkout'],
+  ]);
 }
 
-function checkQaPlan(page, project) {
-  const tests = page.qa?.tests;
+function checkTestPlan(page, checkout, label) {
+  assertRules(label, [
+    [() => !Array.isArray(page.qa?.tests), 'test plan missing'],
+    [() => typeof page.qa.note !== 'string', 'untested boundary note missing'],
+  ]);
+  checkUniqueIds(page.qa.tests, `${label} tests`);
+  for (const test of page.qa.tests) checkFocusedTest(test, checkout, label);
+}
+
+function checkPage(page, project, checkout) {
   const label = `${project.id}/${page.id}`;
-  if (!Array.isArray(tests)) fail(`${label}: test plan missing`);
-  if (typeof page.qa.note !== 'string' || page.qa.note.trim().length < 12) fail(`${label}: describe the untested page boundary`);
-  if (new Set(tests.map(test => test.id)).size !== tests.length) fail(`${label}: duplicate test IDs`);
-  for (const test of tests) checkPageTest(test, realpathSync(resolve(root, project.source.checkout)), label);
-}
-
-function checkPage(page, project) {
-  if (!/^[a-z0-9-]+$/.test(page.id)) fail(`${project.id}: invalid page ID`);
-  if (['name', 'group', 'route'].some(key => !page[key])) fail(`${project.id}/${page.id}: page identity missing`);
+  assertRules(label, [
+    [() => !idPattern.test(page.id), 'invalid page ID'],
+    [() => ['name', 'group', 'route'].some(key => !page[key]), 'page identity missing'],
+    [() => !Array.isArray(page.findings), 'findings list missing'],
+  ]);
   checkCapture(page, project);
-  for (const key of dimensions) checkEntry(page.checks?.[key], `${project.id}/${page.id}/${key}`);
-  checkFeatures(page, project);
-  checkFindings(page, project);
-  checkAudit(page, project);
-  checkQaPlan(page, project);
+  for (const key of checkKeys) checkEntry(page.checks?.[key], `${label}/${key}`);
+  checkFeatures(page, label);
+  page.findings.forEach(finding => checkFinding(finding, page, label));
+  checkAudit(page, label);
+  checkConnections(page, label);
+  checkTestPlan(page, checkout, label);
 }
 
-if (!existsSync(directory)) fail(`No projects folder at ${directory}. Run with DOGFOOD_DATA=demo to check the demo.`);
-const names = readdirSync(directory).filter(name => name.endsWith('.json'));
-if (!names.length) fail('No project manifests found');
-for (const name of names) {
-  const project = JSON.parse(readFileSync(join(directory, name), 'utf8'));
-  if (project.version !== 1 || `${project.id}.json` !== name) fail(`${name}: project version or ID mismatch`);
-  if (!/^[a-z0-9-]+$/.test(project.id)) fail(`${name}: invalid project ID`);
-  if (!project.name || !project.description || !project.source?.url || !project.source?.environment) fail(`${name}: project identity or source missing`);
-  if (!project.source.checkout || !existsSync(resolve(root, project.source.checkout))) fail(`${name}: local checkout missing`);
-  if (!['http:', 'https:'].includes(new URL(project.source.url).protocol)) fail(`${name}: project URL must be HTTP(S)`);
-  if (!Array.isArray(project.guidelines)) fail(`${name}: design guidelines missing`);
-  if (!Array.isArray(project.pages) || !project.pages.length) fail(`${name}: no pages`);
-  const ids = project.pages.map(page => page.id);
-  if (new Set(ids).size !== ids.length) fail(`${name}: duplicate page IDs`);
-  project.pages.forEach(page => checkPage(page, project));
-  console.log(`${project.name}: ${project.pages.length} pages, ${project.pages.reduce((count, page) => count + page.features.length, 0)} features`);
+function checkProjectIdentity(project, name) {
+  assertRules(name, [
+    [() => project.version !== 1 || `${project.id}.json` !== name, 'project version or ID mismatch'],
+    [() => !idPattern.test(project.id), 'invalid project ID'],
+    [() => ['name', 'description'].some(key => !project[key]) || !project.source?.environment, 'project identity or source missing'],
+    [() => !isHttpUrl(project.source.url), 'project URL must be HTTP(S)'],
+    [() => !project.source.checkout || !existsSync(resolve(root, project.source.checkout)), 'local checkout missing'],
+    [() => !Array.isArray(project.guidelines), 'design guidelines missing'],
+    [() => !Array.isArray(project.pages), 'pages missing'],
+  ]);
+  checkUniqueIds(project.pages, `${name} pages`);
 }
+
+function checkProject(name) {
+  const project = JSON.parse(readFileSync(join(projectsDir, name), 'utf8'));
+  checkProjectIdentity(project, name);
+  const checkout = realpathSync(resolve(root, project.source.checkout));
+  project.pages.forEach(page => checkPage(page, project, checkout));
+  const complete = projectView(project).pages.filter(page => page.progress.complete).length;
+  console.log(`${project.name}: ${project.pages.length} pages, ${complete} with complete QA`);
+}
+
+if (!existsSync(projectsDir)) fail(`No projects folder at ${projectsDir}. Run with DOGFOOD_DATA=demo to check the demo.`);
+const names = readdirSync(projectsDir).filter(name => name.endsWith('.json'));
+if (!names.length) fail('No project manifests found');
+names.forEach(checkProject);

@@ -8,11 +8,9 @@ import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const source = join(fileURLToPath(new URL('..', import.meta.url)));
-const fixture = mkdtempSync(join(tmpdir(), 'qa-findings-'));
+const fixture = mkdtempSync(join(tmpdir(), 'dogfood-findings-'));
 const projects = join(fixture, 'projects');
 mkdirSync(projects);
-copyFileSync(join(source, 'server.mjs'), join(fixture, 'server.mjs'));
-copyFileSync(join(source, 'visual-review.mjs'), join(fixture, 'visual-review.mjs'));
 copyFileSync(join(source, 'demo/projects/tidepool.json'), join(projects, 'tidepool.json'));
 const checkout = join(fixture, 'checkout');
 mkdirSync(join(checkout, 'node_modules/.bin'), { recursive: true });
@@ -82,7 +80,7 @@ async function request(url, path, method, body, origin = url) {
 test('page findings and checklists persist with page-scoped validation', async () => {
   const port = await availablePort();
   const url = `http://127.0.0.1:${port}`;
-  child = spawn(process.execPath, [join(fixture, 'server.mjs')], {
+  child = spawn(process.execPath, [join(source, 'server.mjs')], {
     env: { ...process.env, DOGFOOD_PORT: String(port), DOGFOOD_DATA: fixture }, stdio: 'ignore',
   });
   await waitForServer(url);
@@ -151,6 +149,8 @@ test('page findings and checklists persist with page-scoped validation', async (
   const reviewed = await request(url, reviewPath, 'PUT', reviewBody);
   assert.equal(reviewed.status, 200);
   assert.equal(reviewed.body.pages[0].checks.clarity.status, 'pass');
+  assert.equal(reviewed.body.pages[0].checks.clarity.by, 'person');
+  assert.equal(reviewed.body.pages[0].progress.complete, false);
   assert.equal((await (await fetch(`${url}/api/projects/tidepool`)).json()).pages[0].checks.clarity.note, reviewBody.checks.clarity.note);
   assert.equal((await request(url, reviewPath, 'PUT', { ...reviewBody, checks: { ...reviewBody.checks, clarity: { status: 'pass', note: 'Vague' } } })).status, 400);
   const qaPath = '/api/projects/tidepool/pages/home/qa-runs';

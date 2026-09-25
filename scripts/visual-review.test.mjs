@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { latestVisualReview, runVisualReview, validateAnalysis } from '../visual-review.mjs';
+import { latestVisualReview, runVisualReview, validateAnalysis } from '../lib/visual-review.mjs';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGxoAAAAASUVORK5CYII=', 'base64');
 const analysis = {
