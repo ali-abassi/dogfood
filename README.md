@@ -56,6 +56,8 @@ Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registe
 
 `npm run report -- <project-id> > report.md` writes a shareable Markdown summary: what needs work first, every page's six answers, open bugs, and what the evidence does not prove.
 
+`npm run gate -- <project-id> [page-id ...]` applies the same completion gate as `dogfood_complete` from the command line: it exits 0 only when every named page (or every page) is complete, 1 with each page's missing evidence when one is not, and 2 for an unknown project or page. Other tools can require page QA with it; an agent runner can run it after every worker turn.
+
 Upgrading from an earlier dogfood? Run `npm run migrate` once. It moves projects to the six answers and the current data version, keeps old verdicts that no longer count on record under `retiredChecks`, and leaves any outside-edit warning in place.
 
 Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.

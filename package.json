@@ -16,6 +16,7 @@
     "test:acceptance": "for f in tests/acceptance/*.mjs; do echo \"$f\"; node \"$f\" || exit 1; done",
     "lint": "npx --yes eslint@10 .",
     "report": "node scripts/report.mjs",
+    "gate": "node scripts/gate.mjs",
     "migrate": "node scripts/migrate.mjs"
   },
   "engines": {
