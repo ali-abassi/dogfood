@@ -1,6 +1,6 @@
 {
   "name": "dogfood",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Is your app working? dogfood checks every page on a computer and a phone and gives each six plain answers, backed by evidence.",
   "private": true,
   "license": "MIT",
