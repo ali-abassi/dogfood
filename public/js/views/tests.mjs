@@ -43,7 +43,8 @@ function qaCasesMarkup(run) {
 function qaPlanMarkup(page) {
   const tests = page.qa.tests.map(item => `<li><strong>${escapeHtml(item.label)}</strong><p>${escapeHtml(item.reason)}</p><code>${escapeHtml(item.file)}</code></li>`).join('');
   const plan = tests ? `<details class="technical-details"><summary>Why these checks were chosen</summary><ul class="qa-tests">${tests}</ul></details>` : '';
-  return `${qaPlannedCasesMarkup(page)}${plan}<p class="qa-gap">${escapeHtml(page.qa.note)}</p>`;
+  const note = page.qa.note ? `<p class="qa-gap">${escapeHtml(page.qa.note)}</p>` : '';
+  return `${qaPlannedCasesMarkup(page)}${plan}${note}`;
 }
 
 function qaPlannedCasesMarkup(page) {

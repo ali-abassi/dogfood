@@ -1,7 +1,16 @@
 import { state } from './state.mjs';
 
+// The browser's own message for a dropped connection ("Failed to fetch") means nothing to a person.
+async function reach(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error('dogfood is not responding. Check that it is still running, then try again.');
+  }
+}
+
 export async function readJson(url, options) {
-  const response = await fetch(url, options);
+  const response = await reach(url, options);
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
   return data;
