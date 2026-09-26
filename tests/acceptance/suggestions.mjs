@@ -110,6 +110,16 @@ try {
     const add = evaluate(`(() => { const button = document.querySelector('button[data-action="add-project-suggestions"]'); if (!button) return 'no review'; const box = button.getBoundingClientRect(); return box.bottom <= innerHeight && box.top >= 0; })()`);
     assert.ok(add === true || add === 'no review', String(add));
   });
+  browser('set', 'viewport', '1440', '900');
+  evaluate(`(() => { const real = window.fetch.bind(window); window.fetch = (input, options) => new URL(String(input), location.href).pathname.endsWith('/suggestions') ? Promise.resolve(new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })) : real(input, options); return true; })()`);
+  evaluate(`(document.querySelector('[data-overview]').click(), true)`);
+  browser('wait', '400');
+  evaluate(`(document.querySelector('[data-action="review-suggestions"]')?.click(), true)`);
+  browser('wait', '600');
+  check('SG empty state: when an agent added everything meanwhile, opening the review says nothing is waiting and offers Back', () => {
+    assert.match(text('section[aria-label="Review suggested features"]'), /Nothing is waiting/);
+    assert.equal(evaluate(`Boolean(document.querySelector('[data-action="cancel-project-suggestions"]')) && !document.querySelector('[data-action="add-project-suggestions"]')`), true);
+  });
   const errors = browser('errors').trim();
   check('no page errors were thrown', () => assert.ok(!/error/i.test(errors) || /no errors/i.test(errors), errors));
 

@@ -53,6 +53,13 @@ function scrollToTopOnNewView() {
   shownView = view;
 }
 
+// Re-rendering replaces the elements, so focus returns to the one with the same ID.
+function replaceKeepingFocus(html) {
+  const focusedId = document.activeElement?.id;
+  app.innerHTML = html;
+  if (focusedId) document.getElementById(focusedId)?.focus({ preventScroll: true });
+}
+
 export function render() {
   if (!state.project && !state.projects.length) {
     app.innerHTML = `${welcomeMarkup()}<div class="save-message" role="status"></div>`;
@@ -63,7 +70,7 @@ export function render() {
   syncQaState();
   syncVisualState();
   syncSuggestionsState();
-  app.innerHTML = `${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`;
+  replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();
 }
 

@@ -1,4 +1,4 @@
-import { escapeHtml, externalLinkMarkup, statusPill } from '../format.mjs';
+import { escapeHtml, externalLinkMarkup, plainMessageMarkup, statusPill } from '../format.mjs';
 import { groupedPages, isProjectView, state, statusNames, visiblePages } from '../state.mjs';
 
 function menuSelectMarkup(id, label, value, options) {
@@ -64,7 +64,7 @@ function checkAgainMarkup(page) {
 
 function scanErrorMarkup(page) {
   const own = state.scan.key === `${state.project.id}/${page.id}`;
-  return own && state.scan.error ? `<p class="form-error" role="alert">${escapeHtml(state.scan.error)}</p>` : '';
+  return own && state.scan.error ? `<div class="form-error" role="alert">${plainMessageMarkup(state.scan.error)}</div>` : '';
 }
 
 export function pageHeaderMarkup(page) {

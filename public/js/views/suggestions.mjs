@@ -42,11 +42,13 @@ export function suggestionsReviewMarkup() {
   </section>`;
 }
 
+// Opening the review reads the list again, since an agent may have added some of it meanwhile.
 export function openProjectSuggestions() {
   state.view = 'suggestions';
   state.message = '';
   render();
   document.querySelector('#suggestions-heading')?.focus({ preventScroll: true });
+  void reloadProjectSuggestions();
 }
 
 export function updateProjectSuggestionsButton() {

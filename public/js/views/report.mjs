@@ -1,4 +1,4 @@
-import { answerMarkMarkup, escapeHtml, relativeCaptureAge, safeCapturePath } from '../format.mjs';
+import { answerMarkMarkup, escapeHtml, plainMessageMarkup, relativeCaptureAge, safeCapturePath } from '../format.mjs';
 import { deviceNames, state } from '../state.mjs';
 
 function screenMarkup(page, device) {
@@ -6,7 +6,7 @@ function screenMarkup(page, device) {
   const image = capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
   const picture = image
     ? `<img data-screenshot src="${image}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}" width="${escapeHtml(capture.pixelWidth)}" height="${escapeHtml(capture.pixelHeight)}" loading="eager">`
-    : `<p class="screen-missing">${escapeHtml(capture.reason || 'No screenshot yet.')}</p>`;
+    : `<div class="screen-missing">${plainMessageMarkup(capture.reason || 'No screenshot yet.')}</div>`;
   return `<figure class="report-screen report-screen-${device}"><div class="screen-frame">${picture}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(relativeCaptureAge(capture))}</figcaption></figure>`;
 }
 
@@ -28,7 +28,7 @@ function takeScreenshotsMarkup(page) {
   const capture = page.captures.desktop;
   const copy = emptyScreens[capture.reason && capture.reason !== neverCaptured ? 'blocked' : 'missing'](capture);
   const label = state.scan.running ? 'Taking screenshots…' : copy.action;
-  return `<div class="screens-empty"><strong>${copy.title}</strong><p>${escapeHtml(copy.text)}</p><button type="button" class="save-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button></div>`;
+  return `<div class="screens-empty"><strong>${copy.title}</strong><div class="screens-empty-text">${plainMessageMarkup(copy.text)}</div><button type="button" class="save-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button></div>`;
 }
 
 function screensMarkup(page) {

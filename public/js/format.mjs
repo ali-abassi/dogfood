@@ -96,3 +96,10 @@ export function sourceLabel(part) {
   return date ? `${describe(part)} · ${date}` : describe(part);
 }
 
+// Failure messages end with the browser's own code in brackets, for coding agents; people see
+// the plain sentence and can open the code if they want it.
+export function plainMessageMarkup(text) {
+  const match = String(text ?? '').match(/^(.*?)\s\(([^()]*)\)$/s);
+  if (!match) return escapeHtml(text);
+  return `${escapeHtml(match[1])} <details class="agent-detail"><summary>Details for your coding agent</summary><code>${escapeHtml(match[2])}</code></details>`;
+}
