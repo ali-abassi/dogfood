@@ -111,11 +111,15 @@ try {
     assert.ok(add === true || add === 'no review', String(add));
   });
   browser('set', 'viewport', '1440', '900');
-  evaluate(`(() => { const real = window.fetch.bind(window); window.fetch = (input, options) => new URL(String(input), location.href).pathname.endsWith('/suggestions') ? Promise.resolve(new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })) : real(input, options); return true; })()`);
+  evaluate(`(() => { const real = window.fetch.bind(window); window.fetch = (input, options) => new URL(String(input), location.href).pathname.endsWith('/suggestions') ? new Promise(done => setTimeout(() => done(new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })), 1500)) : real(input, options); return true; })()`);
   evaluate(`(document.querySelector('[data-overview]').click(), true)`);
   browser('wait', '400');
   evaluate(`(document.querySelector('[data-action="review-suggestions"]')?.click(), true)`);
-  browser('wait', '600');
+  browser('wait', '400');
+  check('SG loading state: while the list is read again, the cached list stays and says it is checking', () => {
+    assert.match(text('section[aria-label="Review suggested things to do"]'), /Checking for new suggestions…[\s\S]*Weekly timetable/);
+  });
+  browser('wait', '1600');
   check('SG empty state: when an agent added everything meanwhile, opening the review says nothing is waiting and offers Back', () => {
     assert.match(text('section[aria-label="Review suggested things to do"]'), /Nothing is waiting/);
     assert.equal(evaluate(`Boolean(document.querySelector('[data-action="cancel-project-suggestions"]')) && !document.querySelector('[data-action="add-project-suggestions"]')`), true);

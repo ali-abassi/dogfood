@@ -25,11 +25,17 @@ function suggestionPageMarkup(entry) {
   return `<section class="suggestion-page-group content-panel" data-suggestion-page="${escapeHtml(entry.page)}"><h2>${escapeHtml(entry.name)} <small>${escapeHtml(entry.group)}</small></h2>${stale}<div class="suggested-list">${boxes}</div></section>`;
 }
 
+// While the list is read again, the cached one stays with a line saying so.
+function suggestionsListMarkup(count) {
+  const rereading = state.suggestions.loading ? '<p class="muted" role="status">Checking for new suggestions…</p>' : '';
+  return `${rereading}${state.suggestions.items.map(suggestionPageMarkup).join('')}<div class="form-actions"><button type="button" class="save-button" data-action="add-project-suggestions">Add ${escapeHtml(plural(count, 'thing', 'things'))}</button><button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button></div>`;
+}
+
 function suggestionsBodyMarkup(count) {
   if (state.suggestions.error) return `<p class="form-error" role="alert">Could not load the AI’s suggestions. ${escapeHtml(state.suggestions.error)} <button type="button" class="link-button" data-action="retry-suggestions">Try again</button></p>`;
   if (state.suggestions.loading && !count) return '<p class="muted" role="status">Loading suggestions…</p>';
   if (!count) return '<p class="muted">Nothing is waiting. The AI suggests what people can do on a page each time it checks one.</p>';
-  return `${state.suggestions.items.map(suggestionPageMarkup).join('')}<div class="form-actions"><button type="button" class="save-button" data-action="add-project-suggestions">Add ${escapeHtml(plural(count, 'thing', 'things'))}</button><button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button></div>`;
+  return suggestionsListMarkup(count);
 }
 
 export function suggestionsReviewMarkup() {
@@ -84,6 +90,7 @@ export async function reloadProjectSuggestions() {
   if (!state.project) return;
   const id = state.project.id;
   Object.assign(state.suggestions, { key: id, loading: true, error: '' });
+  if (suggestionsVisibleFor(id)) render();
   try {
     state.suggestions.items = await readJson(`/api/projects/${encodeURIComponent(id)}/suggestions`);
   } catch (error) { state.suggestions.error = error.message; }
@@ -105,6 +112,7 @@ export async function addProjectSuggestions(button) {
   const picked = checkedProjectSuggestions();
   if (!picked.length) return;
   button.disabled = true;
+  button.textContent = 'Adding…';
   try {
     state.project = await readJson(`/api/projects/${state.project.id}/features`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
