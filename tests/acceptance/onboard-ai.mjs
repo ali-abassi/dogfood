@@ -112,7 +112,7 @@ try {
   })()`);
   browser('wait', '1400');
   check('checking it sends aiReview to onboarding', () => assert.deepEqual(evaluate('window.__calls[0]'), { url: 'https://site.example/', aiReview: true }));
-  check('progress says when the AI is reviewing pages', () => assert.match(evaluate('window.__progress') ?? '', /Asking AI about 1 of 2 · Home/));
+  check('progress says when the AI is reviewing pages', () => assert.match(evaluate('window.__progress') ?? '', /Checking with AI 1 of 2 · Home/));
   console.log(`\n${passed} checks passed`);
 } catch (error) {
   console.error(`FAILED after ${passed} passing checks:`, error.message);

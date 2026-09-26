@@ -13,12 +13,12 @@ function thingMarkup(feature) {
 }
 
 function thingOptions(status) {
-  return [['untested', 'Not checked'], ['pass', 'Works'], ['needs_work', 'Needs work']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
+  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
 }
 
 function thingEditorMarkup(feature) {
   const id = `thing-${feature.id}`;
-  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What happened when you tried it? Needed for Works or Needs work.">${escapeHtml(feature.note)}</textarea></div>`;
+  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What happened when you tried it? Needed for Good or Needs work.">${escapeHtml(feature.note)}</textarea></div>`;
 }
 
 function thingsFormMarkup(page) {
@@ -47,15 +47,14 @@ function suggestionsMarkup(page) {
 
 function thingsMarkup(page) {
   const body = state.thingsEditing ? thingsFormMarkup(page) : `<ul class="things">${page.features.map(thingMarkup).join('')}</ul>`;
-  const empty = page.features.length ? '' : '<p class="muted">Nothing is listed yet. Add what people come to this page to do, or let the AI suggest it.</p>';
   const update = page.features.length && !state.thingsEditing ? '<button type="button" class="text-button" data-action="edit-things">Update answers</button>' : '';
-  return `<section class="content-panel" aria-label="Things you can do here"><div class="panel-heading"><h2>Things you can do here</h2>${update}</div>${empty}${body}${addThingMarkup()}${suggestionsMarkup(page)}</section>`;
+  return `<section class="content-panel" aria-label="Things you can do here"><div class="panel-heading"><h2>Things you can do here</h2>${update}</div>${body}${addThingMarkup()}${suggestionsMarkup(page)}</section>`;
 }
 
 function scanErrorsMarkup(page) {
   const problems = page.progress.scanProblems.filter(problem => !problem.endsWith('scrolls sideways'));
   if (!problems.length) return '';
-  return `<section class="content-panel" aria-label="Found by the page check"><h2>Found by the page check</h2><ul class="plain-list">${problems.map(problem => `<li>${escapeHtml(problem)}</li>`).join('')}</ul></section>`;
+  return `<section class="content-panel" aria-label="Measured by the page check"><h2>Measured by the page check</h2><ul class="plain-list">${problems.map(problem => `<li>${escapeHtml(problem)}</li>`).join('')}</ul></section>`;
 }
 
 function connectionMarkup(row) {

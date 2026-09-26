@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "id": "tidepool",
   "name": "Tidepool (demo)",
   "description": "A fictional swim school site bundled with dogfood to show every page state.",
@@ -57,19 +57,19 @@
         "security": [
           {
             "id": "inputs",
-            "question": "Are form inputs validated on the server?",
+            "question": "Does the server check every booking and sign-in form before it saves anything?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "private-data",
-            "question": "Does the page avoid exposing other customers’ details?",
+            "question": "Can people see only their own bookings and details, even if they change a link?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "headers",
-            "question": "Are security headers and third-party scripts appropriate?",
+            "question": "Does the page load only the scripts it needs, from places it trusts?",
             "status": "untested",
             "note": ""
           }
@@ -77,13 +77,13 @@
         "scraping": [
           {
             "id": "bulk",
-            "question": "Are booking and account endpoints rate-limited?",
+            "question": "Is there a limit on how fast one visitor can pull bookings or accounts, so nobody can copy them all?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "public-copy",
-            "question": "Is only intentionally public content exposed to crawlers?",
+            "question": "Can search engines and bots see only what is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -91,13 +91,13 @@
         "seo": [
           {
             "id": "title",
-            "question": "Does the page have a specific title and description?",
+            "question": "Does the page have its own clear title and a short description for search results?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "indexing",
-            "question": "Is the page indexed only if it should be public?",
+            "question": "Does the page show up in search only if it is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -105,25 +105,25 @@
         "accessibility": [
           {
             "id": "keyboard",
-            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "question": "Can you use everything with only the keyboard, and always see where you are?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "names",
-            "question": "Do images, fields, and buttons have accessible names?",
+            "question": "Do pictures, fields, and buttons have names a screen reader can read out?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "contrast",
-            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "question": "Is all text easy to read against its background, in every theme the app has?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "reflow",
-            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "question": "Does the page still work when zoomed to 200% and on a narrow phone?",
             "status": "untested",
             "note": ""
           }
@@ -304,19 +304,19 @@
         "security": [
           {
             "id": "inputs",
-            "question": "Are form inputs validated on the server?",
+            "question": "Does the server check every booking and sign-in form before it saves anything?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           },
           {
             "id": "private-data",
-            "question": "Does the page avoid exposing other customers’ details?",
+            "question": "Can people see only their own bookings and details, even if they change a link?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           },
           {
             "id": "headers",
-            "question": "Are security headers and third-party scripts appropriate?",
+            "question": "Does the page load only the scripts it needs, from places it trusts?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           }
@@ -324,13 +324,13 @@
         "scraping": [
           {
             "id": "bulk",
-            "question": "Are booking and account endpoints rate-limited?",
+            "question": "Is there a limit on how fast one visitor can pull bookings or accounts, so nobody can copy them all?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           },
           {
             "id": "public-copy",
-            "question": "Is only intentionally public content exposed to crawlers?",
+            "question": "Can search engines and bots see only what is meant to be public?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           }
@@ -338,13 +338,13 @@
         "seo": [
           {
             "id": "title",
-            "question": "Does the page have a specific title and description?",
+            "question": "Does the page have its own clear title and a short description for search results?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           },
           {
             "id": "indexing",
-            "question": "Is the page indexed only if it should be public?",
+            "question": "Does the page show up in search only if it is meant to be public?",
             "status": "pass",
             "note": "Static page with no inputs, private data, or third-party scripts."
           }
@@ -352,25 +352,25 @@
         "accessibility": [
           {
             "id": "keyboard",
-            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "question": "Can you use everything with only the keyboard, and always see where you are?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "names",
-            "question": "Do images, fields, and buttons have accessible names?",
+            "question": "Do pictures, fields, and buttons have names a screen reader can read out?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "contrast",
-            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "question": "Is all text easy to read against its background, in every theme the app has?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "reflow",
-            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "question": "Does the page still work when zoomed to 200% and on a narrow phone?",
             "status": "untested",
             "note": ""
           }
@@ -574,19 +574,19 @@
         "security": [
           {
             "id": "inputs",
-            "question": "Are form inputs validated on the server?",
+            "question": "Does the server check every booking and sign-in form before it saves anything?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "private-data",
-            "question": "Does the page avoid exposing other customers’ details?",
+            "question": "Can people see only their own bookings and details, even if they change a link?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "headers",
-            "question": "Are security headers and third-party scripts appropriate?",
+            "question": "Does the page load only the scripts it needs, from places it trusts?",
             "status": "untested",
             "note": ""
           }
@@ -594,13 +594,13 @@
         "scraping": [
           {
             "id": "bulk",
-            "question": "Are booking and account endpoints rate-limited?",
+            "question": "Is there a limit on how fast one visitor can pull bookings or accounts, so nobody can copy them all?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "public-copy",
-            "question": "Is only intentionally public content exposed to crawlers?",
+            "question": "Can search engines and bots see only what is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -608,13 +608,13 @@
         "seo": [
           {
             "id": "title",
-            "question": "Does the page have a specific title and description?",
+            "question": "Does the page have its own clear title and a short description for search results?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "indexing",
-            "question": "Is the page indexed only if it should be public?",
+            "question": "Does the page show up in search only if it is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -622,25 +622,25 @@
         "accessibility": [
           {
             "id": "keyboard",
-            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "question": "Can you use everything with only the keyboard, and always see where you are?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "names",
-            "question": "Do images, fields, and buttons have accessible names?",
+            "question": "Do pictures, fields, and buttons have names a screen reader can read out?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "contrast",
-            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "question": "Is all text easy to read against its background, in every theme the app has?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "reflow",
-            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "question": "Does the page still work when zoomed to 200% and on a narrow phone?",
             "status": "untested",
             "note": ""
           }
@@ -826,19 +826,19 @@
         "security": [
           {
             "id": "inputs",
-            "question": "Are form inputs validated on the server?",
+            "question": "Does the server check every booking and sign-in form before it saves anything?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "private-data",
-            "question": "Does the page avoid exposing other customers’ details?",
+            "question": "Can people see only their own bookings and details, even if they change a link?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "headers",
-            "question": "Are security headers and third-party scripts appropriate?",
+            "question": "Does the page load only the scripts it needs, from places it trusts?",
             "status": "untested",
             "note": ""
           }
@@ -846,13 +846,13 @@
         "scraping": [
           {
             "id": "bulk",
-            "question": "Are booking and account endpoints rate-limited?",
+            "question": "Is there a limit on how fast one visitor can pull bookings or accounts, so nobody can copy them all?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "public-copy",
-            "question": "Is only intentionally public content exposed to crawlers?",
+            "question": "Can search engines and bots see only what is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -860,13 +860,13 @@
         "seo": [
           {
             "id": "title",
-            "question": "Does the page have a specific title and description?",
+            "question": "Does the page have its own clear title and a short description for search results?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "indexing",
-            "question": "Is the page indexed only if it should be public?",
+            "question": "Does the page show up in search only if it is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -874,25 +874,25 @@
         "accessibility": [
           {
             "id": "keyboard",
-            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "question": "Can you use everything with only the keyboard, and always see where you are?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "names",
-            "question": "Do images, fields, and buttons have accessible names?",
+            "question": "Do pictures, fields, and buttons have names a screen reader can read out?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "contrast",
-            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "question": "Is all text easy to read against its background, in every theme the app has?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "reflow",
-            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "question": "Does the page still work when zoomed to 200% and on a narrow phone?",
             "status": "untested",
             "note": ""
           }
@@ -1078,19 +1078,19 @@
         "security": [
           {
             "id": "inputs",
-            "question": "Are form inputs validated on the server?",
+            "question": "Does the server check every booking and sign-in form before it saves anything?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "private-data",
-            "question": "Does the page avoid exposing other customers’ details?",
+            "question": "Can people see only their own bookings and details, even if they change a link?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "headers",
-            "question": "Are security headers and third-party scripts appropriate?",
+            "question": "Does the page load only the scripts it needs, from places it trusts?",
             "status": "untested",
             "note": ""
           }
@@ -1098,13 +1098,13 @@
         "scraping": [
           {
             "id": "bulk",
-            "question": "Are booking and account endpoints rate-limited?",
+            "question": "Is there a limit on how fast one visitor can pull bookings or accounts, so nobody can copy them all?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "public-copy",
-            "question": "Is only intentionally public content exposed to crawlers?",
+            "question": "Can search engines and bots see only what is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -1112,13 +1112,13 @@
         "seo": [
           {
             "id": "title",
-            "question": "Does the page have a specific title and description?",
+            "question": "Does the page have its own clear title and a short description for search results?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "indexing",
-            "question": "Is the page indexed only if it should be public?",
+            "question": "Does the page show up in search only if it is meant to be public?",
             "status": "untested",
             "note": ""
           }
@@ -1126,25 +1126,25 @@
         "accessibility": [
           {
             "id": "keyboard",
-            "question": "Can every control be reached and used with the keyboard alone, with a visible focus?",
+            "question": "Can you use everything with only the keyboard, and always see where you are?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "names",
-            "question": "Do images, fields, and buttons have accessible names?",
+            "question": "Do pictures, fields, and buttons have names a screen reader can read out?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "contrast",
-            "question": "Does text meet WCAG AA contrast in light and dark themes?",
+            "question": "Is all text easy to read against its background, in every theme the app has?",
             "status": "untested",
             "note": ""
           },
           {
             "id": "reflow",
-            "question": "Does the page stay usable at 200% zoom and on a narrow phone screen?",
+            "question": "Does the page still work when zoomed to 200% and on a narrow phone?",
             "status": "untested",
             "note": ""
           }
@@ -1164,7 +1164,7 @@
       ],
       "qa": {
         "tests": [],
-        "note": "Blocked until a staff account exists for capture."
+        "note": "Can’t open until a staff account exists for the demo."
       },
       "captures": {
         "desktop": {
@@ -1174,11 +1174,11 @@
           "tier": "real",
           "state": "blocked",
           "actor": "Signed-out visitor",
-          "reason": "Staff-only page. It was not captured because the demo has no staff account."
+          "reason": "Staff-only page: the demo has no staff account to sign in with, so dogfood cannot take its screenshots."
         },
         "mobile": {
           "state": "blocked",
-          "reason": "Not captured yet."
+          "reason": "Staff-only page: the demo has no staff account to sign in with, so dogfood cannot take its screenshots."
         }
       },
       "scan": null,

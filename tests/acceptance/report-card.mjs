@@ -23,7 +23,7 @@ store.registerPage('northwind', {
 });
 store.registerPage('northwind', { id: 'pipeline', name: 'Pipeline forecast', group: 'Workspace and reporting', route: '/workspace/pipeline' });
 store.recordVerdicts('northwind', 'revenue', { checks: { design: { status: 'needs_work', note: longNote } }, features: [{ id: 'f0', status: 'needs_work', note: longNote }] }, 'agent:long-content');
-for (const severity of ['P1', 'P2', 'P3']) store.createFinding('northwind', 'revenue', { severity, title: `Region filter resets when the product line changes (${severity})`, detail: longNote, attachCapture: false }, 'agent:long-content');
+for (const severity of ['P1', 'P2', 'P3']) store.createFinding('northwind', 'revenue', { severity, title: `Region filter resets when the product line changes (report ${['P1', 'P2', 'P3'].indexOf(severity) + 1})`, detail: longNote, attachCapture: false }, 'agent:long-content');
 store.setConnections('northwind', 'revenue', Array.from({ length: 12 }, (_, n) => ({ id: `c${n}`, name: `Revenue query ${n + 1}`, method: 'GET', endpoint: `/api/v2/reports/revenue/regions/${n}?include=channels,currencies`, sends: 'Report filters', receives: 'Revenue rows', source: 'Observed in the page traffic', provenance: 'observed' })));
 
 const answerOrder = ['design', 'purpose', 'ease', 'safety', 'speed', 'works'];

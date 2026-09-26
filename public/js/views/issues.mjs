@@ -1,6 +1,6 @@
 import { findingEndpoint, readJson } from '../api.mjs';
 import { dateLabel, escapeHtml, safeCapturePath, statusPill, verdictByMarkup } from '../format.mjs';
-import { activePage, severityNames, state } from '../state.mjs';
+import { activePage, primaryClass, severityNames, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
 function findingEvidenceMarkup(finding) {
@@ -26,16 +26,16 @@ function resolutionFormMarkup(finding) {
 }
 
 function newFindingFormMarkup(page) {
-  const capture = page.captures.desktop.state === 'rendered' ? `<label class="capture-choice"><input type="checkbox" name="attachCapture"> Attach the computer screenshot if it shows the bug</label>` : '';
-  const severities = ['P2', 'P1', 'P0', 'P3'].map(code => `<option value="${code}">${severityNames[code]}</option>`).join('');
-  return `<form id="finding-form" class="finding-form" novalidate><label for="finding-title">What’s wrong?</label><input id="finding-title" name="title" required minlength="8" maxlength="120" placeholder="For example: Reserve does nothing on a phone"><label for="finding-severity">How bad is it?</label><select id="finding-severity" name="severity">${severities}</select><label for="finding-detail">What happened, and how can someone see it again?</label><textarea id="finding-detail" name="detail" rows="4" required minlength="20" maxlength="1200" placeholder="Where did you start, what did you do, and what happened?"></textarea>${capture}<div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Report bug</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
+  const capture = page.captures.desktop.state === 'rendered' ? `<label class="capture-choice"><input type="checkbox" name="attachCapture"> Attach the Computer screenshot if it shows the bug</label>` : '';
+  const severities = ['P0', 'P1', 'P2', 'P3'].map(code => `<option value="${code}" ${code === 'P2' ? 'selected' : ''}>${severityNames[code]}</option>`).join('');
+  return `<form id="finding-form" class="finding-form" novalidate><label for="finding-title">What’s wrong?</label><input id="finding-title" name="title" required minlength="8" maxlength="120" placeholder="For example: Reserve does nothing on a phone"><label for="finding-severity">How bad is it?</label><select id="finding-severity" name="severity">${severities}</select><label for="finding-detail">What happened, and how can someone see it again?</label><textarea id="finding-detail" name="detail" rows="4" required minlength="20" maxlength="1200" placeholder="Where did you start, what did you do, and what happened?"></textarea>${capture}<div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Report a bug</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
 }
 
 export function findingsMarkup(page) {
   const findings = [...page.findings].sort((a, b) => Number(a.status === 'resolved') - Number(b.status === 'resolved') || a.severity.localeCompare(b.severity));
   const list = findings.length ? `<ul class="findings">${findings.map(findingMarkup).join('')}</ul>` : '<p class="muted">No bugs reported on this page.</p>';
   const form = state.findingForm === 'new' ? newFindingFormMarkup(page) : '';
-  const action = state.findingForm === 'new' ? '' : '<button type="button" class="save-button" data-action="report-bug" data-finding-action="new">Report a bug</button>';
+  const action = state.findingForm === 'new' ? '' : `<button type="button" class="${primaryClass()}" data-action="report-bug" data-finding-action="new">Report a bug</button>`;
   return `<section class="content-panel" aria-label="Bugs"><div class="panel-heading"><h2>Bugs</h2>${action}</div>${form}${list}</section>`;
 }
 
@@ -97,7 +97,9 @@ function cancelFindingForm() {
   focusFindingAction(previous);
 }
 
+// A bug form replaces any other open form, so one Save is ever showing.
 function openFindingForm(id) {
+  Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false });
   state.findingForm = id;
   render();
   document.querySelector(id === 'new' ? '#finding-title' : '#retest-note')?.focus();

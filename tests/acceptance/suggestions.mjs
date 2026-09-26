@@ -72,7 +72,7 @@ try {
   });
   evaluate(`(document.querySelector('[data-action="review-suggestions"]').click(), true)`);
   browser('wait', '600');
-  const offered = evaluate(`[...document.querySelectorAll('section[aria-label="Review suggested features"] [data-suggestion-page]')].map(group => ({ page: group.dataset.suggestionPage, text: group.textContent, boxes: [...group.querySelectorAll('input[name="project-suggestion"]')].map(box => box.checked) }))`);
+  const offered = evaluate(`[...document.querySelectorAll('section[aria-label="Review suggested things to do"] [data-suggestion-page]')].map(group => ({ page: group.dataset.suggestionPage, text: group.textContent, boxes: [...group.querySelectorAll('input[name="project-suggestion"]')].map(box => box.checked) }))`);
   check('SG-1 the review lists suggestions by page, all checked, without ones already listed', () => {
     assert.deepEqual(offered.map(item => [item.page, item.boxes]), [['home', [true, true]], ['classes', [true, true]]]);
     assert.ok(offered[0].text.includes('Weekly timetable') && offered[0].text.includes('Shows every class time this week.'));
@@ -100,7 +100,7 @@ try {
     assert.deepEqual([added.expected, added.addedBy, added.status], ['Choosing an age shows only matching classes.', 'person', 'untested']);
   });
   check('SG-3 what was left unchecked is still offered afterwards', () => {
-    assert.match(text('[data-suggestions-waiting]') || text('section[aria-label="Review suggested features"]'), /suggested 1 thing|Weekly timetable/);
+    assert.match(text('[data-suggestions-waiting]') || text('section[aria-label="Review suggested things to do"]'), /suggested 1 thing|Weekly timetable/);
   });
   browser('set', 'viewport', '390', '844');
   evaluate(`(document.querySelector('[data-action="review-suggestions"]')?.click(), true)`);
@@ -117,7 +117,7 @@ try {
   evaluate(`(document.querySelector('[data-action="review-suggestions"]')?.click(), true)`);
   browser('wait', '600');
   check('SG empty state: when an agent added everything meanwhile, opening the review says nothing is waiting and offers Back', () => {
-    assert.match(text('section[aria-label="Review suggested features"]'), /Nothing is waiting/);
+    assert.match(text('section[aria-label="Review suggested things to do"]'), /Nothing is waiting/);
     assert.equal(evaluate(`Boolean(document.querySelector('[data-action="cancel-project-suggestions"]')) && !document.querySelector('[data-action="add-project-suggestions"]')`), true);
   });
   const errors = browser('errors').trim();

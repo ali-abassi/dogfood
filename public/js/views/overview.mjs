@@ -83,7 +83,7 @@ function scanAllFailures(status) {
 // Polls the scan-all job once a second, then reloads the project and reports what changed.
 async function followScanAll(job) {
   const status = await readJson(`/api/jobs/${encodeURIComponent(job)}`);
-  if (status.status === 'failed') throw new Error(status.error || 'Scan all pages failed.');
+  if (status.status === 'failed') throw new Error(status.error || 'Checking all pages failed.');
   if (status.status === 'done') return status;
   Object.assign(state.scanAll, { total: status.total, scanned: status.scanned, current: status.current });
   render();

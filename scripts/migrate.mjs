@@ -40,7 +40,30 @@ function toVersion5(page) {
   if (page.qa.note === staleDefaultNote) page.qa.note = '';
 }
 
-const steps = { 2: toVersion3, 3: toVersion4, 4: toVersion5 };
+// Version 6: the default checklist questions are reworded for people who are not engineers.
+// A question someone edited keeps its wording.
+const plainQuestions = {
+  'inputs': ['Are inputs validated on the server?', 'Does the server check everything people type before it saves it?'],
+  'private-data': ['Does the page avoid exposing other people’s data?', 'Can people see only their own information, even if they change a link?'],
+  'headers': ['Are security headers and third-party scripts appropriate?', 'Does the page load only the scripts it needs, from places it trusts?'],
+  'bulk': ['Are data endpoints rate-limited against bulk copying?', 'Is there a limit on how fast one visitor can pull data, so nobody can copy it all?'],
+  'public-copy': ['Is only intentionally public content exposed to crawlers?', 'Can search engines and bots see only what is meant to be public?'],
+  'title': ['Does the page have a specific title and description?', 'Does the page have its own clear title and a short description for search results?'],
+  'indexing': ['Is the page indexed only if it should be public?', 'Does the page show up in search only if it is meant to be public?'],
+  'keyboard': ['Can every control be reached and used with the keyboard alone, with a visible focus?', 'Can you use everything with only the keyboard, and always see where you are?'],
+  'names': ['Do images, fields, and buttons have accessible names?', 'Do pictures, fields, and buttons have names a screen reader can read out?'],
+  'contrast': ['Does text meet WCAG AA contrast in light and dark themes?', 'Is all text easy to read against its background, in every theme the app has?'],
+  'reflow': ['Does the page stay usable at 200% zoom and on a narrow phone screen?', 'Does the page still work when zoomed to 200% and on a narrow phone?'],
+};
+
+function toVersion6(page) {
+  for (const row of Object.values(page.audit).flat()) {
+    const [before, after] = plainQuestions[row.id] ?? [];
+    if (row.question === before) row.question = after;
+  }
+}
+
+const steps = { 2: toVersion3, 3: toVersion4, 4: toVersion5, 5: toVersion6 };
 
 // Re-stamps the hash only when dogfood's last write was intact, so an outside edit stays flagged.
 function save(project, integrity) {

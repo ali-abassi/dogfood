@@ -35,8 +35,9 @@ function suggestionsBodyMarkup(count) {
 export function suggestionsReviewMarkup() {
   const { count, pages } = suggestionTotals();
   const scope = count ? `<p class="suggestions-scope">${escapeHtml(plural(count, 'thing', 'things'))} on ${escapeHtml(plural(pages, 'page', 'pages'))}</p>` : '';
-  return `<section class="suggestions-review" aria-label="Review suggested features">
-    <header class="suggestions-heading"><h1 id="suggestions-heading" tabindex="-1">What people can do on each page</h1><p>The AI suggested these from the screenshots. Untick anything that is wrong, then add the rest to check.</p>${scope}</header>
+  return `<section class="suggestions-review" aria-label="Review suggested things to do">
+    <button type="button" class="back-button" data-action="cancel-project-suggestions">‹ Overview</button>
+    <header class="suggestions-heading"><h1 id="suggestions-heading" tabindex="-1">What people can do on each page</h1><p>The AI suggested these from the screenshots. Uncheck anything that is wrong, then add the rest to check.</p>${scope}</header>
     ${suggestionsBodyMarkup(count)}
     ${count ? '' : '<button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button>'}
   </section>`;
