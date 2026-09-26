@@ -1,5 +1,5 @@
 import { readJson } from '../api.mjs';
-import { escapeHtml, scanPosition } from '../format.mjs';
+import { escapeHtml, plainMessageMarkup, scanPosition } from '../format.mjs';
 import { state } from '../state.mjs';
 import { loadProject, render } from '../app.mjs';
 
@@ -20,7 +20,7 @@ function onboardingButtonText() {
 
 function onboardingNoticeMarkup() {
   const progress = state.onboarding.running ? `<p class="onboarding-progress" role="status">${onboardingProgressText()}</p>` : '';
-  const error = state.onboarding.error ? `<p class="form-error" id="onboarding-error" role="alert">${escapeHtml(state.onboarding.error)}</p>` : '';
+  const error = state.onboarding.error ? `<div class="form-error" id="onboarding-error" role="alert">${plainMessageMarkup(state.onboarding.error)}</div>` : '';
   return `${progress}${error}`;
 }
 
