@@ -4,7 +4,7 @@ import { state } from '../state.mjs';
 import { loadProject, render } from '../app.mjs';
 
 const addProjectCopy = {
-  welcome: { title: 'Is your app working?', lede: 'dogfood checks every page of your app on a computer and a phone, and answers six plain questions about each one: does it look right, is its purpose clear, is it easy to use, safe, fast, and working as expected.' },
+  welcome: { title: 'Is your app working?', lede: 'dogfood checks every page of your app on a computer and a phone, and answers six plain questions about each one: does it look right, is its purpose clear, is it easy to use, safe, fast and findable, and working as expected.' },
   add: { title: 'Add an app', lede: 'Paste its address. dogfood finds its pages and takes screenshots of each one on a computer and a phone.' },
 };
 
@@ -40,12 +40,17 @@ function addressFieldMarkup(draft) {
   return `<label for="product-url">Your app’s address<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}" ${invalid}></label>`;
 }
 
+// The first run has nowhere to go back to; adding another app does.
+function backToOverviewMarkup(welcome) {
+  return welcome ? '' : '<button type="button" class="back-button" data-action="cancel-add-project">‹ Overview</button>';
+}
+
 export function addProjectFormMarkup(welcome) {
   const copy = addProjectCopy[welcome ? 'welcome' : 'add'];
   const disabled = state.onboarding.running ? 'disabled' : '';
   const cancel = welcome ? '' : `<button class="text-button" type="button" data-action="cancel-add-project" ${disabled}>Cancel</button>`;
   const draft = state.projectDraft;
-  return `<section class="add-project-panel content-panel" aria-label="Add project">
+  return `${backToOverviewMarkup(welcome)}<section class="add-project-panel content-panel" aria-label="Add an app">
     ${addProjectHeadingMarkup(welcome, copy)}
     ${agentPromptMarkup()}
     <form id="add-project-form" novalidate>
@@ -64,7 +69,7 @@ export function addProjectFormMarkup(welcome) {
 
 function onboardingProgressText() {
   if (state.onboarding.total === null) return 'Finding pages…';
-  const verb = state.onboarding.phase === 'review' ? 'Asking AI about' : 'Checking';
+  const verb = state.onboarding.phase === 'review' ? 'Checking with AI' : 'Checking';
   return `${verb} ${escapeHtml(scanPosition(state.onboarding))}`;
 }
 
@@ -104,7 +109,7 @@ export async function submitOnboarding(form) {
 // Polls the onboarding job once a second until it finishes, then opens the new project.
 async function followOnboarding(job) {
   const status = await readJson(`/api/jobs/${encodeURIComponent(job)}`);
-  if (status.status === 'failed') throw new Error(status.error || 'Onboarding failed.');
+  if (status.status === 'failed') throw new Error(status.error || 'Adding the app failed.');
   if (status.status === 'done') return openOnboardedProject(status.projectId);
   Object.assign(state.onboarding, { phase: status.phase, total: status.total, scanned: status.scanned, current: status.current });
   render();

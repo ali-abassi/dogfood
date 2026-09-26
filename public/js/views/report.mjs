@@ -16,7 +16,7 @@ function changedMarkup(page) {
 }
 
 const emptyScreens = {
-  blocked: capture => ({ title: 'Can’t take screenshots', text: capture.reason, action: 'Try again' }),
+  blocked: capture => ({ title: 'Can’t take screenshots', text: capture.reason, action: 'Check again' }),
   missing: () => ({ title: 'Not checked yet', text: 'dogfood opens the page on a computer and a phone, takes full screenshots, and measures it. It takes about 15 seconds.', action: 'Take screenshots' }),
 };
 

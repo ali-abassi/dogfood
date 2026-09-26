@@ -37,7 +37,7 @@ try {
   check('the report API returns the project report as Markdown', () => {
     assert.equal(report.status, 200);
     assert.match(report.headers.get('content-type'), /^text\/markdown/);
-    assert.match(text, /^# Tidepool \(demo\): QA report/);
+    assert.match(text, /^# Tidepool \(demo\): is it working\?/);
   });
   const foreign = await fetch(`${url}/api/projects/tidepool/pages/admin/remove`, { method: 'POST', headers: { Origin: 'https://evil.example', 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'A cross-site request must not remove pages.' }) });
   check('removing a page refuses cross-origin requests', () => assert.equal(foreign.status, 403));

@@ -118,7 +118,7 @@ code { font-family: var(--mono); }
 .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .page-title { min-width: 0; max-width: 100%; }
 .page-route { overflow: hidden; margin: 0 0 2px; color: var(--tertiary); font: 12px var(--mono); letter-spacing: 0; text-overflow: ellipsis; white-space: nowrap; }
-.page-heading h1 { margin: 0; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
+.page-heading h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .page-heading h1:focus { outline: 0; }
 .page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: end; gap: 6px 14px; color: var(--secondary); font-size: 13px; white-space: nowrap; }
 
@@ -137,7 +137,7 @@ code { font-family: var(--mono); }
 .screen-frame { height: 272px; overflow: hidden; border-radius: 8px; background: var(--canvas); box-shadow: 0 0 0 .5px var(--hairline); }
 .report-screen-mobile .screen-frame { border-radius: 14px; }
 .screen-frame img { display: block; width: 100%; height: auto; }
-.report-screen figcaption { margin-top: 6px; color: var(--tertiary); font-size: 12px; }
+.report-screen figcaption { overflow: hidden; margin-top: 6px; color: var(--tertiary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .report-screen figcaption strong { color: var(--secondary); font-weight: 500; }
 .screen-missing { display: grid; place-items: center; height: 100%; margin: 0; padding: 16px; color: var(--secondary); font-size: 13px; text-align: center; }
 .screens-empty { display: grid; justify-items: center; gap: 6px; padding: 32px 16px; text-align: center; }
@@ -164,7 +164,7 @@ code { font-family: var(--mono); }
 
 /* One answer and its evidence */
 .answer-detail, .screens-view { display: grid; gap: 16px; }
-.back-button { justify-self: start; min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--blue); font-size: 13.5px; font-weight: 500; }
+.back-button { display: block; justify-self: start; margin-bottom: 8px; min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--blue); font-size: 13.5px; font-weight: 500; }
 .back-button:hover { text-decoration: underline; }
 .answer-detail h1, .screens-view h1 { margin: -8px 0 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .answer-detail h1:focus, .screens-view h1:focus { outline: 0; }
@@ -237,7 +237,7 @@ code { font-family: var(--mono); }
 .overview-columns, .overview-page > button { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 0 16px; }
 .overview-columns { min-height: 32px; color: var(--tertiary); font-size: 11.5px; font-weight: 600; }
 .overview-marks { display: grid; grid-template-columns: repeat(6, 56px); justify-items: center; }
-.overview-group h2 { margin: 0; padding: 12px 16px 4px; border-top: .5px solid var(--separator); color: var(--tertiary); font-size: 11px; font-weight: 600; }
+.overview-group h2 { margin: 0; padding: 12px 16px 4px; border-top: .5px solid var(--separator); color: var(--tertiary); font-size: 12px; font-weight: 600; }
 .overview-page > button { width: 100%; min-width: 0; min-height: 52px; padding-top: 8px; padding-bottom: 8px; border: 0; background: transparent; text-align: left; }
 .overview-page > button:hover { background: var(--selection); }
 .overview-identity { display: grid; gap: 2px; min-width: 0; }

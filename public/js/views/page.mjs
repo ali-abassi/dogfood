@@ -36,12 +36,12 @@ export function sidebarMarkup() {
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project pages">
       <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
         ${projectPickerMarkup()}
-        <button type="button" class="add-project-button" data-action="add-project">+ Add project</button>
+        <button type="button" class="add-project-button" data-action="add-project">+ Add an app</button>
         <h2 class="sr-only">Pages</h2>
-        <label class="search-field"><span class="sr-only">Search pages or features</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or features" value="${escapeHtml(state.query)}"></label>
-        <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked at least partly'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
+        <label class="search-field"><span class="sr-only">Search pages or things to do</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or things to do" value="${escapeHtml(state.query)}"></label>
+        <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
         <nav class="page-list" aria-label="Pages"><button type="button" class="page-option overview-option ${overviewSelected ? 'selected' : ''}" data-overview ${overviewSelected ? 'aria-current="page"' : ''}>Overview</button><div class="page-groups">${pageOptionsMarkup(pages)}</div></nav>
-        ${externalLinkMarkup(state.project.source.url, 'Open product ↗', 'source-link')}
+        ${externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link')}
   </aside>`;
 }
 

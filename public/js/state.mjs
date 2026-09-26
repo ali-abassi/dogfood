@@ -8,6 +8,16 @@ export const questionTopics = { security: 'Security', scraping: 'Copying', seo: 
 export const deviceNames = { desktop: 'Computer', mobile: 'Phone' };
 export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null, screensDevice: 'desktop', copied: false, suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, message: '' };
 
+// While any inline form is open, its Save is the view's one blue button.
+export function editorOpen() {
+  return Boolean(state.answerEditing || state.questionsEditing || state.thingsEditing || state.addingThing || state.findingForm);
+}
+
+// The view's primary action, demoted to grey while a form holds the one blue button.
+export function primaryClass() {
+  return editorOpen() ? 'text-button' : 'save-button';
+}
+
 function answeredCount(page) {
   return page.progress.answers.filter(answer => answer.status === 'pass' || answer.status === 'needs_work').length;
 }

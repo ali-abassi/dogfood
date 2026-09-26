@@ -13,7 +13,7 @@ after(() => rmSync(data, { recursive: true, force: true }));
 
 test('the report leads with what needs attention and lists every page and open issue', () => {
   const report = projectReport('tidepool', new Date('2026-09-26T00:00:00Z'));
-  assert.match(report, /^# Tidepool \(demo\): QA report\n\n2026-09-26 · /);
+  assert.match(report, /^# Tidepool \(demo\): is it working\?\n\n2026-09-26 · /);
   assert.ok(report.indexOf('## Needs attention') < report.indexOf('## Pages'));
   assert.match(report, /- Classes changed since its last check; look at it again\./);
   assert.match(report, /\*\*1\*\* page needs a fresh page check\./);
@@ -24,6 +24,6 @@ test('the report leads with what needs attention and lists every page and open i
   assert.doesNotMatch(report, /\bP[0-3]\b/, 'severity codes stay out of the report');
   assert.ok(report.indexOf('TP-001') < report.indexOf('TP-002'), 'issues are ordered by severity');
   assert.match(report, /## What this does not prove/);
-  assert.match(report, /- Staff schedule: not answered yet: Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected\./, 'what is open comes from the answers');
+  assert.match(report, /- Staff schedule, not checked yet: Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected\./, 'what is open comes from the answers');
   assert.doesNotMatch(report, /Nothing beyond the scan/);
 });

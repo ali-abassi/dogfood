@@ -26,7 +26,7 @@ store.recordVerdicts('northwind', 'revenue', {
   checks: { design: { status: 'needs_work', note: longNote }, purpose: { status: 'pass', note: 'The heading and the period selector say this is revenue by region for the last twelve months.' } },
   features: Array.from({ length: 5 }, (_, n) => ({ id: `f${n}`, status: n === 2 ? 'needs_work' : 'pass', note: n === 2 ? longNote : 'Chose EMEA and Hardware, compared with last year; the numbers appeared in under a second and the other filters stayed.' })),
 }, 'agent:design-fixture');
-for (const severity of ['P1', 'P2', 'P3']) store.createFinding('northwind', 'revenue', { severity, title: `Region filter resets when the product line changes and loses the fiscal calendar (${severity})`, detail: longNote, attachCapture: false }, 'agent:design-fixture');
+for (const severity of ['P1', 'P2', 'P3']) store.createFinding('northwind', 'revenue', { severity, title: `Region filter resets when the product line changes and loses the fiscal calendar (report ${['P1', 'P2', 'P3'].indexOf(severity) + 1})`, detail: longNote, attachCapture: false }, 'agent:design-fixture');
 store.setConnections('northwind', 'revenue', Array.from({ length: 12 }, (_, n) => ({
   id: `c${n}`, name: `Revenue query ${n + 1}`, method: n % 4 ? 'GET' : 'POST',
   endpoint: `/api/v2/workspaces/northwind/reports/revenue/regions/${['emea', 'amer', 'apac'][n % 3]}/product-lines?include=channels,currencies&period=ttm&page=${n}`,

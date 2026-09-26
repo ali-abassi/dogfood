@@ -1,6 +1,6 @@
 import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, secondsLabel, sourceLabel, verdictByMarkup } from '../format.mjs';
-import { activePage, answerWords, questionTopics, state } from '../state.mjs';
+import { activePage, answerWords, primaryClass, questionTopics, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
 // Which checklist topics each answer asks, and which answers a person can judge directly.
@@ -40,14 +40,14 @@ function aiCheckMarkup(page, answer) {
 function editAnswerMarkup(answer) {
   if (!judged.has(answer.id)) return '';
   if (state.answerEditing) return answerFormMarkup(answer);
-  return '<button type="button" class="save-button" data-action="edit-answer">Update answer</button>';
+  return `<button type="button" class="${primaryClass()}" data-action="edit-answer">Update answer</button>`;
 }
 
 export function answerPanelMarkup(page, answer) {
   const lead = answer.parts.find(part => part.text === answer.summary) ?? answer.parts[0];
   const error = state.visual.error ? `<p class="form-error" role="alert">${escapeHtml(state.visual.error)}</p>` : '';
   const actions = state.answerEditing ? editAnswerMarkup(answer) : `<div class="form-actions">${editAnswerMarkup(answer)}${aiCheckMarkup(page, answer)}</div>${error}`;
-  return `<section class="answer-panel content-panel" aria-label="The answer"><div class="answer-verdict">${answerMarkMarkup(answer.name, answer.status)}<strong>${escapeHtml(answerWords[answer.status])}</strong></div><p class="answer-text">${escapeHtml(answer.summary)}</p><p class="answer-source" data-answer-source>${escapeHtml(sourceLabel(lead))}</p>${partsMarkup(answer, lead)}${actions}</section>`;
+  return `<section class="answer-panel content-panel" aria-label="The answer"><div class="answer-verdict">${answerMarkMarkup(answer.name, answer.status)}<strong>${escapeHtml(answerWords[answer.status])}</strong></div><p class="answer-text">${escapeHtml(answer.summary)}</p>${lead.source ? `<p class="answer-source" data-answer-source>${escapeHtml(sourceLabel(lead))}</p>` : ''}${partsMarkup(answer, lead)}${actions}</section>`;
 }
 
 function answerFormMarkup(answer) {
@@ -79,12 +79,18 @@ function questionsFormMarkup(page, topics) {
 function questionsMarkup(page, topics) {
   if (state.questionsEditing) return `<section class="content-panel" aria-label="Questions"><h2>Questions</h2>${questionsFormMarkup(page, topics)}</section>`;
   const rows = topics.flatMap(topic => page.audit[topic].map(row => questionMarkup(row, topic))).join('');
-  const primary = judged.has(state.view) ? 'text-button' : 'save-button';
+  const primary = judged.has(state.view) ? 'text-button' : primaryClass();
   return `<section class="content-panel" aria-label="Questions"><div class="panel-heading"><h2>Questions</h2><button type="button" class="${primary}" data-action="answer-questions">Answer questions</button></div><ul class="questions">${rows}</ul></section>`;
 }
 
 function factMarkup(label, value) {
   return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
+}
+
+// "en" means nothing to most people; the browser knows the language's name.
+function languageName(code) {
+  if (!code) return 'Not set';
+  try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) ?? code; } catch { return code; }
 }
 
 function presentOrMissing(value) {
@@ -94,7 +100,7 @@ function presentOrMissing(value) {
 function speedFactsMarkup(page) {
   if (!page.scan) return '<section class="content-panel" aria-label="Measured"><h2>Measured</h2><p class="muted">Not measured yet. Check the page to time it.</p></section>';
   const [desktop, mobile] = [page.scan.viewports.desktop, page.scan.viewports.mobile];
-  return `<section class="content-panel" aria-label="Measured"><h2>Measured</h2><dl class="facts">${factMarkup('Load time on a computer', secondsLabel(desktop.loadMs))}${factMarkup('Load time on a phone', secondsLabel(mobile.loadMs))}${factMarkup('Page title', presentOrMissing(desktop.seo.title))}${factMarkup('Search description', presentOrMissing(desktop.seo.description))}${factMarkup('Main headings', String(desktop.seo.h1Count))}${factMarkup('Language', desktop.seo.lang || 'Not set')}</dl></section>`;
+  return `<section class="content-panel" aria-label="Measured"><h2>Measured</h2><dl class="facts">${factMarkup('Load time on a computer', secondsLabel(desktop.loadMs))}${factMarkup('Load time on a phone', secondsLabel(mobile.loadMs))}${factMarkup('Page title', presentOrMissing(desktop.seo.title))}${factMarkup('Search description', presentOrMissing(desktop.seo.description))}${factMarkup('Main headings on the page', String(desktop.seo.h1Count))}${factMarkup('Page language', languageName(desktop.seo.lang))}</dl></section>`;
 }
 
 const headerWords = { 'content-security-policy': 'Limits which scripts can run', 'strict-transport-security': 'Always uses a secure connection', 'x-frame-options': 'Cannot be hidden inside another site', 'x-content-type-options': 'Files are read only as their real type', 'referrer-policy': 'Limits what other sites learn about visitors' };
