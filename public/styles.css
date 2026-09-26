@@ -309,6 +309,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .suggested-feature small { display: block; color: var(--secondary); font-size: 12.5px; }
 .stale-note { margin: 8px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--orange-tint); font-size: 13px; }
 .suggestions-review { display: grid; gap: 16px; align-content: start; }
+.suggestions-review > .text-button, .suggestions-review > .back-button { justify-self: start; }
 .suggestions-heading h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .suggestions-heading h1:focus { outline: 0; }
 .suggestions-heading p { max-width: 64ch; margin: 6px 0 0; color: var(--secondary); }
