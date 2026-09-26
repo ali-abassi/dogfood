@@ -1,7 +1,7 @@
 {
   "name": "dogfood",
   "version": "0.2.0",
-  "description": "An AI QA system: a local, page-by-page QA workspace: every page, its checks, its evidence, and what is still unproven.",
+  "description": "Is your app working? dogfood checks every page on a computer and a phone and gives each six plain answers, backed by evidence.",
   "private": true,
   "license": "MIT",
   "type": "module",
