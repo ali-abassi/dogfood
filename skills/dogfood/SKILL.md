@@ -80,6 +80,7 @@ Do not fix the app while checking it unless the person asks. Report what you fou
 
 ## 5. Tell the person
 
+- Leave dogfood running so they can look (stop only processes you started, by their own PID; never `pkill` by name, which stops other people's servers too).
 - Point them to <http://127.0.0.1:4321>. Each page shows its screenshots and six answers, and each answer opens to show its evidence.
 - Summarise from `dogfood_report` in plain words: how many pages are good, which need work and why, the open bugs by how bad they are, and what you could not check.
 - Never call something checked that you did not check. Not checked stays Not checked, and a screenshot alone does not prove that anything works.

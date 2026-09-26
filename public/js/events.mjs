@@ -145,7 +145,16 @@ function openEditor(flag, selector) {
   document.querySelector(selector)?.focus({ preventScroll: true });
 }
 
+// Cancel keeps what someone typed unless they choose to discard it.
+function promptIfChanged() {
+  const form = document.querySelector(editorSelector);
+  if (form?.dataset.dirty !== 'true') return false;
+  showUnsavedPrompt(form);
+  return true;
+}
+
 function closeEditor(flag, selector) {
+  if (promptIfChanged()) return;
   state[flag] = false;
   render();
   restoreFocus(selector);
@@ -196,13 +205,14 @@ const buttonActions = new Map([
   ['run-visual', runVisualReview],
   ['add-suggested-features', addSuggestedFeatures],
   ['review-suggestions', openProjectSuggestions],
+  ['retry-suggestions', () => reloadProjectSuggestions()],
   ['add-project-suggestions', addProjectSuggestions],
   ['cancel-project-suggestions', selectOverview],
   ['scan', scanActivePage],
   ['scan-all', scanAllPages],
   ['add-project', openAddProject],
   ['remove-page', openRemovePage],
-  ['cancel-remove-page', () => { state.removingPage = null; render(); }],
+  ['cancel-remove-page', () => { if (promptIfChanged()) return; state.removingPage = null; render(); restoreFocus('[data-action="remove-page"]'); }],
   ['cancel-add-project', () => { state.view = 'overview'; render(); }],
   ['discard-changes', discardChanges],
 ]);
@@ -270,12 +280,17 @@ function handleSuggestionToggle(target) {
   if (target.name === 'project-suggestion') updateProjectSuggestionsButton();
 }
 
+function handleBugButton(button) {
+  if (button.dataset.findingAction === 'cancel' && promptIfChanged()) return;
+  handleFindingButton(button);
+}
+
 export function registerEvents() {
   app.addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
     if (button.id === 'retry') return start();
-    if (button.dataset.findingAction) return handleFindingButton(button);
+    if (button.dataset.findingAction) return handleBugButton(button);
     handleButton(button);
   });
 
@@ -290,8 +305,9 @@ export function registerEvents() {
   app.addEventListener('keydown', event => {
     if (event.key === 'Escape' && state.browseOpen && matchMedia('(max-width: 760px)').matches) closePages();
   });
-  document.addEventListener('keydown', () => { keyboardInput = true; }, true);
-  document.addEventListener('pointerdown', () => { keyboardInput = false; }, true);
+  // The page knows whether the last input was a key or a pointer, so styles can hide focus rings after clicks.
+  document.addEventListener('keydown', () => { keyboardInput = true; document.documentElement.dataset.input = 'keyboard'; }, true);
+  document.addEventListener('pointerdown', () => { keyboardInput = false; document.documentElement.dataset.input = 'pointer'; }, true);
 
   app.addEventListener('input', event => {
     markDirty(event.target);

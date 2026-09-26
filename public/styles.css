@@ -9,17 +9,19 @@
   --sidebar: #ebebef;
   --group: #fff;
   --ink: #1d1d1f;
-  --secondary: #6e6e73;
-  --tertiary: #86868b;
+  --secondary: #5f5f64;
+  --tertiary: #6a6a6f;
   --separator: #e5e5ea;
   --hairline: rgb(0 0 0 / .1);
   --fill: rgb(118 118 128 / .12);
   --fill-strong: rgb(118 118 128 / .2);
   --selection: rgb(0 0 0 / .08);
-  --blue: #0071e3;
-  --blue-hover: #0077ed;
-  --focus: rgb(0 113 227 / .5);
-  --green: #248a3d;
+  /* Every text colour meets WCAG AA (4.5:1) on the canvas, panels, and sidebar. */
+  --blue: #0066cc;
+  --blue-fill: #0066cc;
+  --blue-hover: #0071e3;
+  --focus: rgb(0 102 204 / .5);
+  --green: #1d7a33;
   --orange: #b25000;
   --red: #d70015;
   --gray: #8e8e93;
@@ -36,12 +38,13 @@
     --group: #2c2c2e;
     --ink: #f5f5f7;
     --secondary: #aeaeb2;
-    --tertiary: #8e8e93;
+    --tertiary: #98989d;
     --separator: #3a3a3c;
     --hairline: rgb(255 255 255 / .1);
     --selection: rgb(255 255 255 / .1);
-    --blue: #0a84ff;
-    --blue-hover: #409cff;
+    --blue: #4da3ff;
+    --blue-fill: #0a6ad8;
+    --blue-hover: #1a78e6;
     --focus: rgb(10 132 255 / .6);
     --green: #30d158;
     --orange: #ff9f0a;
@@ -63,6 +66,8 @@ a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
 code { font-family: var(--mono); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-radius: 6px; }
+/* Chrome treats a clicked disclosure as keyboard-focused; after a pointer click, no ring. */
+:root[data-input="pointer"] summary:focus-visible { outline: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .boot { min-height: 100vh; display: grid; place-content: center; gap: 12px; padding: 24px; text-align: center; color: var(--secondary); }
 .boot h1 { margin: 0; color: var(--ink); font-size: 22px; font-weight: 600; }
@@ -166,7 +171,8 @@ code { font-family: var(--mono); }
 .answer-verdict strong { font-size: 17px; font-weight: 600; }
 .answer-text { max-width: 72ch; margin: 10px 0 0; font-size: 15px; overflow-wrap: anywhere; }
 .answer-source { margin: 6px 0 0; color: var(--tertiary); font-size: 12.5px; }
-.answer-panel > .save-button { margin-top: 16px; }
+.answer-panel > .form-actions { margin-top: 16px; }
+.answer-panel > .form-actions:empty { display: none; }
 .answer-parts, .questions, .things, .findings, .plain-list, .connection-list { margin: 12px 0 0; padding: 0; list-style: none; }
 .answer-parts li, .question, .thing { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-top: .5px solid var(--separator); }
 .answer-parts p { margin: 1px 0 0; font-size: 13.5px; overflow-wrap: anywhere; }
@@ -228,7 +234,7 @@ code { font-family: var(--mono); }
 .overview-columns, .overview-page > button { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 0 16px; }
 .overview-columns { min-height: 32px; color: var(--tertiary); font-size: 11.5px; font-weight: 600; }
 .overview-marks { display: grid; grid-template-columns: repeat(6, 56px); justify-items: center; }
-.overview-group h3 { margin: 0; padding: 12px 16px 4px; border-top: .5px solid var(--separator); color: var(--tertiary); font-size: 11px; font-weight: 600; }
+.overview-group h2 { margin: 0; padding: 12px 16px 4px; border-top: .5px solid var(--separator); color: var(--tertiary); font-size: 11px; font-weight: 600; }
 .overview-page > button { width: 100%; min-width: 0; min-height: 52px; padding-top: 8px; padding-bottom: 8px; border: 0; background: transparent; text-align: left; }
 .overview-page > button:hover { background: var(--selection); }
 .overview-identity { display: grid; gap: 2px; min-width: 0; }
@@ -236,9 +242,10 @@ code { font-family: var(--mono); }
 .overview-identity code { overflow: hidden; color: var(--tertiary); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
 .changed-note { color: var(--orange); font-size: 12px; font-weight: 500; }
 .answer-legend { display: none; }
-.overview-empty { padding: 20px 16px; color: var(--secondary); font-size: 13.5px; }
+.overview-empty { display: grid; justify-items: start; gap: 12px; padding: 20px 16px; color: var(--secondary); font-size: 13.5px; }
+.overview-empty p { margin: 0; }
 .integrity-notice { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; background: var(--orange-tint); font-size: 13px; }
-.suggestions-waiting { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0 0 16px; font-size: 13.5px; }
+.suggestions-waiting { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 16px 0 0; font-size: 13.5px; }
 
 /* Status pills (page status in the heading) and sidebar marks */
 .status { display: inline-flex; align-items: center; gap: 6px; width: max-content; padding: 2px 9px; border-radius: 980px; background: var(--fill); color: var(--secondary); font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -253,7 +260,7 @@ code { font-family: var(--mono); }
 
 /* Buttons */
 .save-button, .text-button, .danger-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 16px; border: 0; border-radius: 980px; font-size: 13px; font-weight: 500; white-space: nowrap; }
-.save-button { background: var(--blue); color: #fff; }
+.save-button { background: var(--blue-fill); color: #fff; }
 .save-button:hover { background: var(--blue-hover); }
 .save-button:disabled, .text-button:disabled { background: var(--fill-strong); color: var(--tertiary); }
 .text-button { background: var(--fill); }
@@ -394,7 +401,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
   .answer-legend { display: block; margin: 0 0 8px; color: var(--tertiary); font-size: 12px; font-weight: 600; }
   .overview-page > button { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px 14px; }
   .overview-marks { grid-template-columns: repeat(6, 22px); gap: 10px; justify-items: start; }
-  .overview-group h3 { padding-right: 14px; padding-left: 14px; }
+  .overview-group h2 { padding-right: 14px; padding-left: 14px; }
   .facts > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .question-edit { grid-template-columns: minmax(0, 1fr); }
   .change-images { grid-template-columns: minmax(0, 1fr); }
