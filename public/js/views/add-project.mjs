@@ -20,7 +20,7 @@ function onboardingButtonText() {
 
 function onboardingNoticeMarkup() {
   const progress = state.onboarding.running ? `<p class="onboarding-progress" role="status">${onboardingProgressText()}</p>` : '';
-  const error = state.onboarding.error ? `<p class="form-error" role="alert">${escapeHtml(state.onboarding.error)}</p>` : '';
+  const error = state.onboarding.error ? `<p class="form-error" id="onboarding-error" role="alert">${escapeHtml(state.onboarding.error)}</p>` : '';
   return `${progress}${error}`;
 }
 
@@ -34,6 +34,12 @@ function agentPromptMarkup() {
   return `<section class="agent-prompt" aria-labelledby="agent-prompt-heading"><h2 id="agent-prompt-heading">With your coding agent</h2><p>Give it this sentence. It sets dogfood up, adds every page with what people can do there, and checks them.</p><div class="agent-prompt-box"><p data-agent-prompt>${escapeHtml(agentPrompt)}</p><button type="button" class="text-button" data-action="copy-agent-prompt">${state.copied ? 'Copied' : 'Copy'}</button></div></section><h2 class="add-here-heading">Or add it here</h2>`;
 }
 
+// The address field names its error, so a screen reader announces why it was refused.
+function addressFieldMarkup(draft) {
+  const invalid = state.onboarding.error ? 'aria-invalid="true" aria-describedby="onboarding-error"' : '';
+  return `<label for="product-url">Your app’s address<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}" ${invalid}></label>`;
+}
+
 export function addProjectFormMarkup(welcome) {
   const copy = addProjectCopy[welcome ? 'welcome' : 'add'];
   const disabled = state.onboarding.running ? 'disabled' : '';
@@ -44,7 +50,7 @@ export function addProjectFormMarkup(welcome) {
     ${agentPromptMarkup()}
     <form id="add-project-form" novalidate>
       <fieldset ${disabled}>
-        <label for="product-url">Your app’s address<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}"></label>
+        ${addressFieldMarkup(draft)}
         <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
         <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
         <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>

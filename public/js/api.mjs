@@ -5,7 +5,7 @@ async function reach(url, options) {
   try {
     return await fetch(url, options);
   } catch {
-    throw new Error('dogfood is not responding. Check that it is still running, then try again.');
+    throw new Error('The request did not reach dogfood. Check that dogfood is still running, then try again.');
   }
 }
 

@@ -11,7 +11,7 @@ function fullScreenshotMarkup(page, device) {
   const capture = page.captures[device];
   const image = capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
   if (!image) return `<p class="screen-missing">${escapeHtml(capture.reason || 'No screenshot yet.')}</p>`;
-  return `<figure class="full-screen full-screen-${device}"><img data-screens-image src="${image}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"><figcaption>${escapeHtml(relativeCaptureAge(capture))} · <a href="${image}" target="_blank" rel="noopener">Open full size ↗</a></figcaption></figure>`;
+  return `<figure class="full-screen full-screen-${device}"><img data-screenshot data-screens-image src="${image}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}" width="${escapeHtml(capture.pixelWidth)}" height="${escapeHtml(capture.pixelHeight)}"><figcaption>${escapeHtml(relativeCaptureAge(capture))} · <a href="${image}" target="_blank" rel="noopener">Open full size ↗</a></figcaption></figure>`;
 }
 
 function changeFigureMarkup(page, device, kind, path, caption) {

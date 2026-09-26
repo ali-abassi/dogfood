@@ -44,6 +44,15 @@ function workspaceMarkup() {
   return `<div class="app-window">${sidebarMarkup()}<main class="work-area">${toolbarMarkup()}<div class="page-workspace">${pageContentMarkup(page)}</div></main></div>`;
 }
 
+// A new view starts at its top, so its title and instructions are the first thing seen.
+let shownView = '';
+
+function scrollToTopOnNewView() {
+  const view = `${state.project?.id}/${state.view}/${state.pageId}`;
+  if (view !== shownView) window.scrollTo(0, 0);
+  shownView = view;
+}
+
 export function render() {
   if (!state.project && !state.projects.length) {
     app.innerHTML = `${welcomeMarkup()}<div class="save-message" role="status"></div>`;
@@ -55,6 +64,7 @@ export function render() {
   syncVisualState();
   syncSuggestionsState();
   app.innerHTML = `${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`;
+  scrollToTopOnNewView();
 }
 
 export function showError(message) {
@@ -69,7 +79,6 @@ export async function loadProject(id) {
   state.query = '';
   state.filter = 'all';
   state.sort = 'navigation';
-  state.browseOpen = false;
   Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null });
   state.scan = { key: '', running: false, error: '' };
   state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
