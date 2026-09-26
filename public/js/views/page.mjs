@@ -14,6 +14,7 @@ function pageOptionMarkup(page) {
 }
 
 export function pageOptionsMarkup(pages) {
+  if (!state.project.pages.length) return '<p class="page-no-results" role="status">No pages yet.</p>';
   if (!pages.length) return '<p class="page-no-results" role="status">No pages match. Try another search or filter.</p>';
   return groupedPages(pages).map(({ group, pages: items }) => `<div class="page-group"><p>${escapeHtml(group)}</p>${items.map(pageOptionMarkup).join('')}</div>`).join('');
 }
@@ -41,7 +42,7 @@ export function sidebarMarkup() {
 // Removing a page is rare and needs a reason on record, so it hides behind an inline form.
 function removePageMarkup(page) {
   if (state.removingPage !== page.id) return '';
-  return `<form id="remove-page-form" class="finding-form remove-page-form"><label for="remove-reason">Why should ${escapeHtml(page.name)} not be in this project?</label><textarea id="remove-reason" name="reason" rows="2" required minlength="12" maxlength="400" placeholder="For example: a duplicate of Home, or a route that redirects."></textarea><div id="remove-page-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="danger-button" type="submit">Remove page</button><button class="text-button" type="button" data-action="cancel-remove-page">Cancel</button></div></form>`;
+  return `<form id="remove-page-form" class="finding-form remove-page-form" novalidate><label for="remove-reason">Why should ${escapeHtml(page.name)} not be in this project?</label><textarea id="remove-reason" name="reason" rows="2" required minlength="12" maxlength="400" placeholder="For example: a duplicate of Home, or a route that redirects."></textarea><div id="remove-page-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="danger-button" type="submit">Remove page</button><button class="text-button" type="button" data-action="cancel-remove-page">Cancel</button></div></form>`;
 }
 
 function checkAgainLabel(page) {

@@ -54,10 +54,11 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 | Canvas | #f5f5f7 | #1e1e20 |
 | Sidebar | #ebebef | #28282b |
 | Group | #ffffff | #2c2c2e |
-| Ink / secondary / tertiary | #1d1d1f / #6e6e73 / #86868b | #f5f5f7 / #aeaeb2 / #8e8e93 |
+| Ink / secondary / tertiary | #1d1d1f / #5f5f64 / #6a6a6f | #f5f5f7 / #aeaeb2 / #98989d |
 | Separator | #e5e5ea | #3a3a3c |
-| Action (one filled pill per view, links, focus at 50%) | #0071e3 | #0a84ff |
-| Pass / needs work / blocked | #248a3d / #d70015 / #b25000 | #30d158 / #ff453a / #ff9f0a |
+| Action text and links (focus at 50%) | #0066cc | #4da3ff |
+| Action fill (one filled pill per view, white text) | #0066cc | #0a6ad8 |
+| Pass / needs work / blocked | #1d7a33 / #d70015 / #b25000 | #30d158 / #ff453a / #ff9f0a |
 | Untested / in review | hollow grey dot / filled grey dot | same |
 
 ### Rhythm, shape, material
@@ -101,4 +102,4 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **Agent-selected working policy, 2026-09-26:** the AI check counts as an answer for Looks right, Clear purpose, and Easy to use until a person or agent answers, and says so. A score of 7 or more is Good, because the prompt defines below 7 as "a visitor must guess or the page looks broken"; the reason still names any friction. Gemini scored the clean demo Home at 7–7.5, so a bar of 8 would have called almost every page Needs work.
 - **Agent-selected working policy, 2026-09-26:** load time over 3 seconds on either device is Needs work (`slowLoadMs`), with a ponytail note to revisit once scans time real networks rather than localhost. Missing security headers are shown, not counted, because nearly every local development server lacks them.
 - **Agent-selected working policy, 2026-09-26:** the page's tabs, requirement list, and checklist question editor are gone; agents still edit questions and connections through the MCP tools. Console warnings are no longer shown, since they were never counted and meant nothing to the owner.
-
+- **Agent-selected working policy, 2026-09-26:** every text colour meets WCAG AA (4.5:1) on the canvas, panels, and sidebar, after the independent Overview and Answer reviews measured the old grey (#86868b, 3.6:1) and blue (#0071e3 on the canvas, 4.3:1) failing. Buttons get their own fill token so dark mode can keep white text at 5.2:1.

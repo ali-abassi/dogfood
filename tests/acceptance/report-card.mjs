@@ -106,6 +106,15 @@ try {
     assert.ok(evaluate(`[...document.querySelectorAll('.save-button')].filter(button => button.offsetParent).length`) <= 1);
   });
 
+  await check('Cancel on Remove page returns keyboard focus to Remove page', () => {
+    browser('focus', '[data-action="remove-page"]');
+    browser('press', 'Enter');
+    settle(300);
+    browser('focus', '[data-action="cancel-remove-page"]');
+    browser('press', 'Enter');
+    settle(300);
+    assert.equal(evaluate('document.activeElement?.dataset.action ?? null'), 'remove-page');
+  });
   openAnswer('design');
   await check('AD-1 an answer shows its question, the answer, and where it came from', () => {
     assert.equal(text('[data-answer-detail="design"] h1'), 'Looks right');
@@ -144,6 +153,18 @@ try {
   settle();
 
   openAnswer('purpose');
+  await check('Cancel on a changed answer keeps what was typed and asks to save or discard', () => {
+    browser('click', '[data-action="edit-answer"]');
+    settle(300);
+    browser('fill', '#answer-form textarea', 'Half-written thought about the heading');
+    browser('click', '#answer-form [data-action="cancel-answer"]');
+    settle(300);
+    assert.equal(count('#answer-form .unsaved-prompt'), 1);
+    assert.equal(evaluate(`document.querySelector('#answer-form textarea').value`), 'Half-written thought about the heading');
+    browser('click', '[data-action="discard-changes"]');
+    settle(400);
+    assert.equal(count('#answer-form'), 0);
+  });
   await check('AD-2 answering Needs work with a note updates the report; a short note is refused', () => {
     browser('click', '[data-action="edit-answer"]');
     settle(300);
@@ -255,9 +276,14 @@ try {
 
   openPage('account');
   openAnswer('works');
-  await check('WK-3 reporting a bug adds it and turns Works as expected to Needs work', () => {
+  await check('an empty bug report is refused with the reason under the form', () => {
     browser('click', '[data-action="report-bug"]');
     settle(300);
+    browser('click', '#finding-form button[type="submit"]');
+    settle(600);
+    assert.ok(evaluate(`!document.querySelector('#finding-error').hidden && document.querySelector('#finding-error').textContent.length > 0`));
+  });
+  await check('WK-3 reporting a bug adds it and turns Works as expected to Needs work', () => {
     browser('fill', '#finding-title', 'Sign in button does nothing');
     browser('select', '#finding-severity', 'P1');
     browser('fill', '#finding-detail', 'Open Sign in, enter any email and password, press Sign in: nothing happens.');

@@ -19,10 +19,22 @@ function partMarkup(part) {
   return `<li>${answerMarkMarkup(sourceLabel(part), part.status)}<div><p>${escapeHtml(part.text)}</p><small>${escapeHtml(sourceLabel(part))}</small></div></li>`;
 }
 
-// More than one piece of evidence goes into an answer; each is listed with where it came from.
-function partsMarkup(answer) {
-  if (answer.parts.length < 2) return '';
-  return `<ul class="answer-parts" aria-label="What this answer is made of">${answer.parts.map(partMarkup).join('')}</ul>`;
+// More than one piece of evidence goes into an answer; the lead one is already the answer line above.
+function partsMarkup(answer, lead) {
+  const others = answer.parts.filter(part => part !== lead);
+  if (!others.length) return '';
+  return `<ul class="answer-parts" aria-label="Also part of this answer">${others.map(partMarkup).join('')}</ul>`;
+}
+
+// The AI can answer the three judged questions, so their detail offers it when it has not looked yet.
+function aiCanAnswer(page, answer) {
+  return judged.has(answer.id) && page.progress.aiReview !== 'current' && page.captures.desktop.state === 'rendered';
+}
+
+function aiCheckMarkup(page, answer) {
+  if (!aiCanAnswer(page, answer)) return '';
+  const label = state.visual.running ? 'Checking with AI…' : 'Check with AI (about half a cent)';
+  return `<button type="button" class="text-button" data-action="run-visual" ${state.visual.running ? 'disabled' : ''}>${label}</button>`;
 }
 
 function editAnswerMarkup(answer) {
@@ -33,13 +45,15 @@ function editAnswerMarkup(answer) {
 
 export function answerPanelMarkup(page, answer) {
   const lead = answer.parts.find(part => part.text === answer.summary) ?? answer.parts[0];
-  return `<section class="answer-panel content-panel" aria-label="The answer"><div class="answer-verdict">${answerMarkMarkup(answer.name, answer.status)}<strong>${escapeHtml(answerWords[answer.status])}</strong></div><p class="answer-text">${escapeHtml(answer.summary)}</p><p class="answer-source" data-answer-source>${escapeHtml(sourceLabel(lead))}</p>${partsMarkup(answer)}${editAnswerMarkup(answer)}</section>`;
+  const error = state.visual.error ? `<p class="form-error" role="alert">${escapeHtml(state.visual.error)}</p>` : '';
+  const actions = state.answerEditing ? editAnswerMarkup(answer) : `<div class="form-actions">${editAnswerMarkup(answer)}${aiCheckMarkup(page, answer)}</div>${error}`;
+  return `<section class="answer-panel content-panel" aria-label="The answer"><div class="answer-verdict">${answerMarkMarkup(answer.name, answer.status)}<strong>${escapeHtml(answerWords[answer.status])}</strong></div><p class="answer-text">${escapeHtml(answer.summary)}</p><p class="answer-source" data-answer-source>${escapeHtml(sourceLabel(lead))}</p>${partsMarkup(answer, lead)}${actions}</section>`;
 }
 
 function answerFormMarkup(answer) {
   const current = activePage().checks[answer.id];
   const choice = (value, label) => `<label class="choice"><input type="radio" name="status" value="${value}" ${current.status === value ? 'checked' : ''} required> ${label}</label>`;
-  return `<form id="answer-form" class="answer-form" data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}</div></fieldset><label for="answer-note">What did you see?</label><textarea id="answer-note" name="note" rows="3" maxlength="1200" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
+  return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}</div></fieldset><label for="answer-note">What did you see?</label><textarea id="answer-note" name="note" rows="3" maxlength="1200" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
 }
 
 function questionMarkup(row, topic) {

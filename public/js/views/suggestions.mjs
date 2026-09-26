@@ -10,7 +10,7 @@ function suggestionTotals() {
 
 export function suggestionsWaitingMarkup() {
   const { count, pages } = suggestionTotals();
-  if (state.suggestions.error) return `<p class="form-error" role="alert">Could not load the AI’s suggestions: ${escapeHtml(state.suggestions.error)}</p>`;
+  if (state.suggestions.error) return `<p class="form-error" role="alert">Could not load the AI’s suggestions. ${escapeHtml(state.suggestions.error)} <button type="button" class="link-button" data-action="retry-suggestions">Try again</button></p>`;
   if (!count) return '';
   return `<p class="suggestions-waiting" data-suggestions-waiting>The AI suggested ${escapeHtml(plural(count, 'thing', 'things'))} people can do on ${escapeHtml(plural(pages, 'page', 'pages'))}. <button type="button" class="text-button" data-action="review-suggestions">Review</button></p>`;
 }

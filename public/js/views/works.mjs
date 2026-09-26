@@ -27,7 +27,7 @@ function thingsFormMarkup(page) {
 
 function addThingMarkup() {
   if (!state.addingThing) return '<button type="button" class="link-button" data-action="add-thing">Add a thing people can do</button>';
-  return `<form id="add-thing-form" class="finding-form"><label for="thing-name">What can people do here?</label><input id="thing-name" name="name" required maxlength="80" placeholder="For example: Book a lesson for a child"><label for="thing-expected">What should happen when it works?</label><input id="thing-expected" name="expected" required maxlength="200" placeholder="For example: the booking is confirmed and an email arrives"><div id="add-thing-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="text-button" type="submit">Add</button><button class="text-button" type="button" data-action="cancel-add-thing">Cancel</button></div></form>`;
+  return `<form id="add-thing-form" class="finding-form" novalidate><label for="thing-name">What can people do here?</label><input id="thing-name" name="name" required maxlength="80" placeholder="For example: Book a lesson for a child"><label for="thing-expected">What should happen when it works?</label><input id="thing-expected" name="expected" required maxlength="200" placeholder="For example: the booking is confirmed and an email arrives"><div id="add-thing-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="text-button" type="submit">Add</button><button class="text-button" type="button" data-action="cancel-add-thing">Cancel</button></div></form>`;
 }
 
 export function remainingSuggestions(page, review) {

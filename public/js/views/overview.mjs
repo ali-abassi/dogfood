@@ -36,7 +36,7 @@ function overviewPageMarkup(page) {
 }
 
 function overviewGroupMarkup({ group, pages }) {
-  return `<section class="overview-group" aria-label="${escapeHtml(group)} pages"><h3>${escapeHtml(group)}</h3>${pages.map(overviewPageMarkup).join('')}</section>`;
+  return `<section class="overview-group" aria-label="${escapeHtml(group)} pages"><h2>${escapeHtml(group)}</h2>${pages.map(overviewPageMarkup).join('')}</section>`;
 }
 
 // Orange, not red: the manifest still works, but edits made outside dogfood skipped its validation.
@@ -63,15 +63,21 @@ function scanAllNoticeMarkup() {
 
 export function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
-  const pages = groups ? `${columnsMarkup()}${groups}` : '<p class="overview-empty">No pages yet. Add the app’s address to find its pages.</p>';
+  const pages = groups ? `${columnsMarkup()}${groups}` : '<div class="overview-empty"><p>No pages yet. Ask your coding agent to add this app’s pages, or add the app again from its address and dogfood will find them.</p><button type="button" class="text-button" data-action="add-project">Add an app</button></div>';
   return `<section class="overview-content" aria-label="Project overview">
     <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
-    ${suggestionsWaitingMarkup()}
     ${legendMarkup()}
     <section class="overview-pages content-panel" aria-label="Pages">${pages}</section>
+    ${suggestionsWaitingMarkup()}
   </section>`;
+}
+
+// Pages that could not be opened are named, so a run where nothing loaded never reads as a success.
+function scanAllFailures(status) {
+  if (!status.failed.length) return '';
+  return `dogfood could not open ${plural(status.failed.length, 'page', 'pages')}. Check that the app is running, then check again; each page says what went wrong.`;
 }
 
 // Polls the scan-all job once a second, then reloads the project and reports what changed.
@@ -94,8 +100,8 @@ export async function scanAllPages() {
     const status = await followScanAll(job);
     state.project = await readJson(`/api/projects/${encodeURIComponent(state.project.id)}`);
     await reloadProjectSuggestions();
-    state.scanAll = { running: false, total: null, scanned: 0, current: '', error: '' };
-    state.message = `Checked ${plural(status.total, 'page', 'pages')}; ${status.changed.length} changed`;
+    state.scanAll = { running: false, total: null, scanned: 0, current: '', error: scanAllFailures(status) };
+    state.message = `Checked ${plural(status.scanned, 'page', 'pages')}; ${status.changed.length} changed`;
   } catch (error) {
     state.scanAll = { running: false, total: null, scanned: 0, current: '', error: error.message };
   }
