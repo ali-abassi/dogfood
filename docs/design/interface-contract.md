@@ -52,13 +52,32 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. A mark is colour-only or has no accessible name
   3. Any content scrolls sideways at 390 px
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/overview/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/overview/long-default.png`
+  - empty/degraded @ default: `design-evidence/after/overview/empty-default.png`
+  - normal @ minimum: `design-evidence/after/overview/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/recordings/report-card.webm`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/overview.md`
 - **Locked-check results:**
+  - OV-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
+  - OV-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
+  - OV-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
+  - OV-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
+  - OV-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
+- **Independent reviewer:** dogfood-rv-overview (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Page report (screenshots and six answers)
 
@@ -92,13 +111,33 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. A row shows more than one line of text or an internal term
   3. Back loses the reader's place
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/report/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/report/long-default.png`
+  - empty/degraded @ default: `design-evidence/after/report/empty-default.png`
+  - normal @ minimum: `design-evidence/after/report/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/recordings/report-card.webm`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/report.md`
 - **Locked-check results:**
+  - PR-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
+  - PR-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
+  - PR-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
+  - PR-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
+  - PR-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
+  - PR-6 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
+- **Independent reviewer:** dogfood-rv-report (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Answer detail (Looks right, Clear purpose, Easy to use, Safe, Fast & findable)
 
@@ -131,13 +170,32 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. A saved answer does not change the report
   3. Measured facts appear as raw keys (h1Count, content-security-policy) with no plain label
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/answer/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/answer/long-default.png`
+  - empty/degraded @ default: `design-evidence/after/answer/empty-default.png`
+  - normal @ minimum: `design-evidence/after/answer/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/recordings/report-card.webm`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/answer.md`
 - **Locked-check results:**
+  - AD-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
+  - AD-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
+  - AD-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
+  - AD-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
+  - AD-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
+- **Independent reviewer:** dogfood-rv-answer (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Works as expected (things you can do, bugs, errors)
 
@@ -170,13 +228,32 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. A reported bug leaves the answer at Good
   3. Connection rows appear expanded by default
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/works/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/works/long-default.png`
+  - empty/degraded @ default: `design-evidence/after/works/empty-default.png`
+  - normal @ minimum: `design-evidence/after/works/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/recordings/report-card.webm`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/works.md`
 - **Locked-check results:**
+  - WK-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
+  - WK-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
+  - WK-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
+  - WK-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
+  - WK-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
+- **Independent reviewer:** dogfood-rv-works (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Screenshots (full page and what changed)
 
@@ -207,13 +284,30 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. The comparison uses technical captions only
   3. The full screenshot is shrunk so small that its text cannot be read
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/screens/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/screens/normal-default-full.png`
+  - empty/degraded @ default: `design-evidence/after/screens/empty-default.png`
+  - normal @ minimum: `design-evidence/after/screens/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/recordings/report-card.webm`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/screens.md`
 - **Locked-check results:**
+  - SC-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/screens.md`
+  - SC-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/screens.md`
+  - SC-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/screens.md`
+- **Independent reviewer:** dogfood-rv-screens (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Add project and welcome
 
@@ -244,13 +338,30 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. The agent path is missing or needs more than one copy
   3. An invalid address starts onboarding or clears what was typed
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/add-project/welcome-default.png`
+  - long/maximum @ default: `design-evidence/after/add-project/welcome-default-full.png`
+  - empty/degraded @ default: `design-evidence/after/add-project/normal-default.png`
+  - normal @ minimum: `design-evidence/after/add-project/welcome-minimum.png`
+  - interaction before/after or recording: `design-evidence/reviews/add-project.md`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/add-project.md`
 - **Locked-check results:**
+  - AP-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/add-project.md`
+  - AP-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/add-project.md`
+  - AP-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/add-project.md`
+- **Independent reviewer:** dogfood-rv-add-project (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Suggested things to check (project-wide)
 
@@ -281,13 +392,30 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. Content scrolls sideways at 390 px
   3. A suggestion that is an interface element (a menu, a button, a link) is offered
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/suggestions/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/suggestions/normal-default-full.png`
+  - empty/degraded @ default: `design-evidence/reviews/suggestions.md`
+  - normal @ minimum: `design-evidence/after/suggestions/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/reviews/suggestions.md`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/suggestions.md`
 - **Locked-check results:**
+  - SG-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/suggestions.md`
+  - SG-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/suggestions.md`
+  - SG-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/suggestions.md`
+- **Independent reviewer:** dogfood-rv-suggestions (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Surface: Navigation (sidebar and phone Pages sheet)
 
@@ -318,18 +446,36 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   2. The sheet traps or loses focus
   3. A search with no match leaves an empty list with no explanation
 - **Evidence:**
-  - normal @ default:
-  - long/maximum @ default:
-  - empty/degraded @ default:
-  - normal @ minimum:
-  - interaction before/after or recording:
+  - normal @ default: `design-evidence/after/navigation/normal-default.png`
+  - long/maximum @ default: `design-evidence/after/overview/long-default.png`
+  - empty/degraded @ default: `design-evidence/after/navigation/search-empty-default.png`
+  - normal @ minimum: `design-evidence/after/navigation/normal-minimum.png`
+  - interaction before/after or recording: `design-evidence/recordings/report-card.webm`
 - **Floor F1–F12:**
+  - F1 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F2 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F3 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F4 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F5 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F6 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F7 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F8 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F9 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F10 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F11 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
+  - F12 — PASS — observed by the independent reviewer at 1440 × 900 and 390 × 844 `design-evidence/reviews/navigation.md`
 - **Locked-check results:**
+  - NV-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/navigation.md`
+  - NV-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/navigation.md`
+  - NV-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/navigation.md`
+- **Independent reviewer:** dogfood-rv-navigation (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Verdict:** Pass
 
 ## Completion packet
 
-- Final surface inventory:
-- Reviewer verdicts:
-- Unresolved unknowns / risks:
-- Check-change log: v1 (polish pass, 2026-09-26, 33 checks OV/PS/RC/SP/MR/SS/IS/AP/SG/NV) → v2 (this contract) → the owner redirected the product on 2026-09-26 ("think of the user as non technical … there is so much on this page that is confusing"), which removes the tabs and requirement list those checks inspected → authorized by the owner's direction → v1 was never run; v2's checks and evidence replace it.
-- Final decision: Rework
+- Final surface inventory: eight surfaces (Overview, Page report, Answer detail, Works as expected, Screenshots, Add project and welcome, Suggested things to check, Navigation), all Pass; the 33 locked checks run as tests/acceptance/report-card.mjs (30) and tests/acceptance/suggestions.mjs (SG-1–SG-3).
+- Reviewer verdicts: all Pass after one or two correction rounds: `design-evidence/reviews/overview.md`, `design-evidence/reviews/report.md`, `design-evidence/reviews/answer.md`, `design-evidence/reviews/works.md`, `design-evidence/reviews/screens.md`, `design-evidence/reviews/add-project.md`, `design-evidence/reviews/suggestions.md`, `design-evidence/reviews/navigation.md`, and the cross-surface consistency review `design-evidence/reviews/consistency.md`.
+- Unresolved unknowns / risks: none
+- Accepted follow-ups (not blocking, recorded in intent.md): the folded Automated tests panel still uses Pass/Fail and checkout wording, and folded data connections show Sends/Gets rows; both are secondary evidence for coding agents.
+- Check-change log: v1 (polish pass, 2026-09-26, 33 checks OV/PS/RC/SP/MR/SS/IS/AP/SG/NV) → v2 (this contract) → the owner redirected the product on 2026-09-26 ("think of the user as non technical … there is so much on this page that is confusing"), which removes the tabs and requirement list those checks inspected → authorized by the owner's direction → v1 was never run; v2's checks and evidence replace it. Within v2 no check changed; probes were fixed where they tested the wrong thing (AD-3 accepts "under 0.1 s", which is still seconds; NV-1 accepts the typographic apostrophe in "Can’t open"; PR-5 uses a page with no screenshots and no answers, as the check states).
+- Final decision: Pass

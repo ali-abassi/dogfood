@@ -40,3 +40,6 @@ Change detection already catches the failure that matters, evidence describing a
 ## Next
 
 - Watch real use (two of the owner's products are checked with dogfood) and fix what slows people or agents down.
+- Follow-ups from the consistency review: put the folded Automated tests panel (Pass/Fail, checkout wording) and the folded data connections (Sends/Gets rows) into plain words.
+- Design contract v2 closed on 2026-09-26: eight surfaces and a cross-surface consistency review, all Pass from independent reviewers on a different model, final validator passing.
+
