@@ -65,7 +65,9 @@ test('a page moves from registered to complete only when all six answers are ans
   store.createProject({ id: 'shop', name: 'Shop', description: 'A test shop.', url: 'https://example.com', environment: 'Fixture', checkout: data });
   store.registerPage('shop', { id: 'home', name: 'Home', group: 'Public', route: '/' });
   const progress = () => store.pageProgress(store.readProject('shop'), store.readProject('shop').pages[0]);
-  assert.equal(progress().status, 'blocked');
+  assert.equal(progress().status, 'untested', 'a page that was never captured is not checked yet, not blocked');
+  store.recordCapture('shop', 'home', { device: 'desktop', blockedReason: 'The checkout needs a signed-in staff account.' });
+  assert.equal(progress().status, 'blocked', 'a real reason the page cannot be captured blocks it');
   assert.deepEqual(progress().requirements.map(item => item.id), ['capture', 'scan', 'design', 'purpose', 'ease', 'safety', 'speed', 'works', 'issues']);
   assert.deepEqual(progress().answers.map(item => [item.name, item.status]), [['Looks right', 'untested'], ['Clear purpose', 'untested'], ['Easy to use', 'untested'], ['Safe', 'untested'], ['Fast & findable', 'untested'], ['Works as expected', 'untested']]);
   assert.match(progress().requirements.find(item => item.id === 'works').missing, /Add what people can do here/);

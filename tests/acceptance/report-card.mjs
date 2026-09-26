@@ -273,8 +273,8 @@ try {
   openAnswer('speed');
   await check('AD-3 Fast & findable gives each device\'s load time in seconds and says whether search has a title and description', () => {
     const detail = text('[data-answer-detail="speed"]');
-    assert.match(detail, /Load time on a computer\s+\d+\.\d s/);
-    assert.match(detail, /Load time on a phone\s+\d+\.\d s/);
+    assert.match(detail, /Load time on a computer\s+(under 0\.1 s|\d+\.\d s)/);
+    assert.match(detail, /Load time on a phone\s+(under 0\.1 s|\d+\.\d s)/);
     assert.match(detail, /Page title\s+(Missing|.+)/);
     assert.match(detail, /Search description\s+(Missing|.+)/);
     assert.doesNotMatch(detail, /h1Count|content-security-policy/);

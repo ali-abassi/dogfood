@@ -44,7 +44,7 @@ export function scanPosition({ scanned, total, current }) {
 
 export function secondsLabel(value) {
   if (value === null || value === undefined) return 'Not measured';
-  return `${(value / 1000).toFixed(1)} s`;
+  return value < 100 ? 'under 0.1 s' : `${(value / 1000).toFixed(1)} s`;
 }
 
 export function authorName(by) {

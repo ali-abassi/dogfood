@@ -111,7 +111,7 @@ code { font-family: var(--mono); }
 
 /* Page heading */
 .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-.page-title { min-width: 0; }
+.page-title { min-width: 0; max-width: 100%; }
 .page-route { overflow: hidden; margin: 0 0 2px; color: var(--tertiary); font: 12px var(--mono); letter-spacing: 0; text-overflow: ellipsis; white-space: nowrap; }
 .page-heading h1 { margin: 0; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .page-heading h1:focus { outline: 0; }
@@ -375,7 +375,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
   .toolbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; min-height: 52px; padding: 8px 16px; background: var(--canvas); border-bottom: .5px solid var(--hairline); }
   .page-menu-toggle { display: inline-flex; flex: none; align-items: center; min-height: 32px; padding: 0 14px; border: 0; border-radius: 980px; background: var(--fill); font-size: 13px; font-weight: 500; }
   .page-workspace { padding: 16px 16px 40px; }
-  .page-heading { flex-direction: column; align-items: start; gap: 8px; }
+  .page-heading { flex-direction: column; align-items: stretch; gap: 8px; }
   .page-heading h1, .overview-heading h1, .answer-detail h1, .screens-view h1, .suggestions-heading h1 { font-size: 24px; }
   .page-actions { justify-content: start; }
   .content-panel { padding: 14px; }
