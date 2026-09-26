@@ -56,7 +56,7 @@ Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registe
 
 `npm run report -- <project-id> > report.md` writes a shareable Markdown summary: what needs work first, every page's six answers, open bugs, and what the evidence does not prove.
 
-Upgrading from an earlier dogfood? Run `npm run migrate` once. It moves projects to the six answers, keeps old verdicts that no longer count on record under `retiredChecks`, and leaves any outside-edit warning in place.
+Upgrading from an earlier dogfood? Run `npm run migrate` once. It moves projects to the six answers and the current data version, keeps old verdicts that no longer count on record under `retiredChecks`, and leaves any outside-edit warning in place.
 
 Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.
 

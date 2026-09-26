@@ -25,13 +25,18 @@ function suggestionPageMarkup(entry) {
   return `<section class="suggestion-page-group content-panel" data-suggestion-page="${escapeHtml(entry.page)}"><h2>${escapeHtml(entry.name)} <small>${escapeHtml(entry.group)}</small></h2>${stale}<div class="suggested-list">${boxes}</div></section>`;
 }
 
+function suggestionsBodyMarkup(count) {
+  if (state.suggestions.loading && !count) return '<p class="muted" role="status">Loading suggestions…</p>';
+  if (!count) return '<p class="muted">Nothing is waiting. The AI suggests what people can do on a page each time it checks one.</p>';
+  return `${state.suggestions.items.map(suggestionPageMarkup).join('')}<div class="form-actions"><button type="button" class="save-button" data-action="add-project-suggestions">Add ${escapeHtml(plural(count, 'thing', 'things'))}</button><button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button></div>`;
+}
+
 export function suggestionsReviewMarkup() {
   const { count } = suggestionTotals();
-  const groups = state.suggestions.items.map(suggestionPageMarkup).join('');
   return `<section class="suggestions-review" aria-label="Review suggested features">
     <header class="suggestions-heading"><h1 id="suggestions-heading" tabindex="-1">What people can do on each page</h1><p>The AI suggested these from the screenshots. Untick anything that is wrong, then add the rest to check.</p></header>
-    ${groups}
-    <div class="form-actions"><button type="button" class="save-button" data-action="add-project-suggestions">Add ${escapeHtml(plural(count, 'thing', 'things'))}</button><button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button></div>
+    ${suggestionsBodyMarkup(count)}
+    ${count ? '' : '<button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button>'}
   </section>`;
 }
 

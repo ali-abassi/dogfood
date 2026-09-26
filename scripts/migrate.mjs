@@ -31,7 +31,16 @@ function toVersion4(page) {
   page.checks = { design, purpose: untested, ease: clear ?? untested };
 }
 
-const steps = { 2: toVersion3, 3: toVersion4 };
+// Version 5: pages found by onboarding used to get the note "Nothing beyond the scan and
+// screenshots has been checked yet." It went stale as soon as anyone checked the page, so it is
+// cleared; the report now works out what is unanswered from the answers themselves.
+const staleDefaultNote = 'Nothing beyond the scan and screenshots has been checked yet.';
+
+function toVersion5(page) {
+  if (page.qa.note === staleDefaultNote) page.qa.note = '';
+}
+
+const steps = { 2: toVersion3, 3: toVersion4, 4: toVersion5 };
 
 // Re-stamps the hash only when dogfood's last write was intact, so an outside edit stays flagged.
 function save(project, integrity) {

@@ -16,7 +16,7 @@ const data = mkdtempSync(join(tmpdir(), 'dogfood-scan-proof-'));
 let passed = 0;
 
 const layout = (title, body, extra = '') => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title><meta name="description" content="${title} at Fixture Shop."></head><body style="margin:0;font:16px system-ui">
-<nav aria-label="Main"><a href="/">Home</a> <a href="/pricing">Pricing</a> <a href="/about">About</a> <a href="https://elsewhere.example/">Elsewhere</a></nav>
+<nav aria-label="Main"><a href="/">Home</a> <a href="/index.html">Start</a> <a href="/pricing">Pricing</a> <a href="/about">About</a> <a href="https://elsewhere.example/">Elsewhere</a></nav>
 <main style="padding:24px"><h1>${title}</h1>${body}<p>${'Fixture copy. '.repeat(40)}</p></main>${extra}</body></html>`;
 
 const pages = {
@@ -95,7 +95,7 @@ try {
     assert.equal(shop.source.url, `${site}/`);
     assert.match(cli, /fixture-shop/);
   });
-  check('onboarding finds pages from the rendered navigation and the sitemap, same-site only', () => {
+  check('onboarding finds pages from the rendered navigation and the sitemap, same-site only, with /index.html as /', () => {
     const routes = shop.pages.map(item => item.route).sort();
     assert.deepEqual(routes, ['/', '/about', '/hidden', '/pricing']);
     assert.equal(page(shop, 'home')?.route, '/');

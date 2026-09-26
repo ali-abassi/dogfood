@@ -24,4 +24,6 @@ test('the report leads with what needs attention and lists every page and open i
   assert.doesNotMatch(report, /\bP[0-3]\b/, 'severity codes stay out of the report');
   assert.ok(report.indexOf('TP-001') < report.indexOf('TP-002'), 'issues are ordered by severity');
   assert.match(report, /## What this does not prove/);
+  assert.match(report, /- Staff schedule: not answered yet: Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected\./, 'what is open comes from the answers');
+  assert.doesNotMatch(report, /Nothing beyond the scan/);
 });
