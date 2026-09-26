@@ -1,12 +1,12 @@
 # Current outcome — dogfood owned end to end
 
-- **User-stated, 2026-09-25:** "Continue, you own this project." Ali is focused on dogfood the tool, not on any one project's QA progress.
-- **Agent-selected working policy:** pick the next most valuable improvement, record it here, build it (PAL workers on Muse or Claude while Codex is out), verify it with an acceptance suite, push to `main`, and continue.
+- **User-stated, 2026-09-25:** "Continue, you own this project." The owner is focused on dogfood the tool, not on any one project's QA progress.
+- **Agent-selected working policy:** pick the next most valuable improvement, record it here, build it (with delegated workers where useful), verify it with an acceptance suite, push to `main`, and continue.
 
 ## Shipped under ownership (2026-09-25, through `a1b1bc6`)
 
 1. Protection: the acceptance suites live in `tests/acceptance/` (8 suites, 115 checks), `npm run lint` enforces complexity 5, and GitHub CI runs unit tests, checks, lint, and the MCP suite on every push.
-2. Know what changed since you last checked: each scan compares every screenshot with the previous one and stores a diff; pages reviewed before a visual change are flagged "Changed since review" until reviewed again; Scan all pages (app, `npm run scan`, `dogfood_scan_project`). On AI Social Team it caught the phone layout fixes on Schedule and Competitor research.
+2. Know what changed since you last checked: each scan compares every screenshot with the previous one and stores a diff; pages reviewed before a visual change are flagged "Changed since review" until reviewed again; Scan all pages (app, `npm run scan`, `dogfood_scan_project`). On a real project it caught phone layout fixes on two pages.
 3. Onboarding can also run the AI review (opt-in, about half a cent per page) so pages arrive with suggested features.
 4. A Markdown QA report (`npm run report`, `dogfood_report`, Download report in the app) that leads with what needs attention and states what is not proven.
 5. Removing a page registered by mistake, with a reason on record (`dogfood_remove_page`, Remove page… in the app).
@@ -39,4 +39,4 @@ Change detection already catches the failure that matters, evidence describing a
 
 ## Next
 
-- Watch real use (AI Social Team and AI Money Team are live in dogfood) and fix what slows people or agents down.
+- Watch real use (two of the owner's products are checked with dogfood) and fix what slows people or agents down.
