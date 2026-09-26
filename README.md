@@ -2,7 +2,7 @@
 
 <h1 align="center">dogfood</h1>
 
-<p align="center"><strong>Is your app working?</strong> dogfood checks every page of your app on a computer and a phone, and gives each page six plain answers, each backed by evidence you can open.</p>
+<p align="center"><strong>A quality assurance app for any project.</strong> Your coding agent reviews every page systematically, and you see where quality stands, page by page, as the project moves: computer and phone screenshots and six plain answers per page, each backed by evidence you can open. QA becomes a streamlined process, so you finish projects faster.</p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
