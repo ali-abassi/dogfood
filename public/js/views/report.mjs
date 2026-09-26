@@ -5,7 +5,7 @@ function screenMarkup(page, device) {
   const capture = page.captures[device];
   const image = capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
   const picture = image
-    ? `<img src="${image}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}" loading="eager">`
+    ? `<img data-screenshot src="${image}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}" width="${escapeHtml(capture.pixelWidth)}" height="${escapeHtml(capture.pixelHeight)}" loading="eager">`
     : `<p class="screen-missing">${escapeHtml(capture.reason || 'No screenshot yet.')}</p>`;
   return `<figure class="report-screen report-screen-${device}"><div class="screen-frame">${picture}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(relativeCaptureAge(capture))}</figcaption></figure>`;
 }

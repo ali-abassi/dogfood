@@ -26,15 +26,17 @@ function suggestionPageMarkup(entry) {
 }
 
 function suggestionsBodyMarkup(count) {
+  if (state.suggestions.error) return `<p class="form-error" role="alert">Could not load the AI’s suggestions. ${escapeHtml(state.suggestions.error)} <button type="button" class="link-button" data-action="retry-suggestions">Try again</button></p>`;
   if (state.suggestions.loading && !count) return '<p class="muted" role="status">Loading suggestions…</p>';
   if (!count) return '<p class="muted">Nothing is waiting. The AI suggests what people can do on a page each time it checks one.</p>';
   return `${state.suggestions.items.map(suggestionPageMarkup).join('')}<div class="form-actions"><button type="button" class="save-button" data-action="add-project-suggestions">Add ${escapeHtml(plural(count, 'thing', 'things'))}</button><button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button></div>`;
 }
 
 export function suggestionsReviewMarkup() {
-  const { count } = suggestionTotals();
+  const { count, pages } = suggestionTotals();
+  const scope = count ? `<p class="suggestions-scope">${escapeHtml(plural(count, 'thing', 'things'))} on ${escapeHtml(plural(pages, 'page', 'pages'))}</p>` : '';
   return `<section class="suggestions-review" aria-label="Review suggested features">
-    <header class="suggestions-heading"><h1 id="suggestions-heading" tabindex="-1">What people can do on each page</h1><p>The AI suggested these from the screenshots. Untick anything that is wrong, then add the rest to check.</p></header>
+    <header class="suggestions-heading"><h1 id="suggestions-heading" tabindex="-1">What people can do on each page</h1><p>The AI suggested these from the screenshots. Untick anything that is wrong, then add the rest to check.</p>${scope}</header>
     ${suggestionsBodyMarkup(count)}
     ${count ? '' : '<button type="button" class="text-button" data-action="cancel-project-suggestions">Back to overview</button>'}
   </section>`;
@@ -108,7 +110,7 @@ export async function addProjectSuggestions(button) {
     const addedPages = new Set(picked.map(item => item.page)).size;
     state.message = `Added ${plural(picked.length, 'thing', 'things')} to ${plural(addedPages, 'page', 'pages')}`;
     await reloadProjectSuggestions();
-    if (!suggestionTotals().count) state.view = 'overview';
+    state.view = 'overview';
   } catch (error) { state.message = error.message; }
   render();
 }

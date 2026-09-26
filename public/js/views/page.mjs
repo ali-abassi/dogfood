@@ -1,16 +1,22 @@
 import { escapeHtml, externalLinkMarkup, statusPill } from '../format.mjs';
-import { groupedPages, state, statusNames, visiblePages } from '../state.mjs';
+import { groupedPages, isProjectView, state, statusNames, visiblePages } from '../state.mjs';
 
 function menuSelectMarkup(id, label, value, options) {
   const items = options.map(([key, text]) => `<option value="${key}" ${value === key ? 'selected' : ''}>${text}</option>`).join('');
   return `<label class="menu-select">${label}<select id="${id}">${items}</select></label>`;
 }
 
-function pageOptionMarkup(page) {
-  const selected = page.id === state.pageId;
-  const status = page.progress.status;
+// Each status has its own shape as well as its colour, so the list reads without colour vision.
+const statusShapes = { pass: '✓', needs_work: '!', in_review: '◐', untested: '–', blocked: '×' };
+
+function statusMarkMarkup(status) {
   const label = statusNames[status] || status;
-  return `<button type="button" class="page-option ${selected ? 'selected' : ''}" data-page="${escapeHtml(page.id)}" ${selected ? 'aria-current="page"' : ''}><span>${escapeHtml(page.name)}</span><span class="menu-status status-${escapeHtml(status)}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"></span></button>`;
+  return `<span class="menu-status status-${escapeHtml(status)}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${statusShapes[status] ?? ''}</span>`;
+}
+
+function pageOptionMarkup(page) {
+  const selected = !isProjectView() && page.id === state.pageId;
+  return `<button type="button" class="page-option ${selected ? 'selected' : ''}" data-page="${escapeHtml(page.id)}" ${selected ? 'aria-current="page"' : ''}><span>${escapeHtml(page.name)}</span>${statusMarkMarkup(page.progress.status)}</button>`;
 }
 
 export function pageOptionsMarkup(pages) {

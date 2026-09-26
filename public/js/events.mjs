@@ -250,7 +250,7 @@ function renderSidebarPageList() {
 
 function handleProjectSelection(select) {
   if (blockOpenFormNavigation()) { select.value = state.project.id; return; }
-  loadProject(select.value).catch(error => showError(error.message));
+  loadProject(select.value).then(() => restoreFocus('#project-select'), error => showError(error.message));
 }
 
 function handlePageSort(select) {
@@ -305,6 +305,12 @@ export function registerEvents() {
   app.addEventListener('keydown', event => {
     if (event.key === 'Escape' && state.browseOpen && matchMedia('(max-width: 760px)').matches) closePages();
   });
+  // A screenshot file that is gone says so, instead of showing a broken image.
+  app.addEventListener('error', event => {
+    if (!event.target.matches?.('img[data-screenshot]')) return;
+    event.target.closest('figure')?.querySelector('figcaption a')?.remove();
+    event.target.replaceWith(Object.assign(document.createElement('p'), { className: 'screen-missing', textContent: 'This screenshot is missing. Check the page again to take a new one.' }));
+  }, true);
   // The page knows whether the last input was a key or a pointer, so styles can hide focus rings after clicks.
   document.addEventListener('keydown', () => { keyboardInput = true; document.documentElement.dataset.input = 'keyboard'; }, true);
   document.addEventListener('pointerdown', () => { keyboardInput = false; document.documentElement.dataset.input = 'pointer'; }, true);

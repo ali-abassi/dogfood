@@ -95,7 +95,7 @@ code { font-family: var(--mono); }
 .page-group p { margin: 0; padding: 8px 8px 4px; color: var(--tertiary); font-size: 11px; font-weight: 600; }
 .page-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 28px; padding: 4px 8px; border: 0; border-radius: 6px; background: transparent; text-align: left; font-size: 13px; }
 .page-option.selected { background: var(--selection); font-weight: 500; }
-.menu-status { flex: none; width: 8px; height: 8px; border-radius: 50%; color: var(--gray); }
+.menu-status { display: inline-grid; flex: none; place-items: center; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; font-weight: 700; line-height: 1; }
 .page-no-results { margin: 8px; color: var(--secondary); font-size: 12.5px; }
 .page-sidebar > .source-link { padding: 4px 8px 0; font-size: 12.5px; }
 .overview-option { flex: none; }
@@ -254,9 +254,8 @@ code { font-family: var(--mono); }
 .status-in_review { color: var(--ink); }
 .status-needs_work, .status-open { background: var(--red-tint); color: var(--red); }
 .status-blocked { background: var(--orange-tint); color: var(--orange); }
-.page-option .menu-status { background: currentColor; }
-.page-option .menu-status.status-untested { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
-.page-option .menu-status.status-in_review { color: var(--secondary); }
+.page-option .menu-status.status-untested { box-shadow: inset 0 0 0 1.5px var(--separator); color: var(--tertiary); }
+.page-option .menu-status.status-in_review { background: var(--fill); color: var(--secondary); }
 
 /* Buttons */
 .save-button, .text-button, .danger-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 16px; border: 0; border-radius: 980px; font-size: 13px; font-weight: 500; white-space: nowrap; }
@@ -310,6 +309,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .suggestions-heading h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .suggestions-heading h1:focus { outline: 0; }
 .suggestions-heading p { max-width: 64ch; margin: 6px 0 0; color: var(--secondary); }
+.suggestions-heading .suggestions-scope { color: var(--ink); font-weight: 500; }
 .suggestion-page-group h2 small { color: var(--secondary); font-size: 13px; font-weight: 400; }
 .suggestions-review > .form-actions { position: sticky; bottom: 0; z-index: 4; margin: 0; padding: 12px 0 16px; background: var(--canvas); border-top: .5px solid var(--hairline); }
 
