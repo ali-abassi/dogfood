@@ -28,11 +28,15 @@ async function scanActivePage() {
   render();
 }
 
-function selectPage(id) {
+// Fix-first rows name their page and view; every other page jump opens the report.
+const pageJumpViews = ['report', 'screens', 'works', ...answerIds];
+
+function selectPage(id, view = 'report') {
+  const name = pageJumpViews.includes(view) ? view : 'report';
   closeEditors();
-  Object.assign(state, { pageId: id, view: 'report', browseOpen: false, query: '', filter: 'all', message: '' });
+  Object.assign(state, { pageId: id, view: name, browseOpen: false, query: '', filter: 'all', message: '' });
   render();
-  document.querySelector('#selected-page-heading')?.focus({ preventScroll: true });
+  document.querySelector(name === 'report' ? '#selected-page-heading' : '#answer-heading')?.focus({ preventScroll: true });
 }
 
 function openRemovePage() {
@@ -231,7 +235,7 @@ function selectView(name) {
 
 function handleNavigationButton(button) {
   if (button.dataset.overview !== undefined) { selectOverview(); return true; }
-  if (button.dataset.page) { selectPage(button.dataset.page); return true; }
+  if (button.dataset.page) { selectPage(button.dataset.page, button.dataset.view); return true; }
   if (!button.dataset.view) return false;
   selectView(button.dataset.view);
   return true;

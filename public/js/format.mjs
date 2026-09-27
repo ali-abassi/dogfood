@@ -69,8 +69,8 @@ export function externalLinkMarkup(value, label, className = '') {
   return url ? `<a class="${escapeHtml(className)}" href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : '';
 }
 
-// The shape carries the state as well as the colour: ✓ good, ! needs work, ◐ partly, – not checked, ↻ recheck.
-const markShapes = { pass: '✓', needs_work: '!', partial: '◐', untested: '–', recheck: '↻' };
+// The shape carries the state as well as the colour: ✓ good, ! needs work, ◐ partly, – not checked, ↻ recheck, × blocked.
+const markShapes = { pass: '✓', needs_work: '!', partial: '◐', untested: '–', recheck: '↻', blocked: '×' };
 
 export function answerMarkMarkup(name, status) {
   const word = answerWords[status];
@@ -85,7 +85,7 @@ const sourceWords = {
   things: () => 'From trying the things you can do here, below',
   bugs: () => 'From the bugs below',
   tests: () => 'From the automated tests',
-  verdict: part => (part.by ? `From ${authorName(part.by)}` : 'From an earlier answer that was not signed'),
+  verdict: part => (part.by ? `From ${authorName(part.by)}` : 'From an earlier check (no date recorded)'),
 };
 
 // Where an answer came from, in plain words, with when.

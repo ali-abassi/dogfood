@@ -2,19 +2,23 @@ import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, plural, scanPosition } from '../format.mjs';
 import { answerIds, answerShortNames, displayAnswerStatus, groupedPages, state } from '../state.mjs';
 import { render } from '../app.mjs';
+import { fixFirstMarkup } from './issues.mjs';
 import { reloadProjectSuggestions, suggestionsWaitingMarkup } from './suggestions.mjs';
 
 function countWords(count, singular, pluralForm) {
   return `${count} ${count === 1 ? singular : pluralForm}`;
 }
 
-// One sentence answers the question the owner came with.
+// One sentence answers the question the owner came with. Blocked pages get their own count,
+// so red means actionable and waiting never hides inside another bucket.
 function answerSentence(pages) {
   const count = status => pages.filter(page => page.progress.status === status).length;
   const good = count('pass');
   const needs = count('needs_work');
-  const rest = pages.length - good - needs;
-  return `Is ${state.project.name} working? ${countWords(good, 'page is', 'pages are')} good, ${countWords(needs, 'needs', 'need')} work, and ${countWords(rest, 'is', 'are')} not fully checked yet.`;
+  const blocked = pages.filter(page => !['pass', 'needs_work'].includes(page.progress.status) && page.progress.answers.some(answer => answer.status === 'blocked')).length;
+  const rest = pages.length - good - needs - blocked;
+  const waiting = blocked ? `, ${countWords(blocked, 'page is', 'pages are')} blocked` : '';
+  return `Is ${state.project.name} working? ${countWords(good, 'page is', 'pages are')} good, ${countWords(needs, 'needs', 'need')} work${waiting}, and ${countWords(rest, 'is', 'are')} not fully checked yet.`;
 }
 
 function columnsMarkup() {
@@ -67,6 +71,7 @@ export function overviewMarkup() {
     <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
+    ${fixFirstMarkup(state.project.pages)}
     ${legendMarkup()}
     <section class="overview-pages content-panel" aria-label="Pages">${pages}</section>
     ${suggestionsWaitingMarkup()}

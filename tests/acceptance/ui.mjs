@@ -69,9 +69,12 @@ try {
   await waitForServer();
   const project = await api('/api/projects/tidepool');
   const book = project.pages.find(item => item.id === 'book');
-  // Seed one attributed verdict so the UI has something to attribute.
+  // Seed one attributed verdict so the UI has something to attribute, and one blocked answer.
   await api('/api/projects/tidepool/pages/home/verdicts', { method: 'PATCH', body: JSON.stringify({
-    checks: { purpose: { status: 'pass', note: 'The heading says Tidepool teaches swimming to children and adults.' } },
+    checks: {
+      purpose: { status: 'pass', note: 'The heading says Tidepool teaches swimming to children and adults.' },
+      design: { status: 'blocked', note: 'Waiting on the brand fonts from the designer.' },
+    },
   }) });
   const seeded = await api('/api/projects/tidepool');
 
@@ -86,8 +89,9 @@ try {
     const ids = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => row.dataset.overviewPage)`);
     assert.deepEqual(ids, seeded.pages.map(item => item.id));
   });
-  const words = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked', recheck: 'Recheck' };
+  const words = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked', recheck: 'Recheck', blocked: 'Blocked' };
   const shown = (item, answer) => `${answer.name}: ${words[displayAnswerStatus(item, answer)]}`;
+  const blockedPages = seeded.pages.filter(item => !['pass', 'needs_work'].includes(item.progress.status) && item.progress.answers.some(answer => answer.status === 'blocked')).length;
   check('each overview row shows the server\'s status and six answers, with Recheck for Good answers on changed pages', () => {
     const rows = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => ({ id: row.dataset.overviewPage, status: row.dataset.status, marks: [...row.querySelectorAll('[data-answer-mark]')].map(mark => mark.getAttribute('aria-label')) }))`);
     for (const item of seeded.pages) {
@@ -96,10 +100,22 @@ try {
       assert.deepEqual(row.marks, item.progress.answers.map(answer => shown(item, answer)), `${item.id} answers`);
     }
   });
-  check('the overview sentence counts good pages, pages that need work, and the rest from the server', () => {
+  check('the overview sentence counts good pages, pages that need work, blocked pages, and the rest from the server', () => {
     const count = status => seeded.pages.filter(item => item.progress.status === status).length;
+    const rest = seeded.pages.length - count('pass') - count('needs_work') - blockedPages;
     const sentence = page(`document.querySelector('[data-answer-sentence]').textContent`);
-    assert.match(sentence, new RegExp(`\\b${count('pass')} pages? (is|are) good, ${count('needs_work')} needs? work, and ${seeded.pages.length - count('pass') - count('needs_work')} `));
+    assert.match(sentence, new RegExp(`\\b${count('pass')} pages? (is|are) good, ${count('needs_work')} needs? work, ${blockedPages} pages? (is|are) blocked, and ${rest} `));
+  });
+  check('Fix first lists open P0-P2 bugs across pages, worst and oldest first', () => {
+    const rows = page(`[...document.querySelectorAll('[data-fix-first] .finding-row')].map(row => ({ severity: row.querySelector('.bug-severity').textContent, title: row.querySelector('.finding-row-title').textContent, meta: row.querySelector('.finding-row-meta').textContent }))`);
+    assert.deepEqual(rows, [{ severity: 'Annoying', title: 'Reserve button sits beside the email field', meta: 'Book a lesson · TP-001' }]);
+  });
+  check('choosing a Fix first row opens that page’s bugs', () => {
+    page(`document.querySelector('[data-fix-first] .finding-row').click() || true`);
+    settle();
+    assert.equal(page(`document.querySelector('#answer-heading')?.textContent`), 'Works as expected');
+    page(`document.querySelector('[data-overview]').click() || true`);
+    settle();
   });
   check('sidebar status marks use the server status in plain words', () => {
     const labels = page(`[...document.querySelectorAll('.page-sidebar [data-page]')].map(item => ({ id: item.dataset.page, label: item.querySelector('[role="img"]')?.getAttribute('aria-label') }))`);
@@ -116,6 +132,14 @@ try {
   check('the page shows the server\'s six answers with one-line reasons', () => {
     const rows = page(`[...document.querySelectorAll('[data-answer-row]')].map(row => ({ id: row.dataset.answerRow, mark: row.querySelector('[data-answer-mark]').getAttribute('aria-label'), summary: row.querySelector('.answer-summary').textContent }))`);
     assert.deepEqual(rows, book.progress.answers.map(answer => ({ id: answer.id, mark: shown(book, answer), summary: shortReason(answer.summary) })));
+  });
+  check('the page lists its open bugs above its answers', () => {
+    const rows = page(`[...document.querySelectorAll('[data-open-findings] .finding-row')].map(row => ({ severity: row.querySelector('.bug-severity').textContent, title: row.querySelector('.finding-row-title').textContent, meta: row.querySelector('.finding-row-meta').textContent }))`);
+    assert.deepEqual(rows, [
+      { severity: 'Annoying', title: 'Reserve button sits beside the email field', meta: 'TP-001' },
+      { severity: 'Cosmetic', title: 'Time slots have no time zone', meta: 'TP-002' },
+    ]);
+    assert.ok(page(`document.querySelector('[data-open-findings]').getBoundingClientRect().top < document.querySelector('[data-answers]').getBoundingClientRect().top`));
   });
   check('an answer that is not answered says what would answer it, and opens its detail', () => {
     const open = book.progress.answers.find(answer => answer.status === 'untested');
@@ -134,6 +158,16 @@ try {
   });
   page(`document.querySelector('[data-action="back-to-report"]').click() || true`);
   settle();
+  check('a blocked answer reads Blocked with its reason, and the form offers Blocked', () => {
+    assert.equal(page(`document.querySelector('[data-answer-row="design"] [data-answer-mark]').getAttribute('aria-label')`), 'Looks right: Blocked');
+    page(`document.querySelector('[data-answer-row="design"]').click() || true`);
+    settle();
+    assert.equal(page(`document.querySelector('[data-answer-detail="design"] .answer-verdict strong').textContent`), 'Blocked');
+    assert.equal(page(`document.querySelector('[data-answer-detail="design"] .answer-text').textContent`), 'Waiting on the brand fonts from the designer.');
+    page(`document.querySelector('[data-action="edit-answer"]').click() || true`);
+    settle();
+    assert.deepEqual(page(`[...document.querySelectorAll('#answer-form input[name="status"]')].map(input => input.value)`), ['pass', 'needs_work', 'blocked']);
+  });
 
   page(`document.querySelector('[data-page="admin"]').click() || true`);
   settle();

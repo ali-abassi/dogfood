@@ -61,7 +61,7 @@ export function answerPanelMarkup(page, answer) {
 function answerFormMarkup(answer) {
   const current = activePage().checks[answer.id];
   const choice = (value, label) => `<label class="choice"><input type="radio" name="status" value="${value}" ${current.status === value ? 'checked' : ''} required> ${label}</label>`;
-  return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}</div></fieldset><label for="answer-note">What did you see?</label><textarea id="answer-note" name="note" rows="3" maxlength="1200" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
+  return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}${choice('blocked', 'Blocked')}</div></fieldset><label for="answer-note">What did you see, or what do you need?</label><textarea id="answer-note" name="note" rows="3" maxlength="1200" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
 }
 
 function questionMarkup(row, topic) {
@@ -71,12 +71,12 @@ function questionMarkup(row, topic) {
 }
 
 function questionOptions(status) {
-  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
+  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work'], ['blocked', 'Blocked']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
 }
 
 function questionEditorMarkup(row, topic) {
   const id = `${topic}-${row.id}`;
-  return `<div class="question-edit" data-question-row data-topic="${escapeHtml(topic)}" data-id="${escapeHtml(row.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(row.question)}</label><select id="${escapeHtml(id)}-status">${questionOptions(row.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What did you see?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What did you see? Needed for Good or Needs work.">${escapeHtml(row.note)}</textarea></div>`;
+  return `<div class="question-edit" data-question-row data-topic="${escapeHtml(topic)}" data-id="${escapeHtml(row.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(row.question)}</label><select id="${escapeHtml(id)}-status">${questionOptions(row.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What did you see?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What did you see? Needed for Good, Needs work, or Blocked.">${escapeHtml(row.note)}</textarea></div>`;
 }
 
 function questionsFormMarkup(page, topics) {
@@ -199,8 +199,8 @@ async function submitVerdicts(form, errorSelector, body, message) {
 export async function saveAnswer(form) {
   const data = new FormData(form);
   const note = String(data.get('note') ?? '').trim();
-  if (!data.get('status')) return showFormError(form, '#answer-error', 'Choose Good or Needs work.');
-  if (note.length < 12) return showFormError(form, '#answer-error', 'Write at least 12 characters about what you saw.');
+  if (!data.get('status')) return showFormError(form, '#answer-error', 'Choose Good, Needs work, or Blocked.');
+  if (note.length < 12) return showFormError(form, '#answer-error', 'Write at least 12 characters about what you saw or need.');
   const checks = { [form.dataset.answer]: { status: data.get('status'), note } };
   await submitVerdicts(form, '#answer-error', { checks }, 'Answer saved');
 }
