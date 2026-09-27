@@ -10,7 +10,7 @@ Source list / artifact manifest: https://github.com/ali-abassi/dogfood/blob/main
 Direction decision (use / avoid / prove): use: the six answers in the owner's words (Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected), the words Good, Needs work, and Not checked, large side-by-side screenshots, one list of six rows that drills into one answer's evidence, the existing tokens and one blue pill per view; avoid: tabs on the page, requirement lists, internal terms on the report (requirement, verdict, audit, checklist, connection, capture, scan, P0–P3), numeric scores, and more than one line of text per row; prove: after-screenshots of every surface at 1440 × 900 and 390 × 844 with the Tidepool demo and the Northwind long-content fixture, the locked checks run as the acceptance suite tests/acceptance/report-card.mjs, and recordings of answering, reporting a bug, and navigating by keyboard
 Fixed constraints: no framework, no build step, no dependencies; the data the agent records (features, checklists, issues, tests, connections, scans, screenshots, AI reviews) keeps its shape; every acceptance behaviour that still exists keeps a passing check (moved checks are logged below); complexity 5 or less per function; the MCP completion gate reads the same six answers as the app
 Non-goals: dark-mode redesign beyond parity, marketing pages, new kinds of evidence, changing how scans or AI reviews are produced beyond the three judged questions
-Shared type / spacing / color / shape / imagery / motion rules: system SF stack at 400–600; 28px page titles, 17px panel titles, 15px row titles, 13–14px answers and body, 12px meta; spacing on the 4/8/12/16/24/32 scale; canvas #f5f5f7 and white 12px panels; blue #0071e3 only for the one primary action, links, and focus; green for Good, red for Needs work, grey for Not checked, orange only for "Changed since last check"; every mark pairs its colour with a shape (check, exclamation, dash) and a word or accessible name; radii 12/8/6 and full pills for buttons; imagery is only the product's own screenshots; motion only for disclosure chevrons, at most 150 ms, none under reduced motion
+Shared type / spacing / color / shape / imagery / motion rules: system SF stack at 400–600; 28px page titles, 17px panel titles, 15px row titles, 13–14px answers and body, 12px meta; spacing on the 4/8/12/16/24/32 scale; canvas #f5f5f7 and white 12px panels; blue #0071e3 only for the one primary action, links, and focus; green for Good, red for Needs work, grey for Not checked, orange for Recheck; every mark pairs its colour with a shape (check, exclamation, dash, circular arrow) and a word or accessible name; radii 12/8/6 and full pills for buttons; imagery is only the product's own screenshots; motion only for disclosure chevrons, at most 150 ms, none under reduced motion
 Shared interaction and feedback rules: a row is one button that opens its answer; Back returns to the report and puts keyboard focus on the row that was opened; a click never leaves a stray focus ring; every save confirms in the same words as its label and updates the mark in place; an unchanged form closes silently, a changed one asks Save or Discard inline; nothing reflows sideways when something opens; destructive actions stay grey until the confirming step
 Default viewport: 1440 × 900
 Minimum viewport: 390 × 844
@@ -27,12 +27,12 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Primary user job:** know whether the app works and which pages need fixing
 - **Observable successful outcome:** the person names a page that needs work and which of the six answers is wrong, then opens it in one click
 - **Entry / exit:** entry from app start, the sidebar Overview item, or after adding a project; exit by opening a page row, Review suggestions, Add project, or Check all pages
-- **Critical information, ordered:** one sentence answering "Is Tidepool working?" with counts of pages that are good, need work, and are not checked; what changed since the last check; each page with its six marks in the fixed order
+- **Critical information, ordered:** one sentence answering "Is Tidepool working?" with counts of pages that are good, need work, and are not checked; each page with its six marks in the fixed order, Recheck where a Good answer's evidence predates the page's last visual change
 - **Primary actions:** Check all pages
 - **Secondary actions:** Download report, Review suggested features, open a page
 - **Composition and hierarchy:** title with the answer sentence under it and the actions on the right; one white panel listing pages by site section, each row: page name and route on the left, six marks aligned under six short column headings on the right
 - **Interaction and feedback rules:** a row is one button opening that page's report; Check all pages shows progress in its own label and ends by naming what changed
-- **Normal state:** Tidepool demo: 5 pages, one needing work, two changed since last check, suggestions waiting
+- **Normal state:** Tidepool demo: 5 pages, one needing work, two with Recheck answers, suggestions waiting
 - **Empty state:** a project with no pages says so in plain words and offers Add project
 - **Long / maximum-content state:** the Northwind fixture: a 52-character project name, 60-character page names, a 90-character route
 - **Loading state:** the suggestions line appears when loaded without moving the page list
@@ -85,7 +85,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Primary user job:** see the page on a computer and a phone and learn which of the six answers are good
 - **Observable successful outcome:** within five seconds the person says whether the page works and which answer needs fixing
 - **Entry / exit:** entry from an overview row, a sidebar row, or Back from an answer; exit by opening an answer row, View full page, Check with AI, Check again, Open page, or Remove page
-- **Critical information, ordered:** page name and plain status; desktop and phone screenshots with when they were taken and whether the page changed since the last check; the six answers, each with its mark and one plain sentence
+- **Critical information, ordered:** page name and plain status; desktop and phone screenshots with when they were taken; the six answers, each with its mark and one plain sentence, Recheck instead of Good when its evidence predates the page's last visual change
 - **Primary actions:** Check with AI (only while the AI has not checked the current screenshots)
 - **Secondary actions:** Check again, View full page, Open page, Remove page…
 - **Composition and hierarchy:** heading row (route, name, status, actions); a screenshot panel with the desktop screenshot wide and the phone screenshot narrow side by side, both cropped to one height with View full page; a panel titled "Is this page working?" holding six rows in the fixed order
@@ -145,9 +145,9 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Primary user job:** understand the evidence behind one answer and, when needed, record a better one
 - **Observable successful outcome:** the person can say who or what gave the answer and why, and a new answer they save appears on the report
 - **Entry / exit:** entry from a report row; exit by Back to the report
-- **Critical information, ordered:** the question in plain words; the answer with its mark; where it came from (you, an agent by name, the AI review of these screenshots, or a measurement) and when; the evidence (the note, the AI's reason, measured facts in plain words, the questions asked); what to do next when it needs work
+- **Critical information, ordered:** the question in plain words; the answer with its mark; where it came from (you, an agent by name, the AI review of these screenshots, or a measurement) and when; the evidence (the note, the AI's reason, measured facts in plain words, the questions asked); what to do next when it needs work, or Check again when it reads Recheck
 - **Primary actions:** Update answer (the judged answers) or Answer questions (Safe and Fast & findable)
-- **Secondary actions:** Back, Check with AI, Cancel
+- **Secondary actions:** Back, Check with AI, Check again (Recheck answers), Cancel
 - **Composition and hierarchy:** back control, the question as the title, one answer panel (mark, answer, source line), then evidence panels; the form replaces the answer panel inline
 - **Interaction and feedback rules:** Good and Needs work are a two-choice control; a note of at least 12 characters is required and a shorter one is refused inline; saving confirms "Answer saved" and the mark updates on return
 - **Normal state:** Tidepool Book, Looks right answered by an agent; Fast & findable with measured load times

@@ -1,6 +1,6 @@
 // Words people see. The server sends each answer's name, question, and summary; these name states.
 export const statusNames = { blocked: 'Can’t open', untested: 'Not checked', in_review: 'Partly checked', pass: 'Good', needs_work: 'Needs work', open: 'Open', resolved: 'Fixed' };
-export const answerWords = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked' };
+export const answerWords = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked', recheck: 'Recheck' };
 export const answerShortNames = { design: 'Looks', purpose: 'Purpose', ease: 'Ease', safety: 'Safety', speed: 'Speed', works: 'Works' };
 export const answerIds = Object.keys(answerShortNames);
 export const severityNames = { P0: 'Breaks the app', P1: 'Blocks this page', P2: 'Annoying', P3: 'Cosmetic' };
@@ -50,6 +50,17 @@ export function visiblePages() {
 
 export function activePage() {
   return state.project?.pages.find(page => page.id === state.pageId) ?? null;
+}
+
+// A Good answer reads Recheck, not Good, when any of its evidence predates the page's last visual
+// change: verdicts and reviews from before describe a page that no longer looks like this one.
+// Measurements come from the current scan, so they never go stale; evidence without a time cannot
+// prove it is fresh, so it reads Recheck too.
+export function displayAnswerStatus(page, answer) {
+  if (answer.status !== 'pass' || !page.progress.changedSinceReview) return answer.status;
+  const lastChangedAt = Date.parse(page.scan?.lastChangedAt);
+  const stale = answer.parts.some(part => part.source !== 'scan' && !(Date.parse(part.at) >= lastChangedAt));
+  return stale ? 'recheck' : answer.status;
 }
 
 export function isProjectView() {

@@ -6,6 +6,8 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { shortReason } from '../../public/js/format.mjs';
+import { displayAnswerStatus } from '../../public/js/state.mjs';
 
 const repo = fileURLToPath(new URL('../..', import.meta.url));
 const data = mkdtempSync(join(tmpdir(), 'dogfood-ui-proof-'));
@@ -84,13 +86,14 @@ try {
     const ids = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => row.dataset.overviewPage)`);
     assert.deepEqual(ids, seeded.pages.map(item => item.id));
   });
-  const words = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked' };
-  check('each overview row shows the server\'s status and six answers, not a client-side recomputation', () => {
+  const words = { pass: 'Good', needs_work: 'Needs work', partial: 'Partly checked', untested: 'Not checked', recheck: 'Recheck' };
+  const shown = (item, answer) => `${answer.name}: ${words[displayAnswerStatus(item, answer)]}`;
+  check('each overview row shows the server\'s status and six answers, with Recheck for Good answers on changed pages', () => {
     const rows = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => ({ id: row.dataset.overviewPage, status: row.dataset.status, marks: [...row.querySelectorAll('[data-answer-mark]')].map(mark => mark.getAttribute('aria-label')) }))`);
     for (const item of seeded.pages) {
       const row = rows.find(entry => entry.id === item.id);
       assert.equal(row.status, item.progress.status, `${item.id} status`);
-      assert.deepEqual(row.marks, item.progress.answers.map(answer => `${answer.name}: ${words[answer.status]}`), `${item.id} answers`);
+      assert.deepEqual(row.marks, item.progress.answers.map(answer => shown(item, answer)), `${item.id} answers`);
     }
   });
   check('the overview sentence counts good pages, pages that need work, and the rest from the server', () => {
@@ -110,14 +113,14 @@ try {
   check('choosing a page from the overview opens that page', () => {
     assert.equal(page(`document.querySelector('#selected-page-heading')?.textContent`), book.name);
   });
-  check('the page shows the server\'s six answers with their summaries', () => {
+  check('the page shows the server\'s six answers with one-line reasons', () => {
     const rows = page(`[...document.querySelectorAll('[data-answer-row]')].map(row => ({ id: row.dataset.answerRow, mark: row.querySelector('[data-answer-mark]').getAttribute('aria-label'), summary: row.querySelector('.answer-summary').textContent }))`);
-    assert.deepEqual(rows, book.progress.answers.map(answer => ({ id: answer.id, mark: `${answer.name}: ${words[answer.status]}`, summary: answer.summary })));
+    assert.deepEqual(rows, book.progress.answers.map(answer => ({ id: answer.id, mark: shown(book, answer), summary: shortReason(answer.summary) })));
   });
   check('an answer that is not answered says what would answer it, and opens its detail', () => {
     const open = book.progress.answers.find(answer => answer.status === 'untested');
     const row = page(`(() => { const row = document.querySelector('[data-answer-row="${open.id}"]'); return { summary: row.querySelector('.answer-summary').textContent, view: row.dataset.view }; })()`);
-    assert.deepEqual(row, { summary: open.summary, view: open.id });
+    assert.deepEqual(row, { summary: shortReason(open.summary), view: open.id });
   });
 
   page(`document.querySelector('[data-page="home"]').click() || true`);

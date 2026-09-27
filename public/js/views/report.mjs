@@ -1,5 +1,5 @@
-import { answerMarkMarkup, escapeHtml, plainMessageMarkup, relativeCaptureAge, safeCapturePath } from '../format.mjs';
-import { deviceNames, state } from '../state.mjs';
+import { answerMarkMarkup, escapeHtml, plainMessageMarkup, relativeCaptureAge, safeCapturePath, shortReason } from '../format.mjs';
+import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
 
 function screenMarkup(page, device) {
   const capture = page.captures[device];
@@ -8,11 +8,6 @@ function screenMarkup(page, device) {
     ? `<img data-screenshot src="${image}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}" width="${escapeHtml(capture.pixelWidth)}" height="${escapeHtml(capture.pixelHeight)}" loading="eager">`
     : `<div class="screen-missing">${plainMessageMarkup(capture.reason || 'No screenshot yet.')}</div>`;
   return `<figure class="report-screen report-screen-${device}"><div class="screen-frame">${picture}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(relativeCaptureAge(capture))}</figcaption></figure>`;
-}
-
-function changedMarkup(page) {
-  if (!page.progress.changedSinceReview) return '';
-  return '<button type="button" class="changed-chip" data-action="view-screens">Changed since last check</button>';
 }
 
 const emptyScreens = {
@@ -34,7 +29,7 @@ function takeScreenshotsMarkup(page) {
 function screensMarkup(page) {
   const rendered = ['desktop', 'mobile'].some(device => page.captures[device].state === 'rendered');
   const body = rendered ? `<div class="report-screen-pair">${screenMarkup(page, 'desktop')}${screenMarkup(page, 'mobile')}</div>` : takeScreenshotsMarkup(page);
-  const actions = rendered ? `<div class="screens-actions">${changedMarkup(page)}<button type="button" class="link-button" data-action="view-screens">View full page</button></div>` : '';
+  const actions = rendered ? '<div class="screens-actions"><button type="button" class="link-button" data-action="view-screens">View full page</button></div>' : '';
   return `<section class="report-screens content-panel" data-report-screens aria-label="How the page looks">${actions}${body}</section>`;
 }
 
@@ -50,14 +45,15 @@ function aiCheckMarkup(page) {
   return `<div class="ai-check"><button type="button" class="save-button" data-action="run-visual" ${running ? 'disabled' : ''}>${running ? 'Checking with AI…' : 'Check with AI'}</button><small>About half a cent</small>${error}</div>`;
 }
 
-function answerRowMarkup(answer) {
+function answerRowMarkup(page, answer) {
   // The tag cell is always there, so every row's chevron lines up.
   const source = `<span class="answer-source-tag">${answer.parts.some(part => part.source === 'ai') ? 'AI' : ''}</span>`;
-  return `<li><button type="button" class="answer-row" data-view="${escapeHtml(answer.id)}" data-answer-row="${escapeHtml(answer.id)}">${answerMarkMarkup(answer.name, answer.status)}<span class="answer-name">${escapeHtml(answer.name)}</span><span class="answer-summary" title="${escapeHtml(answer.summary)}">${escapeHtml(answer.summary)}</span>${source}<span class="chevron" aria-hidden="true"></span></button></li>`;
+  const oneLine = shortReason(answer.summary);
+  return `<li><button type="button" class="answer-row" data-view="${escapeHtml(answer.id)}" data-answer-row="${escapeHtml(answer.id)}">${answerMarkMarkup(answer.name, displayAnswerStatus(page, answer))}<span class="answer-name">${escapeHtml(answer.name)}</span><span class="answer-summary" title="${escapeHtml(oneLine)}">${escapeHtml(oneLine)}</span>${source}<span class="chevron" aria-hidden="true"></span></button></li>`;
 }
 
 function answersMarkup(page) {
-  const rows = page.progress.answers.map(answerRowMarkup).join('');
+  const rows = page.progress.answers.map(answer => answerRowMarkup(page, answer)).join('');
   return `<section class="answers-panel content-panel" data-answers aria-labelledby="answers-heading"><header class="answers-heading"><h2 id="answers-heading">Is this page working?</h2>${aiCheckMarkup(page)}</header><ul class="answer-list">${rows}</ul></section>`;
 }
 

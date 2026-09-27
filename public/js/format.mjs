@@ -69,8 +69,8 @@ export function externalLinkMarkup(value, label, className = '') {
   return url ? `<a class="${escapeHtml(className)}" href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : '';
 }
 
-// The shape carries the state as well as the colour: ✓ good, ! needs work, ◐ partly, – not checked.
-const markShapes = { pass: '✓', needs_work: '!', partial: '◐', untested: '–' };
+// The shape carries the state as well as the colour: ✓ good, ! needs work, ◐ partly, – not checked, ↻ recheck.
+const markShapes = { pass: '✓', needs_work: '!', partial: '◐', untested: '–', recheck: '↻' };
 
 export function answerMarkMarkup(name, status) {
   const word = answerWords[status];
@@ -94,6 +94,53 @@ export function sourceLabel(part) {
   if (!describe) return 'Not checked yet';
   const date = dateLabel(part.at);
   return date ? `${describe(part)} · ${date}` : describe(part);
+}
+
+// One-line reasons hide evidence paths, rule numbers, and file names; the full text stays in the
+// detail behind the chevron. Bare ".js" stays, so product names like Node.js survive; real script
+// paths (src/worker.js) still go through the path rule.
+const rulesPrefix = /^[A-Z][\w/&.-]*(?:\s+[A-Z][\w/&.-]*)*\s+rules?\s+\d[\d,\s]*?(?:and\s+\d+)?\s*:\s*/;
+const pathToken = /\S*\/\S*/g;
+const pathRoots = /^(?:\.*\/|~\/|\/|(?:evidence|src|web|captures|data|dist|build)\/)/;
+const fileToken = /\b[\w-]+(?:\.[\w-]+)*\.(?:tsx|jsx|mts|cts|mjs|cjs|ts|json|css|scss|png|jpe?g|webp|svg|avif|gif|md|ya?ml|toml|lock|log|txt|csv|har|webm|mp4|mov)\b/g;
+const tidyRules = [
+  [/\s+/g, ' '],
+  [/\(\s+/g, '('],
+  [/\s+([.,;:!?)\]}])/g, '$1'],
+  [/\(\s*\)|\[\s*\]|\{\s*\}/g, ''],
+  [/\s+(and|or)\s*([.,;:!?)\]}]|$)/gi, '$2'],
+  [/([.,;:!?])\s*\1+/g, '$1'],
+  [/[,;:]\s*([.!?]|$)/g, '$1'],
+  [/^[.,;:!?)\]}\s]+/, ''],
+];
+
+function technicalPath(word) {
+  if (!word.includes('/') || word.includes('://')) return false;
+  if (pathRoots.test(word) || /\.\w+$/.test(word)) return true;
+  return word.split('/').filter(Boolean).length > 2;
+}
+
+function tokenEdge(token, pattern) {
+  return token.match(pattern)?.[0] ?? '';
+}
+
+// Strips the path but keeps the punctuation around it, so the sentence keeps its ending.
+function stripPathToken(token) {
+  const prefix = tokenEdge(token, /^[(["']+/);
+  const suffix = tokenEdge(token, /[)\]"'.,;:!?]+$/);
+  const word = token.slice(prefix.length, token.length - suffix.length);
+  return technicalPath(word) ? prefix + suffix : token;
+}
+
+function tidyReason(text) {
+  return tidyRules.reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), text).trim();
+}
+
+export function shortReason(text) {
+  const collapsed = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (!collapsed) return '';
+  const stripped = tidyReason(collapsed.replace(rulesPrefix, '').replace(/\bEvidence\s*:\s*/g, '').replace(pathToken, stripPathToken).replace(fileToken, ''));
+  return stripped || collapsed;
 }
 
 // Failure messages end with the browser's own code in brackets, for coding agents; people see
