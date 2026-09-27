@@ -62,7 +62,7 @@ const text = selector => evaluate(`document.querySelector(${JSON.stringify(selec
 let server;
 try {
   await run('scripts/onboard.mjs', [`${site}/`, '--name', 'Swim Club']);
-  store.recordVerdicts('swim-club', 'home', { checks: { ease: { status: 'pass', note: 'Heading and navigation read clearly at 1440 wide.' } } }, 'agent:proof');
+  store.recordVerdicts('swim-club', 'home', { checks: { purpose: { status: 'pass', note: 'The banner and heading say this is the swim club home page.' }, ease: { status: 'pass', note: 'Heading and navigation read clearly at 1440 wide.' } } }, 'agent:proof');
   release = 2;
 
   const port = await freePort();
@@ -112,9 +112,10 @@ try {
   browser('open', url);
   browser('set', 'viewport', '1440', '900');
   browser('wait', '800');
-  check('the overview marks the changed page, and only it', () => {
-    assert.equal(evaluate(`document.querySelectorAll('[data-changed-since-review]').length`), 1);
-    assert.match(text('[data-overview-page="home"] [data-changed-since-review]'), /Changed since last check/);
+  check('the overview marks changed Good answers Recheck, on the changed page only', () => {
+    assert.equal(evaluate(`document.querySelectorAll('[data-changed-since-review]').length`), 0);
+    assert.deepEqual(evaluate(`[...document.querySelectorAll('[data-overview-page="home"] [data-answer-mark]')].map(mark => mark.getAttribute('aria-label'))`).filter(label => label.endsWith(': Recheck')), ['Clear purpose: Recheck']);
+    assert.equal(evaluate(`[...document.querySelectorAll('[data-overview-page="about"] [data-answer-mark]')].some(mark => mark.getAttribute('aria-label').endsWith(': Recheck'))`), false);
   });
   check('Check all pages is the overview\'s action', () => {
     assert.equal(evaluate(`document.querySelector('button[data-action="scan-all"]')?.classList.contains('save-button')`), true);
@@ -127,7 +128,18 @@ try {
 
   click('[data-page="home"]');
   browser('wait', '500');
-  click('[data-report-screens] .changed-chip');
+  check('the changed answer reads Recheck and offers to check the page again', () => {
+    assert.equal(evaluate(`document.querySelector('[data-answer-row="purpose"] [data-answer-mark]').getAttribute('aria-label')`), 'Clear purpose: Recheck');
+    click('[data-answer-row="purpose"]');
+  });
+  browser('wait', '500');
+  check('the Recheck answer says why and offers Check again', () => {
+    assert.match(text('[data-answer-detail="purpose"]'), /The screenshots changed since this answer/);
+    assert.equal(evaluate(`document.querySelector('[data-answer-detail="purpose"] [data-action="scan"]')?.textContent`), 'Check again');
+    click('[data-action="back-to-report"]');
+  });
+  browser('wait', '500');
+  click('[data-action="view-screens"]');
   browser('wait', '1500');
   check('the changed page shows what changed, with the before, now, and difference images', () => {
     const panel = text('section[aria-label="What changed"]');

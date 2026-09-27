@@ -28,7 +28,7 @@ store.setConnections('northwind', 'revenue', Array.from({ length: 12 }, (_, n) =
 
 const answerOrder = ['design', 'purpose', 'ease', 'safety', 'speed', 'works'];
 const answerNames = ['Looks right', 'Clear purpose', 'Easy to use', 'Safe', 'Fast & findable', 'Works as expected'];
-const markLabel = /^(Looks right|Clear purpose|Easy to use|Safe|Fast & findable|Works as expected): (Good|Needs work|Partly checked|Not checked)$/;
+const markLabel = /^(Looks right|Clear purpose|Easy to use|Safe|Fast & findable|Works as expected): (Good|Needs work|Partly checked|Not checked|Recheck)$/;
 const internalTerms = /\b(requirements?|verdicts?|audits?|checklists?|connections?|captures?|P0|P1)\b/i;
 
 const { check, passed } = checker();

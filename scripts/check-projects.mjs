@@ -133,6 +133,7 @@ function checkPage(page, project, checkout) {
     [() => !idPattern.test(page.id), 'invalid page ID'],
     [() => ['name', 'group', 'route'].some(key => !page[key]), 'page identity missing'],
     [() => !Array.isArray(page.findings), 'findings list missing'],
+    [() => page.signedIn !== undefined && typeof page.signedIn !== 'boolean', 'signed-in registration invalid'],
   ]);
   devices.forEach(device => checkCapture(page.captures?.[device], project, `${label}/${device}`));
   checkScan(page, label);
@@ -153,6 +154,7 @@ function checkProjectIdentity(project, name) {
     [() => project.source.checkout && !existsSync(resolve(root, project.source.checkout)), 'local checkout missing'],
     [() => !Array.isArray(project.guidelines), 'design guidelines missing'],
     [() => !Array.isArray(project.pages), 'pages missing'],
+    [() => project.signedOutMarkers !== undefined && (!Array.isArray(project.signedOutMarkers) || !project.signedOutMarkers.every(item => typeof item === 'string' && item.trim())), 'signed-out markers invalid'],
   ]);
   checkUniqueIds(project.pages, `${name} pages`);
 }

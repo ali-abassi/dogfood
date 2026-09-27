@@ -1,6 +1,6 @@
 import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, secondsLabel, sourceLabel, verdictByMarkup } from '../format.mjs';
-import { activePage, answerWords, primaryClass, questionTopics, state } from '../state.mjs';
+import { activePage, answerWords, displayAnswerStatus, primaryClass, questionTopics, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
 // Which checklist topics each answer asks, and which answers a person can judge directly.
@@ -43,11 +43,19 @@ function editAnswerMarkup(answer) {
   return `<button type="button" class="${primaryClass()}" data-action="edit-answer">Update answer</button>`;
 }
 
+// A Recheck answer names why it is stale and offers to check the page again.
+function recheckMarkup(page, answer) {
+  if (displayAnswerStatus(page, answer) !== 'recheck' || state.answerEditing) return '';
+  const label = state.scan.running ? 'Checking the page…' : 'Check again';
+  return `<p class="recheck-note">The screenshots changed since this answer. Check the page again, then confirm it still holds.</p><div class="form-actions"><button type="button" class="text-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button></div>`;
+}
+
 export function answerPanelMarkup(page, answer) {
   const lead = answer.parts.find(part => part.text === answer.summary) ?? answer.parts[0];
+  const shown = displayAnswerStatus(page, answer);
   const error = state.visual.error ? `<p class="form-error" role="alert">${escapeHtml(state.visual.error)}</p>` : '';
   const actions = state.answerEditing ? editAnswerMarkup(answer) : `<div class="form-actions">${editAnswerMarkup(answer)}${aiCheckMarkup(page, answer)}</div>${error}`;
-  return `<section class="answer-panel content-panel" aria-label="The answer"><div class="answer-verdict">${answerMarkMarkup(answer.name, answer.status)}<strong>${escapeHtml(answerWords[answer.status])}</strong></div><p class="answer-text">${escapeHtml(answer.summary)}</p>${lead.source ? `<p class="answer-source" data-answer-source>${escapeHtml(sourceLabel(lead))}</p>` : ''}${partsMarkup(answer, lead)}${actions}</section>`;
+  return `<section class="answer-panel content-panel" aria-label="The answer"><div class="answer-verdict">${answerMarkMarkup(answer.name, shown)}<strong>${escapeHtml(answerWords[shown])}</strong></div><p class="answer-text">${escapeHtml(answer.summary)}</p>${lead.source ? `<p class="answer-source" data-answer-source>${escapeHtml(sourceLabel(lead))}</p>` : ''}${recheckMarkup(page, answer)}${partsMarkup(answer, lead)}${actions}</section>`;
 }
 
 function answerFormMarkup(answer) {

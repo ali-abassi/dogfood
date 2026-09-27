@@ -1,6 +1,6 @@
 import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, plural, scanPosition } from '../format.mjs';
-import { answerIds, answerShortNames, groupedPages, state } from '../state.mjs';
+import { answerIds, answerShortNames, displayAnswerStatus, groupedPages, state } from '../state.mjs';
 import { render } from '../app.mjs';
 import { reloadProjectSuggestions, suggestionsWaitingMarkup } from './suggestions.mjs';
 
@@ -27,10 +27,9 @@ function legendMarkup() {
 }
 
 function overviewPageMarkup(page) {
-  const changed = page.progress.changedSinceReview ? '<span class="changed-note" data-changed-since-review>Changed since last check</span>' : '';
-  const marks = page.progress.answers.map(answer => answerMarkMarkup(answer.name, answer.status)).join('');
+  const marks = page.progress.answers.map(answer => answerMarkMarkup(answer.name, displayAnswerStatus(page, answer))).join('');
   return `<div class="overview-page" data-overview-page="${escapeHtml(page.id)}" data-status="${escapeHtml(page.progress.status)}"><button type="button" data-page="${escapeHtml(page.id)}">
-    <span class="overview-identity"><strong title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</strong><code title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</code>${changed}</span>
+    <span class="overview-identity"><strong title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</strong><code title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</code></span>
     <span class="overview-marks">${marks}</span>
   </button></div>`;
 }
