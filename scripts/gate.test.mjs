@@ -5,6 +5,7 @@ import { pagesGate } from '../lib/completion.mjs';
 
 const page = (name, complete) => ({
   name,
+  id: name.toLowerCase(),
   progress: { complete, status: complete ? 'pass' : 'in_review', requirements: [{ id: 'scan', met: complete, missing: 'Check the page.' }] },
 });
 
@@ -13,17 +14,17 @@ function gate(...args) {
 }
 
 test('the gate passes only when every page is complete', () => {
-  assert.deepEqual(pagesGate([page('Home', true)]), { complete: true, lines: ['✓ Home: complete (pass)'] });
+  assert.deepEqual(pagesGate([page('Home', true)]), { complete: true, lines: ['✓ Home [home]: complete (pass)'] });
   const mixed = pagesGate([page('Home', true), page('Book', false)]);
   assert.equal(mixed.complete, false);
-  assert.deepEqual(mixed.lines.slice(1), ['✗ Book: in_review', '  - scan: Check the page.']);
+  assert.deepEqual(mixed.lines.slice(1), ['✗ Book [book]: in_review', '  - scan: Check the page.']);
   assert.equal(pagesGate([]).complete, false);
 });
 
 test('the command exits 1 with the missing evidence for an incomplete page', () => {
   const result = gate('tidepool', 'classes');
   assert.equal(result.status, 1);
-  assert.match(result.stdout, /✗ .*: in_review\n {2}- ease: /);
+  assert.match(result.stdout, /✗ Classes \[classes\]: in_review\n {2}- ease: /);
 });
 
 test('the command exits 2 for a wrong request', () => {
