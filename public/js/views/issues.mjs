@@ -1,6 +1,6 @@
 import { findingEndpoint, readJson } from '../api.mjs';
 import { dateLabel, escapeHtml, safeCapturePath, statusPill, verdictByMarkup } from '../format.mjs';
-import { activePage, primaryClass, severityNames, state } from '../state.mjs';
+import { activePage, fixFirstFindings, openFindings, primaryClass, severityNames, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
 function findingEvidenceMarkup(finding) {
@@ -29,6 +29,27 @@ function newFindingFormMarkup(page) {
   const capture = page.captures.desktop.state === 'rendered' ? `<label class="capture-choice"><input type="checkbox" name="attachCapture"> Attach the Computer screenshot if it shows the bug</label>` : '';
   const severities = ['P0', 'P1', 'P2', 'P3'].map(code => `<option value="${code}" ${code === 'P2' ? 'selected' : ''}>${severityNames[code]}</option>`).join('');
   return `<form id="finding-form" class="finding-form" novalidate><label for="finding-title">What’s wrong?</label><input id="finding-title" name="title" required minlength="8" maxlength="120" placeholder="For example: Reserve does nothing on a phone"><label for="finding-severity">How bad is it?</label><select id="finding-severity" name="severity">${severities}</select><label for="finding-detail">What happened, and how can someone see it again?</label><textarea id="finding-detail" name="detail" rows="4" required minlength="20" maxlength="1200" placeholder="Where did you start, what did you do, and what happened?"></textarea>${capture}<div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Report a bug</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
+}
+
+// One open bug in a list: how bad it is, its title, and where to find it. Opens the Bugs section.
+function openFindingRowMarkup(finding, meta, navigation) {
+  return `<li><button type="button" class="finding-row" ${navigation}><span class="bug-severity severity-${escapeHtml(finding.severity)}">${escapeHtml(severityNames[finding.severity])}</span><span class="finding-row-title" title="${escapeHtml(finding.title)}">${escapeHtml(finding.title)}</span><span class="finding-row-meta">${meta}</span><span class="chevron" aria-hidden="true"></span></button></li>`;
+}
+
+// A page's open bugs above its answers: id, priority, title. Nothing when there are none.
+export function openFindingsMarkup(page) {
+  const open = openFindings(page);
+  if (!open.length) return '';
+  const rows = open.map(finding => openFindingRowMarkup(finding, escapeHtml(finding.id), 'data-view="works"')).join('');
+  return `<section class="content-panel" data-open-findings aria-label="Open bugs"><h2>Open bugs</h2><ul class="finding-rows">${rows}</ul></section>`;
+}
+
+// The overview's Fix first: open P0–P2 bugs across pages, worst and oldest first.
+export function fixFirstMarkup(pages) {
+  const items = fixFirstFindings(pages);
+  if (!items.length) return '';
+  const rows = items.map(({ page, finding }) => openFindingRowMarkup(finding, `${escapeHtml(page.name)} · ${escapeHtml(finding.id)}`, `data-page="${escapeHtml(page.id)}" data-view="works"`)).join('');
+  return `<section class="content-panel fix-first" data-fix-first aria-label="Fix first"><h2>Fix first</h2><ul class="finding-rows">${rows}</ul></section>`;
 }
 
 export function findingsMarkup(page) {

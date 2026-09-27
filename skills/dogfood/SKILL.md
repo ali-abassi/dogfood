@@ -58,7 +58,7 @@ For each page, list the things a person comes there to do, each with what should
 
 ## 4. Answer the six questions, page by page
 
-Work through `dogfood_next` in order. It lists each unfinished page with what is missing and the tool that answers it. Record answers with `dogfood_record_verdicts`, passing your agent name. Every Good or Needs work needs a note.
+Work through `dogfood_next` in order. It lists each unfinished page with what is missing and the tool that answers it. Record answers with `dogfood_record_verdicts`, passing your agent name. Every Good or Needs work needs a note. When you cannot check something because you need access, a provider, or a human, record `blocked` with what you need instead of guessing.
 
 **Write notes a non-technical person understands.** Start with what you did and what you saw: "Pressed Reserve with a real email on a phone; the confirmation showed and the email arrived within a minute." Do not start with tooling, URLs, or commit hashes.
 

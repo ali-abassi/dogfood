@@ -20,7 +20,7 @@
 | **Fast & findable** | Does it load quickly and show up properly in search? | Measured load time and search questions |
 | **Works as expected** | Does everything you can do here work, with no bugs? | Someone tries each thing a person can do there; open bugs and errors the page check found |
 
-Each answer is **Good**, **Needs work**, **Partly checked**, or **Not checked**, and opens to show where it came from: you, a named agent, the AI, or a measurement. A person's or agent's verdict outranks the AI's, every Good or Needs work carries a note saying what was seen, and nothing unproven is shown as good.
+Each answer is **Good**, **Needs work**, **Partly checked**, **Not checked**, **Recheck**, or **Blocked**, and opens to show where it came from: you, a named agent, the AI, or a measurement. A person's or agent's verdict outranks the AI's, every Good or Needs work carries a note saying what was seen, and nothing unproven is shown as good.
 
 ## With your coding agent
 

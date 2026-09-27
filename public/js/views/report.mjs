@@ -1,5 +1,6 @@
 import { answerMarkMarkup, escapeHtml, plainMessageMarkup, relativeCaptureAge, safeCapturePath, shortReason } from '../format.mjs';
 import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
+import { openFindingsMarkup } from './issues.mjs';
 
 function screenMarkup(page, device) {
   const capture = page.captures[device];
@@ -58,5 +59,5 @@ function answersMarkup(page) {
 }
 
 export function pageReportMarkup(page) {
-  return `${screensMarkup(page)}${answersMarkup(page)}`;
+  return `${screensMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}`;
 }

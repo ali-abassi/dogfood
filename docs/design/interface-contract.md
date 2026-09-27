@@ -10,7 +10,7 @@ Source list / artifact manifest: https://github.com/ali-abassi/dogfood/blob/main
 Direction decision (use / avoid / prove): use: the six answers in the owner's words (Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected), the words Good, Needs work, and Not checked, large side-by-side screenshots, one list of six rows that drills into one answer's evidence, the existing tokens and one blue pill per view; avoid: tabs on the page, requirement lists, internal terms on the report (requirement, verdict, audit, checklist, connection, capture, scan, P0–P3), numeric scores, and more than one line of text per row; prove: after-screenshots of every surface at 1440 × 900 and 390 × 844 with the Tidepool demo and the Northwind long-content fixture, the locked checks run as the acceptance suite tests/acceptance/report-card.mjs, and recordings of answering, reporting a bug, and navigating by keyboard
 Fixed constraints: no framework, no build step, no dependencies; the data the agent records (features, checklists, issues, tests, connections, scans, screenshots, AI reviews) keeps its shape; every acceptance behaviour that still exists keeps a passing check (moved checks are logged below); complexity 5 or less per function; the MCP completion gate reads the same six answers as the app
 Non-goals: dark-mode redesign beyond parity, marketing pages, new kinds of evidence, changing how scans or AI reviews are produced beyond the three judged questions
-Shared type / spacing / color / shape / imagery / motion rules: system SF stack at 400–600; 28px page titles, 17px panel titles, 15px row titles, 13–14px answers and body, 12px meta; spacing on the 4/8/12/16/24/32 scale; canvas #f5f5f7 and white 12px panels; blue #0071e3 only for the one primary action, links, and focus; green for Good, red for Needs work, grey for Not checked, orange for Recheck; every mark pairs its colour with a shape (check, exclamation, dash, circular arrow) and a word or accessible name; radii 12/8/6 and full pills for buttons; imagery is only the product's own screenshots; motion only for disclosure chevrons, at most 150 ms, none under reduced motion
+Shared type / spacing / color / shape / imagery / motion rules: system SF stack at 400–600; 28px page titles, 17px panel titles, 15px row titles, 13–14px answers and body, 12px meta; spacing on the 4/8/12/16/24/32 scale; canvas #f5f5f7 and white 12px panels; blue #0071e3 only for the one primary action, links, and focus; green for Good, red for Needs work, grey for Not checked, orange for Recheck and Blocked; every mark pairs its colour with a shape (check, exclamation, dash, circular arrow, cross) and a word or accessible name; radii 12/8/6 and full pills for buttons; imagery is only the product's own screenshots; motion only for disclosure chevrons, at most 150 ms, none under reduced motion
 Shared interaction and feedback rules: a row is one button that opens its answer; Back returns to the report and puts keyboard focus on the row that was opened; a click never leaves a stray focus ring; every save confirms in the same words as its label and updates the mark in place; an unchanged form closes silently, a changed one asks Save or Discard inline; nothing reflows sideways when something opens; destructive actions stay grey until the confirming step
 Default viewport: 1440 × 900
 Minimum viewport: 390 × 844
@@ -27,12 +27,12 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Primary user job:** know whether the app works and which pages need fixing
 - **Observable successful outcome:** the person names a page that needs work and which of the six answers is wrong, then opens it in one click
 - **Entry / exit:** entry from app start, the sidebar Overview item, or after adding a project; exit by opening a page row, Review suggestions, Add project, or Check all pages
-- **Critical information, ordered:** one sentence answering "Is Tidepool working?" with counts of pages that are good, need work, and are not checked; each page with its six marks in the fixed order, Recheck where a Good answer's evidence predates the page's last visual change
+- **Critical information, ordered:** one sentence answering "Is Tidepool working?" with counts of pages that are good, need work, blocked, and are not checked; the open P0–P2 bugs across pages, worst and oldest first; each page with its six marks in the fixed order, Recheck where a Good answer's evidence predates the page's last visual change
 - **Primary actions:** Check all pages
 - **Secondary actions:** Download report, Review suggested features, open a page
-- **Composition and hierarchy:** title with the answer sentence under it and the actions on the right; one white panel listing pages by site section, each row: page name and route on the left, six marks aligned under six short column headings on the right
+- **Composition and hierarchy:** title with the answer sentence under it and the actions on the right; a Fix first panel when P0–P2 bugs are open, each row opening that page's bugs; one white panel listing pages by site section, each row: page name and route on the left, six marks aligned under six short column headings on the right
 - **Interaction and feedback rules:** a row is one button opening that page's report; Check all pages shows progress in its own label and ends by naming what changed
-- **Normal state:** Tidepool demo: 5 pages, one needing work, two with Recheck answers, suggestions waiting
+- **Normal state:** Tidepool demo: 5 pages, one needing work, two with Recheck answers, one bug to fix first, suggestions waiting
 - **Empty state:** a project with no pages says so in plain words and offers Add project
 - **Long / maximum-content state:** the Northwind fixture: a 52-character project name, 60-character page names, a 90-character route
 - **Loading state:** the suggestions line appears when loaded without moving the page list
@@ -42,7 +42,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Representative content:** Tidepool demo and the Northwind long-content fixture
 - **Surface-specific anti-slop risks:** metric-card sprawl, scores, status dots without words, repeating the same status in three places
 - **Acceptance checks:**
-  - `OV-1` — the overview opens with one sentence stating how many pages are good, need work, and are not checked | Tidepool demo | 1440 × 900 | screenshot + DOM
+  - `OV-1` — the overview opens with one sentence stating how many pages are good, need work, and are not checked, with blocked pages counted separately | Tidepool demo | 1440 × 900 | screenshot + DOM
   - `OV-2` — every page row shows six marks in the report's order under six column headings, and each mark's accessible name names the answer and its state, for example "Safe: Not checked" | Tidepool demo | 1440 × 900 | screenshot + DOM
   - `OV-3` — at phone width each row shows the page name and its six marks with no sideways scrolling, and the column meaning is still available | Tidepool demo | 390 × 844 | screenshot + DOM
   - `OV-4` — long page names wrap to at most two lines while long routes stay on one line with an ellipsis | Northwind fixture | 1440 × 900 | screenshot
@@ -85,10 +85,10 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Primary user job:** see the page on a computer and a phone and learn which of the six answers are good
 - **Observable successful outcome:** within five seconds the person says whether the page works and which answer needs fixing
 - **Entry / exit:** entry from an overview row, a sidebar row, or Back from an answer; exit by opening an answer row, View full page, Check with AI, Check again, Open page, or Remove page
-- **Critical information, ordered:** page name and plain status; desktop and phone screenshots with when they were taken; the six answers, each with its mark and one plain sentence, Recheck instead of Good when its evidence predates the page's last visual change
+- **Critical information, ordered:** page name and plain status; desktop and phone screenshots with when they were taken; its open bugs with their id, priority, and title; the six answers, each with its mark and one plain sentence, Recheck instead of Good when its evidence predates the page's last visual change
 - **Primary actions:** Check with AI (only while the AI has not checked the current screenshots)
 - **Secondary actions:** Check again, View full page, Open page, Remove page…
-- **Composition and hierarchy:** heading row (route, name, status, actions); a screenshot panel with the desktop screenshot wide and the phone screenshot narrow side by side, both cropped to one height with View full page; a panel titled "Is this page working?" holding six rows in the fixed order
+- **Composition and hierarchy:** heading row (route, name, status, actions); a screenshot panel with the desktop screenshot wide and the phone screenshot narrow side by side, both cropped to one height with View full page; an Open bugs panel when bugs are open, each row opening the Bugs section; a panel titled "Is this page working?" holding six rows in the fixed order
 - **Interaction and feedback rules:** each row is one button opening its answer; Check with AI states its cost before spending and shows progress in its label; Check again shows progress and updates the screenshots and marks in place
 - **Normal state:** Tidepool Book: one answer needs work, some good, some not checked
 - **Empty state:** a page with no screenshots shows "Not checked yet" with one Take screenshots action, and all six rows read Not checked
@@ -100,7 +100,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - **Representative content:** Tidepool demo and the Northwind long-content fixture
 - **Surface-specific anti-slop risks:** tabs, requirement lists, multi-line evidence notes on the report, a second blue button, badges repeating the status
 - **Acceptance checks:**
-  - `PR-1` — both screenshots and all six answer rows (name, mark, and answer sentence) are visible on first paint | Tidepool Book | 1440 × 900 | screenshot
+  - `PR-1` — on a page with no open bugs, both screenshots and all six answer rows (name, mark, and answer sentence) are visible on first paint | Tidepool Home | 1440 × 900 | screenshot
   - `PR-2` — the six rows appear in the order Looks right, Clear purpose, Easy to use, Safe, Fast & findable, Works as expected, and each answer is one line of plain words with no internal term | Tidepool Book | 1440 × 900 | screenshot + DOM
   - `PR-3` — activating a row opens that answer; Back returns to the report with keyboard focus on the same row | Tidepool Book | 1440 × 900 | recording
   - `PR-4` — at phone width the screenshots come first, then the six rows, with no sideways scrolling | Tidepool Book | 390 × 844 | screenshot + DOM

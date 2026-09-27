@@ -13,12 +13,12 @@ function thingMarkup(feature) {
 }
 
 function thingOptions(status) {
-  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
+  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work'], ['blocked', 'Blocked']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
 }
 
 function thingEditorMarkup(feature) {
   const id = `thing-${feature.id}`;
-  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What happened when you tried it? Needed for Good or Needs work.">${escapeHtml(feature.note)}</textarea></div>`;
+  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What happened when you tried it? Needed for Good, Needs work, or Blocked.">${escapeHtml(feature.note)}</textarea></div>`;
 }
 
 function thingsFormMarkup(page) {

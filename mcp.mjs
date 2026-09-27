@@ -20,7 +20,7 @@ const verdictSchema = {
   type: 'object',
   properties: {
     status: { type: 'string', enum: verdictValues },
-    note: { type: 'string', description: 'Evidence note supporting the verdict; pass and needs_work require at least 12 characters.' },
+    note: { type: 'string', description: 'Evidence note supporting the verdict; pass, needs_work, and blocked require at least 12 characters.' },
   },
   required: ['status', 'note'],
 };

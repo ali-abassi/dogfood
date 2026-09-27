@@ -28,7 +28,7 @@ store.setConnections('northwind', 'revenue', Array.from({ length: 12 }, (_, n) =
 
 const answerOrder = ['design', 'purpose', 'ease', 'safety', 'speed', 'works'];
 const answerNames = ['Looks right', 'Clear purpose', 'Easy to use', 'Safe', 'Fast & findable', 'Works as expected'];
-const markLabel = /^(Looks right|Clear purpose|Easy to use|Safe|Fast & findable|Works as expected): (Good|Needs work|Partly checked|Not checked|Recheck)$/;
+const markLabel = /^(Looks right|Clear purpose|Easy to use|Safe|Fast & findable|Works as expected): (Good|Needs work|Partly checked|Not checked|Recheck|Blocked)$/;
 const internalTerms = /\b(requirements?|verdicts?|audits?|checklists?|connections?|captures?|P0|P1)\b/i;
 
 const { check, passed } = checker();
@@ -84,13 +84,19 @@ try {
     assert.doesNotMatch(text('.overview-content'), internalTerms);
   });
 
-  openPage('book');
+  openPage('home');
   await check('PR-1 both screenshots and all six answers are visible on first paint', () => {
     const layout = evaluate(`({ height: innerHeight, images: [...document.querySelectorAll('[data-report-screens] img')].map(image => image.getBoundingClientRect().top), rows: [...document.querySelectorAll('[data-answer-row]')].map(row => row.getBoundingClientRect().bottom) })`);
     assert.equal(layout.images.length, 2);
     assert.ok(layout.images.every(top => top < layout.height));
     assert.equal(layout.rows.length, 6);
     assert.ok(layout.rows.every(bottom => bottom <= layout.height), `rows end at ${layout.rows.join(', ')} of ${layout.height}`);
+  });
+  openPage('book');
+  await check('a page with open bugs lists them above its answers', () => {
+    assert.equal(count('[data-open-findings] .finding-row'), 2);
+    const order = evaluate(`({ findings: document.querySelector('[data-open-findings]').getBoundingClientRect().top, answers: document.querySelector('[data-answer-row]').getBoundingClientRect().top })`);
+    assert.ok(order.findings < order.answers);
   });
   await check('PR-2 the six answers come in order, each one line of plain words', () => {
     const rows = evaluate(`[...document.querySelectorAll('[data-answer-row]')].map(row => { const summary = row.querySelector('.answer-summary'); return { id: row.dataset.answerRow, name: row.querySelector('.answer-name').innerText, summary: summary.innerText, lines: Math.round(summary.getBoundingClientRect().height / parseFloat(getComputedStyle(summary).lineHeight)) }; })`);
