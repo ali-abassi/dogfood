@@ -23,6 +23,7 @@ writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 const { browser, evaluate } = browserSession('task-plan');
 const { check, passed } = checker();
 let server;
+let acceptedTaskId;
 
 const settle = () => browser('wait', '350');
 const click = selector => { evaluate(`document.querySelector(${JSON.stringify(selector)}).click() || true`); settle(); };
@@ -65,6 +66,7 @@ try {
     click('[data-action="task-accept"]');
     assert.equal(status(), 'Accepted');
     assert.match(evaluate(`document.querySelector('.plan-summary')?.textContent`), /1 of 1 accepted/);
+    acceptedTaskId = evaluate(`document.querySelector('[data-selected-task]').dataset.selectedTask`);
   });
 
   await check('blocked work shows its reason and can be released back to the queue', () => {
@@ -91,6 +93,17 @@ try {
     assert.equal(evaluate(`document.querySelector('[data-action="task-claim"]') !== null`), true);
   });
 
+  await check('editing an accepted task omits work-state fields and reopens changed work', () => {
+    click(`.plan-task[data-task-id="${acceptedTaskId}"]`);
+    click('[data-action="edit-task"]');
+    assert.equal(evaluate(`document.querySelector('#task-status') === null`), true);
+    assert.equal(evaluate(`document.querySelector('#task-blocker') === null`), true);
+    fill('#task-outcome', 'The ready file and its explanation are visible.');
+    click('#task-form button[type="submit"]');
+    assert.equal(status(), 'To do');
+    assert.match(evaluate(`document.querySelector('.plan-detail .task-outcome')?.textContent`), /explanation are visible/);
+  });
+
   await check('Refresh tasks picks up work added outside the browser', async () => {
     const response = await fetch(`${server.url}/api/projects/tidepool/tasks`, {
       method: 'POST',
@@ -98,8 +111,26 @@ try {
       body: JSON.stringify({ title: 'Agent-added work', outcome: 'The browser sees this task after refresh.', scope: [], pageIds: [], look: '', checks: [{ id: 'ready', command: [process.execPath, '-e', 'process.exit(0)'] }] }),
     });
     assert.equal(response.ok, true);
+    const agentTask = await response.json();
+    process.env.DOGFOOD_DATA = data;
+    const { claimTask } = await import('../../lib/tasks.mjs');
+    claimTask('tidepool', agentTask.id, 'agent:lost-run');
     click('[data-action="retry-workflow"]');
     assert.match(evaluate(`document.querySelector('.plan-tasks')?.textContent`), /Agent-added work/);
+    click(`.plan-task[data-task-id="${agentTask.id}"]`);
+    assert.equal(status(), 'In progress');
+    assert.equal(evaluate(`document.querySelector('[data-action="edit-task"]') === null`), true);
+    assert.equal(evaluate(`document.querySelector('[data-action="recover-task"]') !== null`), true);
+  });
+
+  await check('a person recovers another owner’s task with a recorded reason', () => {
+    click('[data-action="recover-task"]');
+    assert.equal(evaluate(`document.querySelector('#task-recovery-reason').required`), true);
+    fill('#task-recovery-reason', 'The previous agent run stopped without a handoff.');
+    click('#task-recovery-form button[type="submit"]');
+    assert.equal(status(), 'To do');
+    assert.equal(evaluate(`document.querySelector('[data-action="task-claim"]') !== null`), true);
+    assert.match(evaluate(`document.querySelector('.plan-detail')?.textContent`), /previous agent run stopped/);
   });
 
   await check('Plan remains usable at phone width without horizontal overflow', () => {

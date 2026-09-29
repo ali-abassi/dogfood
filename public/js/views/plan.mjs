@@ -66,17 +66,32 @@ function taskActionButton([action, label], task, busy) {
 }
 
 function taskActionsMarkup(task) {
-  if (task.owner && task.owner !== 'person') return `<p class="muted">${escapeHtml(task.owner)} owns this task.</p>`;
+  if (task.owner && task.owner !== 'person') return recoveryMarkup(task);
   const busy = Boolean(state.workflow.action);
   const actions = availableTaskActions(task).map(option => taskActionButton(option, task, busy)).join('');
   return `<div class="form-actions">${actions}<button type="button" class="text-button" data-action="edit-task" data-task-id="${escapeHtml(task.id)}" ${busy ? 'disabled' : ''}>Edit</button></div>`;
+}
+
+function recoveryMarkup(task) {
+  const open = state.workflow.recovering === task.id;
+  const form = open ? recoveryFormMarkup(task) : `<button type="button" class="text-button" data-action="recover-task" data-task-id="${escapeHtml(task.id)}">Recover task…</button>`;
+  return `<div class="task-recovery"><p class="muted">${escapeHtml(task.owner)} owns this task.</p>${form}</div>`;
+}
+
+function recoveryFormMarkup(task) {
+  return `<form id="task-recovery-form" class="task-recovery-form" data-task-id="${escapeHtml(task.id)}"><label for="task-recovery-reason">Why is this task being released from ${escapeHtml(task.owner)}?</label><textarea id="task-recovery-reason" name="reason" rows="2" required minlength="12" placeholder="For example: the previous agent run stopped without a handoff."></textarea><p id="task-recovery-error" class="form-error" role="alert" hidden></p><div class="form-actions"><button type="submit" class="text-button">Release ownership</button><button type="button" class="text-button" data-action="cancel-task-recovery">Cancel</button></div></form>`;
 }
 
 function taskDetailMarkup(task, tasks) {
   if (!task) return '';
   const pageNames = namedPageIds(task.pageIds || []);
   const dependencyNames = namedTaskIds(task.dependencies || [], tasks);
-  return `<section class="content-panel plan-detail" aria-label="Selected task" data-selected-task="${escapeHtml(task.id)}"><div class="plan-detail-head">${taskTitle(task)}</div><p class="task-outcome">${escapeHtml(task.outcome)}</p>${detailLine('Owner', task.owner)}${detailLine('Blocked by', task.blocker)}${detailLine('Handoff', task.handoff)}${detailLine('Pages', pageNames.join(', '))}${detailLine('Depends on', dependencyNames.join(', '))}${detailLine('Scope', (task.scope || []).join(', '))}${detailLine('Look for', task.look)}${taskChecksMarkup(task)}${receiptMarkup(task.receipt)}${taskActionsMarkup(task)}</section>`;
+  return `<section class="content-panel plan-detail" aria-label="Selected task" data-selected-task="${escapeHtml(task.id)}"><div class="plan-detail-head">${taskTitle(task)}</div><p class="task-outcome">${escapeHtml(task.outcome)}</p>${detailLine('Owner', task.owner)}${detailLine('Blocked by', task.blocker)}${detailLine('Handoff', task.handoff)}${latestRecoveryMarkup(task)}${detailLine('Pages', pageNames.join(', '))}${detailLine('Depends on', dependencyNames.join(', '))}${detailLine('Scope', (task.scope || []).join(', '))}${detailLine('Look for', task.look)}${taskChecksMarkup(task)}${receiptMarkup(task.receipt)}${taskActionsMarkup(task)}</section>`;
+}
+
+function latestRecoveryMarkup(task) {
+  const latest = task.recoveries?.at(-1);
+  return latest ? detailLine(`Released from ${latest.from}`, latest.reason) : '';
 }
 
 function namedPageIds(ids) {
@@ -118,12 +133,16 @@ function taskSubmitLabel(task) {
   return task ? 'Save task' : 'Add task';
 }
 
+function workStateForForm(task, data) {
+  return task && task.status !== 'accepted' ? workStateMarkup(data) : '';
+}
+
 function taskFormMarkup(task) {
   if (!state.workflow.formOpen) return '';
   const data = { ...blankTask, ...task };
   const commands = data.checks.map(check => JSON.stringify(check.command)).join('\n');
   const action = task ? 'Edit' : 'Add';
-  return `<form id="task-form" class="content-panel task-form" data-task-id="${escapeHtml(data.id)}"><h2>${action} task</h2><label for="task-title">Task</label><input id="task-title" name="title" required maxlength="140" value="${escapeHtml(data.title)}" placeholder="What needs to be done?"><label for="task-outcome">Done when</label><textarea id="task-outcome" name="outcome" required rows="2" placeholder="What result should be visible?">${escapeHtml(data.outcome)}</textarea><label for="task-checks">Checks</label><textarea id="task-checks" name="checks" required rows="3" spellcheck="false" placeholder='["npm","test"]'>${escapeHtml(commands)}</textarea><p class="field-hint">One command array per line, for example <code>["npm","test"]</code>. Each runs directly, without a shell.</p><label for="task-scope">Scope <span class="field-optional">optional</span></label><textarea id="task-scope" name="scope" rows="2" placeholder="One file or area per line">${escapeHtml(data.scope.join('\n'))}</textarea><label for="task-look">What should be visible <span class="field-optional">optional</span></label><textarea id="task-look" name="look" rows="2" placeholder="For example: no overflow at phone width">${escapeHtml(data.look)}</textarea>${checkedPagesMarkup(data)}${task ? workStateMarkup(data) : ''}<p id="task-form-error" class="form-error" role="alert" hidden></p><div class="form-actions"><button type="submit" class="save-button" ${state.workflow.action ? 'disabled' : ''}>${taskSubmitLabel(task)}</button><button type="button" class="text-button" data-action="cancel-task-form">Cancel</button></div></form>`;
+  return `<form id="task-form" class="content-panel task-form" data-task-id="${escapeHtml(data.id)}"><h2>${action} task</h2><label for="task-title">Task</label><input id="task-title" name="title" required maxlength="140" value="${escapeHtml(data.title)}" placeholder="What needs to be done?"><label for="task-outcome">Done when</label><textarea id="task-outcome" name="outcome" required rows="2" placeholder="What result should be visible?">${escapeHtml(data.outcome)}</textarea><label for="task-checks">Checks</label><textarea id="task-checks" name="checks" required rows="3" spellcheck="false" placeholder='["npm","test"]'>${escapeHtml(commands)}</textarea><p class="field-hint">One command array per line, for example <code>["npm","test"]</code>. Each runs directly, without a shell.</p><label for="task-scope">Scope <span class="field-optional">optional</span></label><textarea id="task-scope" name="scope" rows="2" placeholder="One file or area per line">${escapeHtml(data.scope.join('\n'))}</textarea><label for="task-look">What should be visible <span class="field-optional">optional</span></label><textarea id="task-look" name="look" rows="2" placeholder="For example: no overflow at phone width">${escapeHtml(data.look)}</textarea>${checkedPagesMarkup(data)}${workStateForForm(task, data)}<p id="task-form-error" class="form-error" role="alert" hidden></p><div class="form-actions"><button type="submit" class="save-button" ${state.workflow.action ? 'disabled' : ''}>${taskSubmitLabel(task)}</button><button type="button" class="text-button" data-action="cancel-task-form">Cancel</button></div></form>`;
 }
 
 function loadingMarkup(workflow) {
@@ -205,7 +224,7 @@ async function loadWorkflow(projectId) {
 
 export function syncWorkflowState() {
   if (state.view !== 'plan' || !state.project || state.workflow.key === state.project.id) return;
-  state.workflow = { key: state.project.id, loading: true, data: null, error: '', action: '', formOpen: false, selected: '', editing: '' };
+  state.workflow = { key: state.project.id, loading: true, data: null, error: '', action: '', formOpen: false, selected: '', editing: '', recovering: '' };
   void loadWorkflow(state.project.id);
 }
 
@@ -228,7 +247,43 @@ export function cancelTaskForm() {
 }
 
 export function selectTask(id) {
+  state.workflow.recovering = '';
   state.workflow.selected = id;
+  render();
+}
+
+export function openTaskRecovery(id) {
+  state.workflow.recovering = id;
+  render();
+  document.querySelector('#task-recovery-reason')?.focus();
+}
+
+export function cancelTaskRecovery() {
+  state.workflow.recovering = '';
+  render();
+}
+
+export async function recoverTask(form) {
+  const reason = fieldText(new FormData(form), 'reason');
+  const errorBox = form.querySelector('#task-recovery-error');
+  if (reason.length < 12) {
+    errorBox.textContent = 'Explain why this task needs to be released (at least 12 characters).';
+    errorBox.hidden = false;
+    return;
+  }
+  const id = form.dataset.taskId;
+  state.workflow.action = `recover:${id}`;
+  form.querySelector('button[type="submit"]').disabled = true;
+  try {
+    await readJson(endpoint(`/tasks/${encodeURIComponent(id)}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ releaseOwner: true, recoveryReason: reason }) });
+    state.workflow.recovering = '';
+    await loadWorkflow(state.project.id);
+  } catch (error) {
+    errorBox.textContent = error.message;
+    errorBox.hidden = false;
+  }
+  state.workflow.action = '';
+  form.querySelector('button[type="submit"]')?.removeAttribute('disabled');
   render();
 }
 
@@ -268,8 +323,12 @@ function buildTask(values, existing) {
   if (!title || !outcome || !lines.length) throw new Error('Task, done when, and at least one check are required.');
   const checks = lines.map((line, index) => checkItem(parseCommand(line), index, existing));
   const task = { title, outcome, checks, scope: fieldLines(values, 'scope'), look: fieldText(values, 'look'), pageIds: values.getAll('pageIds') };
-  if (existing) Object.assign(task, editedTaskFields(values));
+  if (editableWorkState(existing)) Object.assign(task, editedTaskFields(values));
   return task;
+}
+
+function editableWorkState(existing) {
+  return existing && existing.status !== 'accepted';
 }
 
 function editedTaskFields(values) {
