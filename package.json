@@ -1,7 +1,7 @@
 {
   "name": "dogfood",
   "version": "1.0.0",
-  "description": "A quality assurance app for any project: your coding agent reviews every page systematically, and you watch quality on an ongoing basis.",
+  "description": "A lightweight workspace for coding agents to plan, build and prove web projects.",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,7 @@
     "onboard": "node scripts/onboard.mjs",
     "scan": "node scripts/scan.mjs",
     "demo": "DOGFOOD_DATA=demo node server.mjs",
-    "check": "for f in server.mjs mcp.mjs lib/*.mjs public/js/*.mjs public/js/views/*.mjs; do node --check $f || exit 1; done && DOGFOOD_DATA=demo node scripts/check-projects.mjs",
+    "check": "for f in server.mjs mcp.mjs bin/*.mjs lib/*.mjs public/js/*.mjs public/js/views/*.mjs; do node --check $f || exit 1; done && DOGFOOD_DATA=demo node scripts/check-projects.mjs",
     "test": "node --test scripts/*.test.mjs",
     "test:acceptance": "for f in tests/acceptance/*.mjs; do echo \"$f\"; node \"$f\" || exit 1; done",
     "lint": "npx --yes eslint@10 .",
@@ -21,5 +21,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "bin": {
+    "dogfood": "bin/dogfood.mjs"
   }
 }

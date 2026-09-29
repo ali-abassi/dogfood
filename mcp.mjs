@@ -1,5 +1,8 @@
 import './lib/env.mjs';
 import { createInterface } from 'node:readline';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { workflowTools } from './lib/workflow-tools.mjs';
 import { readFileSync } from 'node:fs';
 import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
@@ -98,15 +101,22 @@ const requirementTools = {
   issues: 'dogfood_resolve_issue (after retesting the fix)',
 };
 
+function requirementTool(id) {
+  if (id.startsWith('feature:')) return 'dogfood_record_verdicts with features';
+  if (id.startsWith('audit:')) return 'dogfood_record_verdicts with audit';
+  return requirementTools[id] ?? 'dogfood_page';
+}
+
 function pageOutcome(page, issue) {
   const outcome = {
     page: page.id,
     name: page.name,
     status: page.progress.status,
     complete: page.progress.complete,
+    accepted: page.progress.accepted ?? false,
     changedSinceReview: page.progress.changedSinceReview,
     answers: page.progress.answers.map(({ id, name, status, summary }) => ({ id, name, status, summary })),
-    missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTools[id] })),
+    missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTool(id) })),
   };
   return issue ? { ...outcome, issue } : outcome;
 }
@@ -240,7 +250,7 @@ const definitions = [
   },
   {
     name: 'dogfood_create_project',
-    description: 'Create an empty dogfood project from its URL before registering pages by hand. Prefer dogfood_onboard_project, which also finds and scans every page.',
+    description: 'Create an empty project from a checkout or URL. Use dogfood_init for checkout-first planning, or dogfood_onboard_project to discover an existing site.',
     inputSchema: objectSchema({
       id: { type: 'string', description: 'Lowercase project ID using letters, numbers, and hyphens.' },
       name: { type: 'string', description: 'Human-readable product or project name.' },
@@ -251,7 +261,7 @@ const definitions = [
       browserProfile: { type: 'string', description: 'Optional Chrome profile name (for example Default) so scans see signed-in pages.' },
       guidelines: { type: 'array', items: { type: 'string' }, description: 'Optional project-specific QA guidance.' },
       signedOutMarkers: { type: 'array', items: { type: 'string' }, description: 'Optional phrases that mean a signed-out screen (default: Sign in, Log in, Try the workspace); a scan of a signed-in page showing one fails instead of passing.' },
-    }, ['id', 'name', 'url']),
+    }, ['id', 'name']),
     run: createDogfoodProject,
   },
   {
@@ -496,6 +506,8 @@ const definitions = [
   },
 ];
 
+definitions.push(...workflowTools);
+
 const toolList = definitions.map(({ run, ...tool }) => tool);
 const tools = new Map(definitions.map(definition => [definition.name, definition]));
 
@@ -605,8 +617,20 @@ async function callOnce([name, json = '{}']) {
   process.stdout.write(`${toolResult(await runTool(tool, JSON.parse(json))).content[0].text}\n`);
 }
 
-const oneShot = process.argv.slice(2);
-(oneShot.length ? callOnce(oneShot) : main()).catch(error => {
-  process.stderr.write(`${errorMessage(error)}\n`);
-  process.exitCode = 1;
-});
+export function toolDefinitions() {
+  return toolList;
+}
+
+export async function runNamedTool(name, args = {}) {
+  const tool = tools.get(name);
+  if (!tool) throw new Error(`Unknown tool: ${name}.`);
+  return runTool(tool, args);
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const oneShot = process.argv.slice(2);
+  (oneShot.length ? callOnce(oneShot) : main()).catch(error => {
+    process.stderr.write(`${errorMessage(error)}\n`);
+    process.exitCode = 1;
+  });
+}
