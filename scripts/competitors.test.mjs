@@ -35,6 +35,18 @@ test('a scan reads the landing page, then pricing and features before other page
   assert.equal(chosen[1].url, 'https://rival.example/pricing');
 });
 
+test('a scan reads each page once, whatever its trailing slash, and never files like sitemap.xml', () => {
+  const pages = ['/pricing/', '/pricing', '/sitemap.xml', '/guide.pdf', '/features'].map(route => ({ id: route.replace(/\W+/g, '-'), name: route, route }));
+  assert.deepEqual(competitors.keyPages('https://rival.example/', pages).map(page => page.route), ['/', '/pricing/', '/features']);
+});
+
+test('a bot check or a not-found page is reported instead of read as the competitor\'s content', () => {
+  const content = (title, text = '', headings = []) => ({ title, text, headings });
+  assert.match(competitors.pageProblem(content('Just a moment...', 'Performing security verification')), /bot check/);
+  assert.match(competitors.pageProblem(content('Not Found', '', [{ level: 1, text: 'Page Not Found' }])), /does not exist/);
+  assert.equal(competitors.pageProblem(content('Pricing | Rival', 'Plans from $9')), '');
+});
+
 test('a site is named by the part of its title that matches its host', () => {
   assert.equal(competitors.brandInTitle('AI Ad Generator - Make AI ads | Predis.ai', 'https://predis.ai/'), 'Predis.ai');
   assert.equal(competitors.brandInTitle('Trade Ideas: AI stock scanner', 'https://www.trade-ideas.com/'), 'Trade Ideas');
