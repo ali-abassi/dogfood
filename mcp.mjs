@@ -11,7 +11,7 @@ import { runTests } from './lib/test-runs.mjs';
 import { projectReport } from './lib/report.mjs';
 import { pendingSuggestions } from './lib/suggestions.mjs';
 import { startReview } from './lib/reviews.mjs';
-import { addCompetitor, listCompetitors, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
+import { addCompetitor, listCompetitors, recordCompetitorSummary, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { dataDir } from './lib/paths.mjs';
 
 function competitorOf(competitors, id) {
@@ -335,6 +335,26 @@ const definitions = [
     description: 'Have the AI summarize a scanned competitor from its page text and compare it with this project\'s vision.md. Spends model-provider usage (about a cent through OpenRouter).',
     inputSchema: objectSchema({ project: projectPageProperties.project, competitor: { type: 'string', description: 'Competitor ID from dogfood_competitors.' } }, ['project', 'competitor']),
     run: async ({ project, competitor }) => competitorView(competitorOf(await summarizeCompetitor(project, competitor), competitor)),
+  },
+  {
+    name: 'dogfood_record_competitor_summary',
+    description: 'Record your own summary of a scanned competitor, instead of paying for dogfood_summarize_competitor: read its pages first (dogfood_competitors gives titles, headings and screenshot files; open the screenshots), compare with the project\'s vision.md, and write only what the pages show.',
+    inputSchema: objectSchema({
+      project: projectPageProperties.project,
+      competitor: { type: 'string', description: 'Competitor ID from dogfood_competitors.' },
+      agent: { type: 'string', description: 'Agent name used to attribute the summary.' },
+      summary: objectSchema({
+        whatTheyDo: { type: 'string', description: 'One or two sentences on what the product does.' },
+        whoItsFor: { type: 'string', description: 'Who they sell to, as specifically as the pages say.' },
+        pricing: { type: 'string', description: 'Plans and prices as stated, or that the pages do not say.' },
+        howTheySell: { type: 'string', description: 'Their main promise and the proof they lean on.' },
+        keyFeatures: { type: 'array', items: { type: 'string' }, description: 'Up to 8 short phrases.' },
+        theyDoBetter: { type: 'array', items: { type: 'string' }, description: 'Up to 4: where they are ahead of this project.' },
+        weDoBetter: { type: 'array', items: { type: 'string' }, description: 'Up to 4: where this project is ahead.' },
+        ideasToTake: { type: 'array', items: { type: 'string' }, description: 'Up to 4 specific ideas worth using.' },
+      }, ['whatTheyDo', 'whoItsFor', 'pricing', 'howTheySell', 'keyFeatures', 'theyDoBetter', 'weDoBetter', 'ideasToTake']),
+    }, ['project', 'competitor', 'agent', 'summary']),
+    run: ({ project, competitor, agent, summary }) => competitorView(competitorOf(recordCompetitorSummary(project, competitor, summary, byAgent(agent)), competitor)),
   },
   {
     name: 'dogfood_remove_page',

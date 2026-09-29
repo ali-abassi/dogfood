@@ -87,6 +87,12 @@ test('a summary missing a required answer is refused, and the last good one stay
   assert.equal(competitors.listCompetitors('shop')[0].summary.pricing, 'From $9 a month.');
 });
 
+test('an agent can record its own summary, attributed to it and tied to the scan it read', () => {
+  const [rival] = competitors.recordCompetitorSummary('shop', 'rival-example', { ...summary, pricing: 'Free trial, then $15.' }, 'agent:proof');
+  assert.deepEqual([rival.summary.by, rival.summary.pricing, rival.summary.scannedAt], ['agent:proof', 'Free trial, then $15.', '2026-09-29T08:00:00.000Z']);
+  assert.throws(() => competitors.recordCompetitorSummary('shop', 'rival-example', { ...summary, whatTheyDo: '' }, 'agent:proof'), /left out whatTheyDo/);
+});
+
 test('removing a competitor deletes its screenshots', () => {
   const folder = join(data, 'captures', 'shop', 'competitors', 'rival-example');
   mkdirSync(folder, { recursive: true });
