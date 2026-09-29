@@ -65,6 +65,41 @@ try {
     assert.match(evaluate(`document.querySelector('.plan-summary')?.textContent`), /1 of 1 accepted/);
   });
 
+  await check('blocked work shows its reason and can be released back to the queue', () => {
+    click('[data-action="add-task"]');
+    fill('#task-title', 'Resolve a missing input');
+    fill('#task-outcome', 'The required input is available.');
+    fill('#task-checks', JSON.stringify([process.execPath, '-e', 'require("fs").accessSync("ready.txt")']));
+    click('#task-form button[type="submit"]');
+    click('[data-action="task-claim"]');
+    click('[data-action="edit-task"]');
+    browser('select', '#task-status', 'blocked');
+    fill('#task-blocker', 'Waiting for the input fixture.');
+    fill('#task-handoff', 'Resume when the fixture is ready.');
+    click('#task-form button[type="submit"]');
+    assert.equal(status(), 'Blocked');
+    assert.match(evaluate(`document.querySelector('.plan-blockers')?.textContent`), /Waiting for the input fixture/);
+    assert.equal(evaluate(`document.querySelector('[data-action="task-verify"]') === null`), true);
+    assert.equal(evaluate(`document.querySelector('.plan-next')?.textContent`), 'No task is ready. Review blockers and ownership below.');
+    click('[data-action="edit-task"]');
+    browser('select', '#task-status', 'todo');
+    browser('check', '#task-form input[name="releaseOwner"]');
+    click('#task-form button[type="submit"]');
+    assert.equal(status(), 'To do');
+    assert.equal(evaluate(`document.querySelector('[data-action="task-claim"]') !== null`), true);
+  });
+
+  await check('Refresh tasks picks up work added outside the browser', async () => {
+    const response = await fetch(`${server.url}/api/projects/tidepool/tasks`, {
+      method: 'POST',
+      headers: { Origin: server.url, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Agent-added work', outcome: 'The browser sees this task after refresh.', scope: [], pageIds: [], look: '', checks: [{ id: 'ready', command: [process.execPath, '-e', 'process.exit(0)'] }] }),
+    });
+    assert.equal(response.ok, true);
+    click('[data-action="retry-workflow"]');
+    assert.match(evaluate(`document.querySelector('.plan-tasks')?.textContent`), /Agent-added work/);
+  });
+
   await check('Plan remains usable at phone width without horizontal overflow', () => {
     browser('set', 'viewport', '390', '844');
     settle();
