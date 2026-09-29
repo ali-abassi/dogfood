@@ -28,6 +28,9 @@ const jobs = new Map();
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
+  ['/styles/docs-polish.css', ['styles/docs-polish.css', 'text/css; charset=utf-8']],
+  ['/styles/research-polish.css', ['styles/research-polish.css', 'text/css; charset=utf-8']],
+  ['/styles/reports-polish.css', ['styles/reports-polish.css', 'text/css; charset=utf-8']],
   ['/favicon.svg', ['favicon.svg', 'image/svg+xml']],
   ['/logo.svg', ['logo.svg', 'image/svg+xml']],
 ]);

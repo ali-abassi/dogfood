@@ -27,7 +27,7 @@ function acceptanceCountsMarkup(pages) {
   const accepted = pages.filter(page => page.progress.accepted === true).length;
   const checked = pages.filter(page => page.progress.accepted !== true && page.progress.complete === true).length;
   const remaining = pages.length - accepted - checked;
-  return `<p class="overview-gate-counts" data-gate-counts>${accepted} accepted · ${checked} checked, not accepted · ${remaining} not fully checked</p>`;
+  return `<p class="overview-gate-counts" data-gate-counts><span><strong>${accepted}</strong> accepted</span> · <span><strong>${checked}</strong> checked, not accepted</span> · <span><strong>${remaining}</strong> not fully checked</span></p>`;
 }
 
 function columnsMarkup() {

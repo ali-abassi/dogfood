@@ -79,3 +79,7 @@ Do not fix the app while checking it unless the person asks. Report what you fou
 - Point them to <http://127.0.0.1:4321>. Each page shows its screenshots and six answers, and each answer opens to show its evidence.
 - Summarise from `dogfood_report` in plain words: how many pages are good, which need work and why, the open bugs by how bad they are, and what you could not check.
 - Never call something checked that you did not check. Not checked stays Not checked, and a screenshot alone does not prove that anything works.
+
+## Native-control visual check
+
+Inspect project selectors and other native dropdowns at desktop and phone widths, including a long selected label, keyboard operation and both themes. If using a custom indicator, remove the native indicator, reserve label space and keep the arrow visibly inset from the field edge. Never accept a selector from a DOM or screenshot thumbnail alone.

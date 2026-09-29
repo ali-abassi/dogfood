@@ -1,6 +1,6 @@
 import { readJson } from './api.mjs';
-import { addCompetitor, removeOpenCompetitor, rescanOpenCompetitor, summarizeOpenCompetitor } from './views/competitors.mjs';
-import { fitDocFrame } from './views/docs.mjs';
+import { addCompetitor, reloadCompetitors, removeOpenCompetitor, rescanOpenCompetitor, summarizeOpenCompetitor } from './views/competitors.mjs';
+import { fitDocFrame, retryDocs } from './views/docs.mjs';
 import { startQaAgent } from './views/qa-agent.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
 import { answerIds, state, menuPages, activePage } from './state.mjs';
@@ -224,6 +224,7 @@ const buttonActions = new Map([
   ['cancel-project-suggestions', selectOverview],
   ['scan', scanActivePage],
   ['scan-all', scanAllPages],
+  ['retry-competitors', reloadCompetitors],
   ['add-project', openAddProject],
   ['remove-page', openRemovePage],
   ['cancel-remove-page', () => { if (promptIfChanged()) return; state.removingPage = null; render(); restoreFocus('[data-action="remove-page"]'); }],
@@ -314,6 +315,13 @@ function handleSuggestionToggle(target) {
   if (target.name === 'project-suggestion') updateProjectSuggestionsButton();
 }
 
+function rememberProjectDraft(target) {
+  const form = target.closest('#add-project-form');
+  if (!form) return;
+  const fields = new FormData(form);
+  state.projectDraft = { ...Object.fromEntries(['url', 'name', 'browserProfile'].map(key => [key, String(fields.get(key) ?? '')])), aiReview: fields.has('aiReview') };
+}
+
 function handleBugButton(button) {
   if (button.dataset.findingAction === 'cancel' && promptIfChanged()) return;
   handleFindingButton(button);
@@ -327,12 +335,14 @@ export function registerEvents() {
     const button = event.target.closest('button');
     if (!button) return;
     if (button.id === 'retry') return start();
+    if (button.id === 'retry-docs') return retryDocs();
     if (button.dataset.findingAction) return handleBugButton(button);
     handleButton(button);
   });
 
   app.addEventListener('change', event => {
     markDirty(event.target);
+    rememberProjectDraft(event.target);
     if (event.target.id === 'project-select') return handleProjectSelection(event.target);
     if (event.target.id === 'page-filter') return handlePageFilter(event.target);
     if (event.target.id === 'page-sort') return handlePageSort(event.target);
@@ -354,6 +364,8 @@ export function registerEvents() {
 
   app.addEventListener('input', event => {
     markDirty(event.target);
+    rememberProjectDraft(event.target);
+    if (event.target.id === 'competitor-url') state.competitors.draft = event.target.value;
     if (event.target.id !== 'page-search') return;
     state.query = event.target.value;
     renderSidebarPageList();

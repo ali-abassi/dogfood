@@ -12,3 +12,9 @@
 - Preserve historical audit coverage after a source change, but show old positive answers as Recheck until revalidated. This deliberately favors evidence freshness over guessing whether a documentation or backend edit is harmless. The separate Checked and Accepted labels explain why an answered audit may require new acceptance evidence; all repository content remains covered.
 - Require an attached project URL before page acceptance, with explicit page URLs on the same origin as that declared environment. A loopback page alone does not define the project's runtime; attach its URL first.
 - Reuse the nearest registered checkout when `init` has no explicit ID. Explicit IDs can register separate packages in a monorepo; native checks keep that package directory while evidence covers the repository.
+
+## 2026-09-29 — whole-app clarity
+
+Ali approved Plan as the visual direction and requested the rest of the app improved. Preserve its native utility grammar, native controls, readable outcomes and separate evidence states. Remove repeated setup copy and human-facing API names. Keep optional onboarding settings behind disclosure. The project selector gets exactly one inset chevron while retaining native selection. Record this correction in the QA skill. Keep backend semantics and zero runtime dependencies.
+
+Prior art: Primer CSS `src/forms/form-select.scss` (MIT, active 2026-09-29) uses appearance:none, reserved text padding and an inset background indicator. Borrow the mechanism, not its code or palette. MDN Advanced form styling confirms the native appearance constraint. The rendered Linear reference uses a compact source list next to real work; retain this relationship but use Dogfood’s light/dark tokens and plain QA vocabulary. No new dependency was needed.
