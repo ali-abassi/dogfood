@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,6 +9,8 @@ import { crc32, deflateSync } from 'node:zlib';
 const data = mkdtempSync(join(tmpdir(), 'dogfood-completion-'));
 process.env.DOGFOOD_DATA = data;
 const store = await import('../lib/store.mjs');
+const { pagesGate } = await import('../lib/completion.mjs');
+const { checkoutRevision } = await import('../lib/revision.mjs');
 after(() => rmSync(data, { recursive: true, force: true }));
 
 function chunk(type, body) {
@@ -68,7 +71,9 @@ test('a page moves from registered to complete only when all six answers are ans
   assert.equal(progress().status, 'untested', 'a page that was never captured is not checked yet, not blocked');
   store.recordCapture('shop', 'home', { device: 'desktop', blockedReason: 'The checkout needs a signed-in staff account.' });
   assert.equal(progress().status, 'blocked', 'a real reason the page cannot be captured blocks it');
-  assert.deepEqual(progress().requirements.map(item => item.id), ['capture', 'scan', 'design', 'purpose', 'ease', 'safety', 'speed', 'works', 'issues']);
+  assert.deepEqual(progress().requirements.slice(0, 8).map(item => item.id), ['capture', 'scan', 'design', 'purpose', 'ease', 'safety', 'speed', 'works']);
+  assert.ok(progress().requirements.some(item => item.id === 'audit:security:inputs'));
+  assert.equal(progress().requirements.at(-1).id, 'issues');
   assert.deepEqual(progress().answers.map(item => [item.name, item.status]), [['Looks right', 'untested'], ['Clear purpose', 'untested'], ['Easy to use', 'untested'], ['Safe', 'untested'], ['Fast & findable', 'untested'], ['Works as expected', 'untested']]);
   assert.match(progress().requirements.find(item => item.id === 'works').missing, /Add what people can do here/);
   assert.deepEqual(Object.keys(store.readProject('shop').pages[0].audit), ['security', 'scraping', 'seo', 'accessibility']);
@@ -153,7 +158,9 @@ test('a rescan records how each screenshot changed and flags reviews older than 
   scanWith(true);
   assert.equal(progress().changedSinceReview, true, 'a later scan without changes does not clear the flag');
   store.recordVerdicts('deli', 'home', { checks: { ease: { status: 'pass', note } } }, 'agent:test');
-  assert.equal(progress().changedSinceReview, false, 'a review after the change clears the flag');
+  assert.equal(progress().changedSinceReview, true, 'the earlier feature verdict still needs rechecking');
+  store.recordVerdicts('deli', 'home', { features: [{ id: 'menu', status: 'pass', note }] }, 'agent:test');
+  assert.equal(progress().changedSinceReview, false, 'rechecking the remaining old verdict clears the flag');
   scanWith(true);
   assert.equal(page().scan.changes.desktop.changed, false);
   assert.equal(page().scan.changes.desktop.changedShare, 0);
@@ -206,4 +213,74 @@ test('re-registering a page keeps verdicts and evidence for features that remain
   assert.equal(page.features[1].status, 'untested');
   assert.equal(page.findings.length, 1);
   assert.equal(store.pageProgress(store.readProject('shop'), page).complete, false);
+});
+
+test('audit and acceptance distinguish unfinished rows, findings, checkout changes, and failed rescans', () => {
+  const checkout = join(data, 'revision-checkout');
+  mkdirSync(checkout);
+  execFileSync('git', ['init', '-q', checkout]);
+  writeFileSync(join(checkout, 'backend.js'), 'export const value = 1;\n');
+  execFileSync('git', ['-C', checkout, 'add', 'backend.js']);
+  execFileSync('git', ['-C', checkout, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'initial']);
+  store.createProject({ id: 'revision', name: 'Revision', url: 'https://example.com', checkout });
+  store.registerPage('revision', { id: 'home', name: 'Home', group: 'Public', route: '/', features: [{ id: 'hero', name: 'Hero' }] });
+  store.recordScan('revision', 'home', scan());
+  const page = () => store.readProject('revision').pages[0];
+  const progress = () => store.pageProgress(store.readProject('revision'), page());
+  const view = () => store.projectView(store.readProject('revision'));
+  const audit = Object.fromEntries(Object.entries(page().audit).map(([key, rows]) => [key, rows.map(row => ({ id: row.id, status: 'pass', note }))]));
+  store.recordVerdicts('revision', 'home', {
+    checks: Object.fromEntries(['design', 'purpose', 'ease'].map(key => [key, { status: 'pass', note }])),
+    features: [{ id: 'hero', status: 'pass', note }], audit,
+  }, 'agent:test');
+  assert.equal(progress().complete, true);
+  assert.equal(progress().accepted, true);
+  assert.equal(pagesGate(view().pages, 'acceptance').complete, true);
+  assert.equal(page().scan.fingerprint, checkoutRevision(checkout).fingerprint);
+
+  store.createFinding('revision', 'home', { severity: 'P2', title: 'Small overlap', detail: 'On a narrow phone, the footer text overlaps an icon.', attachCapture: true }, 'agent:test');
+  assert.equal(progress().complete, true, 'a P2 finding does not hide completed audit work');
+  assert.equal(progress().accepted, false, 'acceptance requires no open P2 finding');
+  store.updateFinding('revision', 'home', 'QA-001', { status: 'resolved', note }, 'agent:test');
+
+  store.recordVerdicts('revision', 'home', { audit: { security: [
+    { id: 'inputs', status: 'needs_work', note }, { id: 'private-data', status: 'untested', note: '' },
+  ] } }, 'agent:test');
+  assert.equal(progress().answers.find(answer => answer.id === 'safety').status, 'needs_work');
+  assert.equal(progress().complete, false, 'an unfinished security row cannot hide under needs work');
+  assert.ok(unmet(progress()).includes('audit:security:private-data'));
+  store.recordVerdicts('revision', 'home', { audit: { security: audit.security } }, 'agent:test');
+  assert.equal(progress().accepted, true);
+
+  store.registerPage('revision', { id: 'home', name: 'Home', group: 'Public', route: '/', features: [{ id: 'hero', name: 'Hero' }, { id: 'footer', name: 'Footer' }] });
+  store.recordVerdicts('revision', 'home', { features: [{ id: 'hero', status: 'needs_work', note }] }, 'agent:test');
+  assert.equal(progress().answers.find(answer => answer.id === 'works').status, 'needs_work');
+  assert.equal(progress().complete, false, 'an untested feature remains visible under an aggregate needs work answer');
+  assert.ok(unmet(progress()).includes('feature:footer'));
+  store.recordVerdicts('revision', 'home', { features: [{ id: 'footer', status: 'needs_work', note }] }, 'agent:test');
+  assert.equal(progress().complete, true, 'every row is answered despite the known defect');
+  assert.equal(pagesGate(view().pages).complete, true);
+  assert.equal(pagesGate(view().pages, 'acceptance').complete, false);
+
+  writeFileSync(join(checkout, 'backend.js'), 'export const value = 2;\n');
+  assert.equal(progress().complete, false, 'backend-only edits invalidate current scan evidence');
+  assert.equal(progress().accepted, false);
+  assert.equal(progress().answers.find(answer => answer.id === 'design').status, 'recheck');
+  assert.ok(unmet(progress()).includes('scan'));
+  store.recordScan('revision', 'home', scan());
+  store.recordVerdicts('revision', 'home', { checks: { design: { status: 'pass', note } } }, 'agent:test');
+  assert.equal(progress().answers.find(answer => answer.id === 'design').status, 'pass');
+  store.recordScanAttempt('revision', 'home', 'failed', 'Browser navigation timed out.');
+  assert.equal(progress().complete, false, 'latest failed attempt blocks an older successful scan');
+  assert.match(progress().requirements.find(item => item.id === 'scan').missing, /navigation timed out/);
+
+  const beforeUntracked = checkoutRevision(checkout).fingerprint;
+  writeFileSync(join(checkout, 'new-backend.js'), 'export const added = true;\n');
+  assert.notEqual(checkoutRevision(checkout).fingerprint, beforeUntracked, 'nonignored untracked code changes revision evidence');
+  writeFileSync(join(checkout, '.git', 'info', 'exclude'), 'ignored-build/\n');
+  mkdirSync(join(checkout, 'ignored-build'));
+  writeFileSync(join(checkout, 'ignored-build', 'bundle.js'), 'generated output');
+  const afterUntracked = checkoutRevision(checkout).fingerprint;
+  writeFileSync(join(checkout, 'ignored-build', 'bundle.js'), 'changed generated output');
+  assert.equal(checkoutRevision(checkout).fingerprint, afterUntracked, 'ignored build output does not invalidate evidence');
 });
