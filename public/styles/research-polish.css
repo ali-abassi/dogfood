@@ -46,3 +46,5 @@
   .add-project-panel.content-panel { padding: 20px 16px; }
   .add-project-panel .agent-prompt-box { flex-direction: column; align-items: start; }
 }
+/* The website link sits inside a sentence, so shape identifies it too. */
+.competitor-detail .overview-heading p a { text-decoration: underline; text-underline-offset: 3px; }
