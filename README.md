@@ -101,6 +101,7 @@ Page-writing tools return that page's status, its six answers, and what it still
 - `dogfood_add_competitor` — add a competitor by its website and scan its key pages (at most five per project).
 - `dogfood_scan_competitor` — rescan a competitor's key pages.
 - `dogfood_summarize_competitor` — have the AI summarize a scanned competitor and compare it with the project's vision.
+- `dogfood_record_competitor_summary` — record a summary the agent wrote itself from the scanned pages, at no provider cost.
 - `dogfood_page` — read a page and its derived QA progress.
 - `dogfood_next` — list incomplete pages in site order with missing evidence.
 - `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker; prefer `dogfood_scan_page` for both devices and measured facts.
