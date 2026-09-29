@@ -6,6 +6,8 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+const scanSessions = value => new Set(value.match(/dogfood-scan-[a-f0-9]+/g) ?? []);
+const sessionsBefore = scanSessions(execFileSync('agent-browser', ['session', 'list'], { encoding: 'utf8' }));
 const directory = mkdtempSync(join(tmpdir(), 'dogfood-daily-native-'));
 process.env.DOGFOOD_DATA = join(directory, 'data');
 delete process.env.DOGFOOD_BROWSER_STATE;
@@ -120,6 +122,15 @@ try {
       assert.equal(currentPage().scan.verifiedRole, 'admin');
     });
   }, { explicitProfile: true });
+  let sessions;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    sessions = scanSessions(execFileSync('agent-browser', ['session', 'list'], { encoding: 'utf8' }));
+    if ([...sessions].every(name => sessionsBefore.has(name))) break;
+    await new Promise(done => setTimeout(done, 100));
+  }
+  check('the proof closes only its owned temporary browser session', () => {
+    assert.deepEqual([...sessions].filter(name => !sessionsBefore.has(name)), []);
+  });
   console.log(`${checks} native scanner checks passed`);
 } finally {
   await Promise.all([new Promise(done => local.close(done)), new Promise(done => live.close(done))]);

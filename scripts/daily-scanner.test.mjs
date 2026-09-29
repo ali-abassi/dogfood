@@ -72,3 +72,15 @@ test('setup timeout and command output stay bounded and do not leak output', asy
     assert.ok(Date.now() - before < 3000);
   } finally { rmSync(checkout, { recursive: true, force: true }); }
 });
+
+
+test('setup timeout also bounds owned subprocess groups', async () => {
+  const checkout = mkdtempSync(join(tmpdir(), 'dogfood-fixture-group-'));
+  const command = "require('node:child_process').spawn(process.execPath,['-e','setTimeout(()=>{},10000)'],{stdio:'inherit'});setTimeout(()=>{},10000)";
+  const fixtureProject = { fixtureSetup: { hung: { argv: [process.execPath, '-e', command], timeoutMs: 100 } } };
+  const before = Date.now();
+  try {
+    await assert.rejects(runLocalFixtures(fixtureProject, { environment: 'local', fixture: ['hung'] }, checkout), { code: 'SETUP_MISSING' });
+    assert.ok(Date.now() - before < 3000);
+  } finally { rmSync(checkout, { recursive: true, force: true }); }
+});
