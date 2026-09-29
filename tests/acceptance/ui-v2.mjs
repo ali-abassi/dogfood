@@ -19,6 +19,7 @@ const store = await import(join(repo, 'lib/store.mjs'));
 const facts = (overrides = {}) => ({
   loadMs: 1830, consoleErrors: ['Warning: slot list failed to parse'], pageErrors: [], failedRequests: [], horizontalOverflow: false,
   requests: [{ method: 'GET', url: 'https://tidepool.example/api/slots?day=sat', status: 200 }],
+  links: [{ href: 'https://tidepool.example/classes', text: 'Classes' }, { href: 'https://instagram.com/tidepool', text: 'Instagram' }],
   seo: { title: 'Book a lesson · Tidepool', description: 'Pick a class and a time.', canonical: null, robots: null, lang: 'en', h1Count: 1 },
   accessibility: { imagesWithoutAlt: 0, unlabeledFields: 2, unnamedButtons: 1 },
   headers: { 'x-frame-options': 'DENY', 'content-security-policy': null },
@@ -123,7 +124,7 @@ try {
   };
   check('the page check\'s measurements appear in plain words under the answer they affect', () => {
     const works = answerText('works');
-    for (const expected of ['TypeError: slots is undefined', 'https://tidepool.example/api/hold', '503', '/api/slots']) assert.ok(works.includes(expected), `Works as expected should show ${expected}`);
+    for (const expected of ['TypeError: slots is undefined', 'https://tidepool.example/api/hold', '503']) assert.ok(works.includes(expected), `Works as expected should show ${expected}`);
     const speed = answerText('speed');
     assert.match(speed, /Load time on a computer\s*1\.8 s/);
     assert.ok(speed.includes('Book a lesson · Tidepool'), 'the page title');
@@ -136,6 +137,13 @@ try {
   });
   check('things people can do show what should happen', () => {
     assert.ok(answerText('works').includes('Lists all four classes with their ages.'));
+  });
+  check('About this page gives its title and description, links split by site, and the APIs it calls', () => {
+    const about = text('[data-about]');
+    for (const expected of ['Book a lesson · Tidepool', 'Pick a class and a time.', 'Classes', '/classes', 'Instagram', 'https://instagram.com/tidepool', 'GET /api/slots']) assert.ok(about.includes(expected), `About should show ${expected}`);
+    assert.match(about, /On this site · 1/);
+    assert.match(about, /Elsewhere · 1/);
+    assert.equal(page(`document.querySelector('[data-about] [data-links]').open`), false, 'links are folded');
   });
   check('Easy to use includes the accessibility questions', () => {
     assert.match(answerText('ease'), /keyboard/i);

@@ -1,14 +1,20 @@
-import { answerMarkMarkup, escapeHtml, plainMessageMarkup, relativeCaptureAge, safeCapturePath, shortReason } from '../format.mjs';
+import { answerMarkMarkup, escapeHtml, plainMessageMarkup, shortReason } from '../format.mjs';
 import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
+import { aboutMarkup } from './about.mjs';
+import { shownShot, timelineMarkup } from './history.mjs';
 import { openFindingsMarkup } from './issues.mjs';
 
+function screenPictureMarkup(page, device, shot) {
+  if (!shot) return `<div class="screen-missing">${plainMessageMarkup(page.captures[device].reason || 'No screenshot that day.')}</div>`;
+  const size = shot.width ? ` width="${escapeHtml(shot.width)}" height="${escapeHtml(shot.height)}"` : '';
+  return `<img data-screenshot src="${shot.src}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}>`;
+}
+
+// Each screenshot is the whole page; its frame scrolls so the page can be read top to bottom.
 function screenMarkup(page, device) {
-  const capture = page.captures[device];
-  const image = capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
-  const picture = image
-    ? `<img data-screenshot src="${image}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}" width="${escapeHtml(capture.pixelWidth)}" height="${escapeHtml(capture.pixelHeight)}" loading="eager">`
-    : `<div class="screen-missing">${plainMessageMarkup(capture.reason || 'No screenshot yet.')}</div>`;
-  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame">${picture}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(relativeCaptureAge(capture))}</figcaption></figure>`;
+  const shot = shownShot(page, device);
+  const caption = shot?.caption ?? 'No screenshot';
+  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(caption)}</figcaption></figure>`;
 }
 
 const emptyScreens = {
@@ -30,7 +36,7 @@ function takeScreenshotsMarkup(page) {
 function screensMarkup(page) {
   const rendered = ['desktop', 'mobile'].some(device => page.captures[device].state === 'rendered');
   const body = rendered ? `<div class="report-screen-pair">${screenMarkup(page, 'desktop')}${screenMarkup(page, 'mobile')}</div>` : takeScreenshotsMarkup(page);
-  const actions = rendered ? '<div class="screens-actions"><button type="button" class="link-button" data-action="view-screens">View full page</button></div>' : '';
+  const actions = rendered ? `<div class="screens-actions">${timelineMarkup()}<button type="button" class="link-button" data-action="view-screens">View full page</button></div>` : '';
   return `<section class="report-screens content-panel" data-report-screens aria-label="How the page looks">${actions}${body}</section>`;
 }
 
@@ -59,5 +65,5 @@ function answersMarkup(page) {
 }
 
 export function pageReportMarkup(page) {
-  return `${screensMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}`;
+  return `${screensMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}${aboutMarkup(page)}`;
 }
