@@ -68,7 +68,7 @@ test('the design.html brand guide wins over design.md and is served as its own p
   assert.throws(() => designGuide(store.readProject('shop')), /no design.html/);
 });
 
-test('docs come from origin/main when the checkout has it, not from whatever is checked out', () => {
+test('docs include current working drafts even when origin/main has older documents', () => {
   const repo = join(data, 'gitrepo');
   mkdirSync(repo, { recursive: true });
   const git = (...args) => execFileSync('git', ['-C', repo, ...args], { stdio: 'ignore' });
@@ -77,7 +77,7 @@ test('docs come from origin/main when the checkout has it, not from whatever is 
   git('add', 'vision.md'); git('commit', '-qm', 'vision'); git('update-ref', 'refs/remotes/origin/main', 'HEAD');
   writeFileSync(join(repo, 'vision.md'), '# Local edit\n');
   store.createProject({ id: 'gitdocs', name: 'Git docs', url: 'https://example.com', checkout: repo });
-  assert.equal(projectDocs(store.readProject('gitdocs')).vision.markdown, '# Shipped vision\n');
+  assert.equal(projectDocs(store.readProject('gitdocs')).vision.markdown, '# Local edit\n');
 });
 
 test('without plan.md, the plan is the newest dated file in docs/plans', () => {

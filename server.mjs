@@ -16,6 +16,7 @@ import { captureHistory } from './lib/history.mjs';
 import { qaAgentConfigured, qaAgentRuns, startQaAgent } from './lib/qa-agent.mjs';
 import { addCompetitor, listCompetitors, removeCompetitor, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
+import { workflow, addTask, claimTask, updateTask, verifyTask, acceptTask, context } from './lib/tasks.mjs';
 
 const publicDir = join(root, 'public');
 const port = Number(process.env.DOGFOOD_PORT || 4321);
@@ -128,7 +129,15 @@ const withBody = handler => async (params, request) => projectView(handler(...pa
 function addPageFeatures(projectId, pageId, input, by) {
   return addFeatures(projectId, pageId, input.features, by);
 }
+const taskPath = '/api/projects/([a-z0-9-]+)/tasks/([a-z0-9-]+)';
 const routes = [
+  ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => workflow(id)],
+  ['GET', '/api/projects/([a-z0-9-]+)/context', ([id]) => context(id)],
+  ['POST', '/api/projects/([a-z0-9-]+)/tasks', async ([id], request) => addTask(id, await requestJson(request), person)],
+  ['PATCH', taskPath, async ([id, task], request) => updateTask(id, task, await requestJson(request), person)],
+  ['POST', `${taskPath}/claim`, ([id, task]) => claimTask(id, task, person)],
+  ['POST', `${taskPath}/verify`, ([id, task]) => verifyTask(id, task, person)],
+  ['POST', `${taskPath}/accept`, ([id, task]) => acceptTask(id, task, person)],
   ['POST', '/api/onboard', (params, request) => requestJson(request).then(startOnboarding), 202],
   ['GET', '/api/jobs/([a-f0-9-]+)', ([id]) => backgroundJob(id)],
   ['GET', '/api/projects', () => listProjects()],
