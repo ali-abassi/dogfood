@@ -15,7 +15,7 @@ function screenPictureMarkup(page, device, shot) {
 function screenMarkup(page, device) {
   const shot = shownShot(page, device);
   const caption = shot?.caption ?? 'No screenshot';
-  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(caption)}</figcaption></figure>`;
+  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption title="${escapeHtml(caption)}"><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(caption)}</figcaption></figure>`;
 }
 
 const emptyScreens = {
@@ -27,11 +27,15 @@ const emptyScreens = {
 const neverCaptured = 'Not captured yet.';
 
 // With no screenshot at all, the panel says why and offers to take them.
+function scanErrorMarkup() {
+  return state.scan.error ? `<p class="form-error" role="alert">${escapeHtml(state.scan.error)}</p>` : '';
+}
+
 function takeScreenshotsMarkup(page) {
   const capture = page.captures.desktop;
   const copy = emptyScreens[capture.reason && capture.reason !== neverCaptured ? 'blocked' : 'missing'](capture);
   const label = state.scan.running ? 'Taking screenshots…' : copy.action;
-  return `<div class="screens-empty"><strong>${copy.title}</strong><div class="screens-empty-text">${plainMessageMarkup(copy.text)}</div><button type="button" class="save-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button></div>`;
+  return `<div class="screens-empty"><strong>${copy.title}</strong><div class="screens-empty-text">${plainMessageMarkup(copy.text)}</div><button type="button" class="save-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button>${scanErrorMarkup()}</div>`;
 }
 
 function screensMarkup(page) {

@@ -61,7 +61,7 @@ export function answerPanelMarkup(page, answer) {
 function answerFormMarkup(answer) {
   const current = activePage().checks[answer.id];
   const choice = (value, label) => `<label class="choice"><input type="radio" name="status" value="${value}" ${current.status === value ? 'checked' : ''} required> ${label}</label>`;
-  return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}${choice('blocked', 'Blocked')}</div></fieldset><label for="answer-note">What did you see, or what do you need?</label><textarea id="answer-note" name="note" rows="3" maxlength="1200" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
+  return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}${choice('blocked', 'Blocked')}</div></fieldset><label for="answer-note">What did you see, or what do you need?</label><p id="answer-note-help" class="form-help">Describe what you checked, what happened, or what is blocking you. At least 12 characters.</p><textarea id="answer-note" name="note" rows="4" maxlength="1200" aria-describedby="answer-note-help answer-error" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
 }
 
 function questionMarkup(row, topic) {
@@ -76,7 +76,7 @@ function questionOptions(status) {
 
 function questionEditorMarkup(row, topic) {
   const id = `${topic}-${row.id}`;
-  return `<div class="question-edit" data-question-row data-topic="${escapeHtml(topic)}" data-id="${escapeHtml(row.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(row.question)}</label><select id="${escapeHtml(id)}-status">${questionOptions(row.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What did you see?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What did you see? Needed for Good, Needs work, or Blocked.">${escapeHtml(row.note)}</textarea></div>`;
+  return `<div class="question-edit" data-question-row data-topic="${escapeHtml(topic)}" data-id="${escapeHtml(row.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(row.question)}</label><select id="${escapeHtml(id)}-status">${questionOptions(row.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What did you see?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" aria-describedby="questions-error" placeholder="What did you see? Needed for Good, Needs work, or Blocked.">${escapeHtml(row.note)}</textarea></div>`;
 }
 
 function questionsFormMarkup(page, topics) {
@@ -169,10 +169,16 @@ export function answerDetailMarkup(page) {
   return `<section class="answer-detail" data-answer-detail="${escapeHtml(answer.id)}">${backMarkup(page)}<h1 id="answer-heading" tabindex="-1">${escapeHtml(answer.name)}</h1><p class="answer-question">${escapeHtml(answer.question)}</p>${answerPanelMarkup(page, answer)}${evidenceFor[answer.id](page)}</section>`;
 }
 
-function showFormError(form, selector, message) {
+function showFormError(form, selector, message, field) {
   const box = form.querySelector(selector);
   box.hidden = false;
   box.textContent = message;
+  if (field) {
+    field.setAttribute('aria-invalid', 'true');
+    if (field.tagName === 'TEXTAREA') field.insertAdjacentElement('afterend', box);
+    field.focus();
+  }
+  box.scrollIntoView({ block: 'nearest' });
 }
 
 async function patchVerdicts(body) {
@@ -183,6 +189,7 @@ async function patchVerdicts(body) {
 async function submitVerdicts(form, errorSelector, body, message) {
   const button = form.querySelector('button[type="submit"]');
   const label = button.textContent;
+  if (button.disabled) return;
   button.disabled = true;
   button.textContent = 'Saving…';
   try {
@@ -199,8 +206,10 @@ async function submitVerdicts(form, errorSelector, body, message) {
 export async function saveAnswer(form) {
   const data = new FormData(form);
   const note = String(data.get('note') ?? '').trim();
-  if (!data.get('status')) return showFormError(form, '#answer-error', 'Choose Good, Needs work, or Blocked.');
-  if (note.length < 12) return showFormError(form, '#answer-error', 'Write at least 12 characters about what you saw or need.');
+  if (!data.get('status')) return showFormError(form, '#answer-error', 'Choose Good, Needs work, or Blocked.', form.querySelector('input[name="status"]'));
+  if (note.length < 12) return showFormError(form, '#answer-error', 'Write at least 12 characters about what you saw or need.', form.querySelector('textarea'));
+  form.querySelector('input[name="status"]').removeAttribute('aria-invalid');
+  form.querySelector('textarea').removeAttribute('aria-invalid');
   const checks = { [form.dataset.answer]: { status: data.get('status'), note } };
   await submitVerdicts(form, '#answer-error', { checks }, 'Answer saved');
 }
@@ -213,11 +222,26 @@ function questionsFromForm(form) {
   return audit;
 }
 
+function incompleteEvidenceRow(row) {
+  const note = row.querySelector('textarea');
+  note.removeAttribute('aria-invalid');
+  return row.querySelector('select').value !== 'untested' && note.value.trim().length < 12;
+}
+
+function hasIncompleteEvidence(form, rows, errorSelector) {
+  const row = [...form.querySelectorAll(rows)].find(incompleteEvidenceRow);
+  if (!row) return false;
+  showFormError(form, errorSelector, 'Write at least 12 characters about what you checked or need for each Good, Needs work, or Blocked answer.', row.querySelector('textarea'));
+  return true;
+}
+
 export async function saveQuestions(form) {
+  if (hasIncompleteEvidence(form, '[data-question-row]', '#questions-error')) return;
   await submitVerdicts(form, '#questions-error', { audit: questionsFromForm(form) }, 'Answers saved');
 }
 
 export async function saveThings(form) {
+  if (hasIncompleteEvidence(form, '[data-thing-row]', '#things-error')) return;
   const features = [...form.querySelectorAll('[data-thing-row]')].map(row => ({ id: row.dataset.id, status: row.querySelector('select').value, note: row.querySelector('textarea').value }));
   await submitVerdicts(form, '#things-error', { features }, 'Answers saved');
 }

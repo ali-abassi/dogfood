@@ -1,4 +1,4 @@
-import { escapeHtml, externalLinkMarkup, safeServedImagePath } from '../format.mjs';
+import { escapeHtml, externalLinkMarkup, plainMessageMarkup, safeServedImagePath } from '../format.mjs';
 import { deviceNames, state } from '../state.mjs';
 import { backMarkup } from './answer.mjs';
 import { shownShot, timelineMarkup } from './history.mjs';
@@ -8,11 +8,15 @@ function deviceSwitchMarkup() {
   return `<div class="device-switch" role="group" aria-label="Screenshot">${buttons}</div>`;
 }
 
+function missingScreenshotMarkup(page, device) {
+  return `<div class="screen-missing"><strong>No ${escapeHtml(deviceNames[device].toLowerCase())} screenshot</strong><p>${plainMessageMarkup(page.captures[device].reason || 'No screenshot that day.')}</p><button type="button" class="text-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${state.scan.running ? 'Taking screenshots…' : 'Take screenshots'}</button></div>`;
+}
+
 function fullScreenshotMarkup(page, device) {
   const shot = shownShot(page, device);
-  if (!shot) return `<p class="screen-missing">${escapeHtml(page.captures[device].reason || 'No screenshot that day.')}</p>`;
+  if (!shot) return missingScreenshotMarkup(page, device);
   const size = shot.width ? ` width="${escapeHtml(shot.width)}" height="${escapeHtml(shot.height)}"` : '';
-  return `<figure class="full-screen full-screen-${device}"><img data-screenshot data-screens-image src="${shot.src}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}><figcaption>${escapeHtml(shot.caption)} · <a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption></figure>`;
+  return `<figure class="full-screen full-screen-${device}"><figcaption class="full-screen-caption"><span>${escapeHtml(deviceNames[device])} · ${escapeHtml(shot.caption)}</span><a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption><img data-screenshot data-screens-image src="${shot.src}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}></figure>`;
 }
 
 function changeFigureMarkup(page, device, kind, path, caption) {
@@ -46,6 +50,6 @@ function changesMarkup(page) {
 }
 
 export function screensMarkup(page) {
-  const source = externalLinkMarkup(page.captures.desktop.sourceUrl, 'Open page ↗', 'link-button');
+  const source = externalLinkMarkup(page.captures[state.screensDevice].sourceUrl, 'Open page ↗', 'link-button');
   return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${changesMarkup(page)}</section>`;
 }

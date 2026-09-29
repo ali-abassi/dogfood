@@ -22,13 +22,13 @@ function findingMarkup(finding) {
 }
 
 function resolutionFormMarkup(finding) {
-  return `<form id="resolution-form" class="finding-form" novalidate data-finding-id="${escapeHtml(finding.id)}"><label for="retest-note">What did you check again, and what happened?</label><textarea id="retest-note" name="note" rows="3" required minlength="20" maxlength="1200" placeholder="For example: pressed Reserve on a phone; the booking was confirmed."></textarea><div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Mark fixed</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
+  return `<form id="resolution-form" class="finding-form" novalidate data-finding-id="${escapeHtml(finding.id)}"><label for="retest-note">What did you check again, and what happened?</label><p id="retest-help" class="form-help">Record a fresh check and its result. At least 20 characters.</p><textarea id="retest-note" name="note" rows="4" aria-describedby="retest-help finding-error" required minlength="20" maxlength="1200" placeholder="For example: pressed Reserve on a phone; the booking was confirmed."></textarea><div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Mark fixed</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
 }
 
 function newFindingFormMarkup(page) {
   const capture = page.captures.desktop.state === 'rendered' ? `<label class="capture-choice"><input type="checkbox" name="attachCapture"> Attach the Computer screenshot if it shows the bug</label>` : '';
   const severities = ['P0', 'P1', 'P2', 'P3'].map(code => `<option value="${code}" ${code === 'P2' ? 'selected' : ''}>${severityNames[code]}</option>`).join('');
-  return `<form id="finding-form" class="finding-form" novalidate><label for="finding-title">What’s wrong?</label><input id="finding-title" name="title" required minlength="8" maxlength="120" placeholder="For example: Reserve does nothing on a phone"><label for="finding-severity">How bad is it?</label><select id="finding-severity" name="severity">${severities}</select><label for="finding-detail">What happened, and how can someone see it again?</label><textarea id="finding-detail" name="detail" rows="4" required minlength="20" maxlength="1200" placeholder="Where did you start, what did you do, and what happened?"></textarea>${capture}<div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Report a bug</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
+  return `<form id="finding-form" class="finding-form" novalidate><label for="finding-title">What’s wrong?</label><input id="finding-title" name="title" aria-describedby="finding-error" required minlength="8" maxlength="120" placeholder="For example: Reserve does nothing on a phone"><label for="finding-severity">How bad is it?</label><select id="finding-severity" name="severity">${severities}</select><label for="finding-detail">What happened, and how can someone see it again?</label><p id="finding-detail-help" class="form-help">Include the steps and the result, so someone can reproduce it. At least 20 characters.</p><textarea id="finding-detail" name="detail" rows="4" aria-describedby="finding-detail-help finding-error" required minlength="20" maxlength="1200" placeholder="Where did you start, what did you do, and what happened?"></textarea>${capture}<div id="finding-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Report a bug</button><button class="text-button" type="button" data-finding-action="cancel">Cancel</button></div></form>`;
 }
 
 // One open bug in a list: how bad it is, its title, and where to find it. Opens the Bugs section.
@@ -60,10 +60,15 @@ export function findingsMarkup(page) {
   return `<section class="content-panel" aria-label="Bugs"><div class="panel-heading"><h2>Bugs</h2>${action}</div>${form}${list}</section>`;
 }
 
-function showFindingError(error) {
+function showFindingError(error, field) {
   const box = document.querySelector('#finding-error');
   box.hidden = false;
   box.textContent = error.message;
+  if (field) {
+    field.setAttribute('aria-invalid', 'true');
+    field.insertAdjacentElement('afterend', box);
+    field.focus();
+  }
   box.scrollIntoView({ block: 'nearest' });
 }
 
@@ -88,7 +93,17 @@ async function submitFinding(form, endpoint, method, body, message) {
   }
 }
 
+function shortField(form, name, minimum, message) {
+  const field = form.elements.namedItem(name);
+  field.removeAttribute('aria-invalid');
+  if (field.value.trim().length >= minimum) return false;
+  showFindingError({ message }, field);
+  return true;
+}
+
 export async function saveFinding(form) {
+  if (shortField(form, 'title', 8, 'Describe the bug in at least 8 characters.')) return;
+  if (shortField(form, 'detail', 20, 'Write at least 20 characters about the steps and what happened.')) return;
   const page = activePage();
   const data = new FormData(form);
   const body = { title: data.get('title'), severity: data.get('severity'), detail: data.get('detail'), attachCapture: data.has('attachCapture') };
@@ -96,6 +111,7 @@ export async function saveFinding(form) {
 }
 
 export async function resolveFinding(form) {
+  if (shortField(form, 'note', 20, 'Write at least 20 characters about your fresh check and its result.')) return;
   const page = activePage();
   const body = { status: 'resolved', note: new FormData(form).get('note') };
   await submitFinding(form, findingEndpoint(page, form.dataset.findingId), 'PUT', body, 'Marked fixed');
