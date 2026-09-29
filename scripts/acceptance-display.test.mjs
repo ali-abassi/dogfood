@@ -16,6 +16,19 @@ test('a Good page with complete checks and no acceptance says checked, not accep
   assert.doesNotMatch(markup, /Before acceptance/);
 });
 
+test('an audit-complete page names the unmet acceptance provenance requirement', () => {
+  const requirements = [{ id: 'audit', label: 'Audit', met: true, missing: '' }];
+  const acceptanceRequirements = [
+    { id: 'audit', label: 'Audit complete', met: true, missing: '' },
+    { id: 'provenance', label: 'Declared checkout evidence', met: false, missing: 'The page is not declared to serve this checkout.' },
+  ];
+  const markup = pageHeaderMarkup(fixture({ complete: true, accepted: false, requirements, acceptanceRequirements }));
+  assert.match(markup, /data-gate-status="Checked · Not accepted"/);
+  assert.match(markup, /Before acceptance/);
+  assert.match(markup, /Declared checkout evidence.*not declared to serve this checkout/);
+  assert.doesNotMatch(markup, /<li><strong>Audit/);
+});
+
 test('accepted and incomplete pages keep distinct gate labels', () => {
   assert.match(pageHeaderMarkup(fixture({ complete: true, accepted: true })), /data-gate-status="Accepted"/);
   assert.match(pageHeaderMarkup(fixture({ complete: false, accepted: false })), /data-gate-status="Not fully checked"/);

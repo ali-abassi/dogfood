@@ -98,7 +98,8 @@ export function acceptanceLabel(progress) {
 }
 
 function missingRequirementsMarkup(page) {
-  const missing = (page.progress.requirements || []).filter(item => !item.met);
+  const requirements = page.progress.acceptanceRequirements ?? page.progress.requirements ?? [];
+  const missing = requirements.filter(item => !item.met);
   if (!missing.length) return '';
   const rows = missing.map(item => `<li><strong>${escapeHtml(item.label)}</strong>${item.missing ? ` — ${escapeHtml(item.missing)}` : ''}</li>`).join('');
   return `<details class="page-gate-requirements"><summary>Before acceptance</summary><ul>${rows}</ul></details>`;
