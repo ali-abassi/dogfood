@@ -205,7 +205,21 @@ function selectedTask(tasks, current, next) {
 }
 
 function workflowErrorMarkup(workflow) {
-  return workflow.error ? `<p class="form-error" role="alert">${escapeHtml(workflow.error)}</p>` : '';
+  return workflow.error ? `<p class="form-error" role="alert">${pageAcceptanceErrorMarkup(workflow.error)}</p>` : '';
+}
+
+function pageAcceptanceErrorMarkup(message) {
+  const match = /^Pages are not accepted: ([a-z0-9-]+(?:, [a-z0-9-]+)*)\.$/.exec(message);
+  if (!match) return escapeHtml(message);
+  const pages = match[1].split(', ').map(pageLinkMarkup).join(', ');
+  return `Pages are not accepted: ${pages}.`;
+}
+
+function pageLinkMarkup(id) {
+  const page = state.project.pages.find(item => item.id === id);
+  if (!page) return escapeHtml(id);
+  const url = `?project=${encodeURIComponent(state.project.id)}&view=report&page=${encodeURIComponent(page.id)}`;
+  return `<a href="${url}">${escapeHtml(page.name)} (${escapeHtml(page.id)})</a>`;
 }
 
 export function planMarkup() {
