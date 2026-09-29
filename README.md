@@ -72,6 +72,10 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 A page's report shows its full-page computer and phone screenshots in frames you scroll top to bottom. **History** steps back through every day the page was captured (dogfood keeps each replaced screenshot under `data/captures/<project>/history/`; `GET /api/projects/<id>/pages/<page>/history` lists them). **About this page** gives what the page is for (from the AI check), its title and search description, the features on it with their status, every link on it split into this site and elsewhere, and the API calls it makes, from the code map and from the traffic each page check records.
 
+### Competitors
+
+Each project keeps up to five competitors. Add one by its website and dogfood reads its key pages as a signed-out visitor (the landing page, then pricing, features, product and about pages before anything else), keeping full-page computer and phone screenshots, each page's title, description and headings, and its text. **Summarize with AI** sends that text (no screenshots) with the project's `vision.md` to Gemini 3.8 Flash through OpenRouter and records what they do, who it is for, pricing, how they sell, key features, and how they compare with the project. It costs about a cent. Competitors live in `data/competitors/<project>.json`, and their screenshots under `data/captures/<project>/competitors/`.
+
 ### The AI check
 
 **Check with AI** on a page sends its computer and phone screenshots, with your project's design rules, to Gemini 3.8 Flash through OpenRouter. It scores Looks right, Clear purpose, and Easy to use from 1 to 10 with a reason each; 7 or above reads as Good, because below 7 the prompt means a visitor must guess or the page looks broken. It also suggests what people can do on the page, which you can add with one click. Set `OPENROUTER_API_KEY` in the server's environment. Each check costs about half a cent and is tied to both screenshots' hashes, so it stops counting when either screenshot changes.
@@ -93,6 +97,10 @@ Page-writing tools return that page's status, its six answers, and what it still
 - `dogfood_add_features` — add features to a page, for example ones the AI review suggested; names already listed are skipped.
 - `dogfood_set_core_features` — set the project's core features (its main capabilities, each mapped to the pages that deliver it); the app's Features tab shows each one with a status rolled up from its pages.
 
+- `dogfood_competitors` — list the project's competitors with their AI summaries, pages, and screenshot files.
+- `dogfood_add_competitor` — add a competitor by its website and scan its key pages (at most five per project).
+- `dogfood_scan_competitor` — rescan a competitor's key pages.
+- `dogfood_summarize_competitor` — have the AI summarize a scanned competitor and compare it with the project's vision.
 - `dogfood_page` — read a page and its derived QA progress.
 - `dogfood_next` — list incomplete pages in site order with missing evidence.
 - `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker; prefer `dogfood_scan_page` for both devices and measured facts.

@@ -16,7 +16,7 @@ export function safeCapturePath(value) {
 }
 
 export function safeServedImagePath(value) {
-  return /^\/captures\/[a-z0-9-]+\/(?:(?:history|diffs)\/)?[a-z0-9-]+\.png$/.test(value) ? escapeHtml(value) : '';
+  return /^\/captures\/[a-z0-9-]+\/(?:(?:history|diffs|competitors\/[a-z0-9-]+)\/)?[a-z0-9-]+\.png$/.test(value) ? escapeHtml(value) : '';
 }
 
 export function dateLabel(value) {

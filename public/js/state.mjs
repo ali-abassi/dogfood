@@ -7,7 +7,7 @@ export const severityNames = { P0: 'Breaks the app', P1: 'Blocks this page', P2:
 const severityRank = { P0: 0, P1: 1, P2: 2, P3: 3 };
 export const questionTopics = { security: 'Security', scraping: 'Copying', seo: 'Search', accessibility: 'Accessibility' };
 export const deviceNames = { desktop: 'Computer', mobile: 'Phone' };
-export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null, screensDevice: 'desktop', copied: false, suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, docs: { key: '', loading: false, data: null, error: '' }, history: { key: '', loading: false, shots: null, error: '', day: '' }, message: '' };
+export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null, screensDevice: 'desktop', copied: false, suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, docs: { key: '', loading: false, data: null, error: '' }, history: { key: '', loading: false, shots: null, error: '', day: '' }, competitors: { key: '', loading: false, items: [], error: '', open: '', adding: false, scanning: {}, summarizing: '', removing: '' }, message: '' };
 
 // While any inline form is open, its Save is the view's one blue button.
 export function editorOpen() {
@@ -65,7 +65,7 @@ export function displayAnswerStatus(page, answer) {
 }
 
 export function isProjectView() {
-  return ['overview', 'features', 'vision', 'guide', 'plan', 'add-project', 'suggestions'].includes(state.view);
+  return ['overview', 'features', 'competitors', 'vision', 'guide', 'plan', 'add-project', 'suggestions'].includes(state.view);
 }
 
 // Blog posts are content, not product: the menu leaves them out; the overview still lists them.

@@ -4,6 +4,7 @@ import { escapeHtml } from './format.mjs';
 import { activePage, answerIds, ensureSelection, isProjectView, state } from './state.mjs';
 import { addProjectFormMarkup, welcomeMarkup } from './views/add-project.mjs';
 import { answerDetailMarkup } from './views/answer.mjs';
+import { competitorsMarkup, syncCompetitorsState } from './views/competitors.mjs';
 import { docViewIds, docsMarkup, syncDocsState } from './views/docs.mjs';
 import { featuresMarkup } from './views/features.mjs';
 import { overviewMarkup } from './views/overview.mjs';
@@ -30,12 +31,17 @@ function pageViewMarkup(page) {
   return view(page);
 }
 
+// The project's own views; the documents share one view, and Suggestions is the rest.
+const projectViews = {
+  overview: overviewMarkup,
+  features: featuresMarkup,
+  competitors: competitorsMarkup,
+  'add-project': () => addProjectFormMarkup(false),
+  ...Object.fromEntries(docViewIds.map(id => [id, docsMarkup])),
+};
+
 function projectViewMarkup() {
-  if (state.view === 'overview') return overviewMarkup();
-  if (state.view === 'features') return featuresMarkup();
-  if (docViewIds.includes(state.view)) return docsMarkup();
-  if (state.view === 'add-project') return addProjectFormMarkup(false);
-  return suggestionsReviewMarkup();
+  return (projectViews[state.view] ?? suggestionsReviewMarkup)();
 }
 
 function pageContentMarkup(page) {
@@ -77,6 +83,7 @@ export function render() {
   syncHistoryState();
   syncSuggestionsState();
   syncDocsState();
+  syncCompetitorsState();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();
 }
