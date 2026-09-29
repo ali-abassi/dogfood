@@ -1,0 +1,45 @@
+/* Readable project intent and capability evidence, using the shared Plan tokens. */
+.doc-view, .features-view { min-width: 0; }
+.doc-view .overview-heading > div:first-child, .features-lede { min-width: 0; }
+.doc-view .overview-heading h1, .features-view .overview-heading h1 { overflow-wrap: anywhere; }
+.doc-actions { flex-shrink: 0; }
+.doc-file { overflow-wrap: anywhere; }
+.doc-file span { font-family: var(--mono); }
+.doc-state { max-width: 760px; padding: 24px; }
+.doc-state h2 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+.doc-state p { max-width: 64ch; margin: 0 0 12px; color: var(--secondary); font-size: 14.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.doc-state button { margin-top: 4px; }
+.doc-view .doc-body { width: 100%; max-width: 760px; padding: 28px 32px 32px; overflow-wrap: anywhere; }
+.doc-body [id] { scroll-margin-top: 80px; }
+.doc-body h2, .doc-body h3 { line-height: 1.3; }
+.doc-body h3 { font-size: 20px; }
+.doc-contents { max-width: 760px; margin-bottom: 16px; color: var(--secondary); font-size: 14px; }
+.doc-contents summary { width: fit-content; cursor: pointer; padding: 4px 0; }
+.doc-contents nav { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 8px 0; }
+.doc-contents a { color: var(--blue); text-decoration: none; overflow-wrap: anywhere; }
+.doc-contents a:hover { text-decoration: underline; }
+.doc-guide { min-width: 0; }
+.doc-guide-loading { margin: 0 0 12px; font-size: 14px; }
+.doc-frame { min-width: 0; }
+.features-view .overview-heading { gap: 16px; }
+.features-view .feature-counts { margin-top: 12px; color: var(--secondary); font-size: 13px; }
+.features-view .core-features { padding: 0 24px; }
+.features-view .core-feature { padding: 24px 0; }
+.features-view .core-feature-head { align-items: flex-start; }
+.features-view .core-feature h2 { min-width: 0; font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
+.features-view .core-feature-head .status-pill { flex-shrink: 0; }
+.features-view .core-feature > p { margin-top: 8px; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.features-view .feature-evidence { margin-top: 16px; }
+.features-view .feature-evidence > p { margin: 0; font-size: 12px; }
+.features-view .feature-pages { margin-top: 6px; }
+.features-view .feature-page { max-width: 100%; min-height: 36px; padding: 6px 12px; font-size: 13px; text-align: left; overflow-wrap: anywhere; }
+.features-view .feature-no-evidence { padding-top: 8px; }
+@media (max-width: 760px) {
+  .doc-view .overview-heading, .features-view .overview-heading { flex-wrap: wrap; }
+  .doc-view .doc-body { padding: 24px 20px; font-size: 15px; }
+  .doc-state { padding: 24px 20px; }
+  .doc-contents nav { flex-direction: column; }
+  .features-view .core-features { padding: 0 20px; }
+  .features-view .core-feature-head { flex-wrap: wrap; gap: 8px; }
+  .features-view .core-feature-head h2 { flex: 1 1 180px; }
+}
