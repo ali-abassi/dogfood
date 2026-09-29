@@ -31,8 +31,8 @@ function featureMarkup(feature) {
 function featuresMarkup(page) {
   const body = page.features.length
     ? `<ul class="about-features">${page.features.map(featureMarkup).join('')}</ul>`
-    : '<p class="muted">No features listed yet.</p>';
-  return `<section class="about-part" data-about-features><div class="panel-heading"><h3>Features · ${page.features.length}</h3><button type="button" class="text-button" data-view="works">Check them</button></div>${body}</section>`;
+    : '<p class="muted">No things to do are listed yet.</p>';
+  return `<section class="about-part" data-about-features><div class="panel-heading"><h3>Things people can do · ${page.features.length}</h3><button type="button" class="text-button" data-view="works">Open checks</button></div>${body}</section>`;
 }
 
 // Links from both screen sizes, each once; a phone menu can hold links the computer layout does not.
@@ -72,8 +72,8 @@ function connectionMarkup(row) {
 }
 
 function connectionsMarkup(page) {
-  if (!page.connections.length) return `<section class="about-part"><h3>API connections</h3><p class="muted">${page.scan ? 'None seen yet.' : 'Check the page to see the APIs it calls.'}</p></section>`;
-  return `<details class="about-part about-disclosure" data-connections><summary><h3>API connections · ${page.connections.length}</h3></summary><ul class="about-connections">${page.connections.map(connectionMarkup).join('')}</ul></details>`;
+  if (!page.connections.length) return `<section class="about-part"><h3>Data connections</h3><p class="muted">${page.scan ? 'None seen yet.' : 'Check the page to see where it sends and receives data.'}</p></section>`;
+  return `<details class="about-part about-disclosure" data-connections><summary><h3>Data connections · ${page.connections.length}</h3></summary><ul class="about-connections">${page.connections.map(connectionMarkup).join('')}</ul></details>`;
 }
 
 // What the page is, what people can do on it, where it links, and which APIs it calls.

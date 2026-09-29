@@ -18,7 +18,7 @@ function thingOptions(status) {
 
 function thingEditorMarkup(feature) {
   const id = `thing-${feature.id}`;
-  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" placeholder="What happened when you tried it? Needed for Good, Needs work, or Blocked.">${escapeHtml(feature.note)}</textarea></div>`;
+  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" aria-describedby="things-error" placeholder="What happened when you tried it? Needed for Good, Needs work, or Blocked.">${escapeHtml(feature.note)}</textarea></div>`;
 }
 
 function thingsFormMarkup(page) {
@@ -27,7 +27,7 @@ function thingsFormMarkup(page) {
 
 function addThingMarkup() {
   if (!state.addingThing) return '<button type="button" class="link-button" data-action="add-thing">Add a thing people can do</button>';
-  return `<form id="add-thing-form" class="finding-form" novalidate><label for="thing-name">What can people do here?</label><input id="thing-name" name="name" required maxlength="80" placeholder="For example: Book a lesson for a child"><label for="thing-expected">What should happen when it works?</label><input id="thing-expected" name="expected" required maxlength="200" placeholder="For example: the booking is confirmed and an email arrives"><div id="add-thing-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="text-button" type="submit">Add</button><button class="text-button" type="button" data-action="cancel-add-thing">Cancel</button></div></form>`;
+  return `<form id="add-thing-form" class="finding-form" novalidate><label for="thing-name">What can people do here?</label><input id="thing-name" name="name" required maxlength="80" placeholder="For example: Book a lesson for a child"><label for="thing-expected">What should happen when it works?</label><input id="thing-expected" name="expected" required maxlength="200" placeholder="For example: the booking is confirmed and an email arrives"><div id="add-thing-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Add</button><button class="text-button" type="button" data-action="cancel-add-thing">Cancel</button></div></form>`;
 }
 
 export function remainingSuggestions(page, review) {
@@ -46,7 +46,7 @@ function suggestionsMarkup(page) {
 }
 
 function thingsMarkup(page) {
-  const body = state.thingsEditing ? thingsFormMarkup(page) : `<ul class="things">${page.features.map(thingMarkup).join('')}</ul>`;
+  const body = state.thingsEditing ? thingsFormMarkup(page) : page.features.length ? `<ul class="things">${page.features.map(thingMarkup).join('')}</ul>` : '<p class="muted">Nothing is listed yet. Add what a person should be able to do, then try it and record what happened.</p>';
   const update = page.features.length && !state.thingsEditing ? '<button type="button" class="text-button" data-action="edit-things">Update answers</button>' : '';
   return `<section class="content-panel" aria-label="Things you can do here"><div class="panel-heading"><h2>Things you can do here</h2>${update}</div>${body}${addThingMarkup()}${suggestionsMarkup(page)}</section>`;
 }
@@ -66,6 +66,10 @@ export function worksMarkup(page) {
 export async function addThing(form) {
   const page = activePage();
   const data = new FormData(form);
+  const button = form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  button.disabled = true;
+  button.textContent = 'Adding…';
   try {
     state.project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/features`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -74,6 +78,8 @@ export async function addThing(form) {
     Object.assign(state, { addingThing: false, message: 'Added' });
     render();
   } catch (error) {
+    button.disabled = false;
+    button.textContent = 'Add';
     const box = form.querySelector('#add-thing-error');
     box.hidden = false;
     box.textContent = error.message;

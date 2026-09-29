@@ -1,0 +1,34 @@
+/* Report details stay readable while the six-row first paint keeps its existing size. */
+.answer-detail, .screens-view, .suggestions-review { min-width: 0; }
+.answer-detail .content-panel, .screens-view .content-panel, .suggestion-page-group { min-width: 0; }
+.answer-detail .back-button, .screens-view .back-button { max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+.answer-question, .answer-text, .answer-parts p, .question-note, .thing-note,
+.finding p, .ai-notes p, .ai-notes li { line-height: 1.55; white-space: pre-wrap; }
+.answer-parts p, .thing-expected, .question strong, .thing-name,
+.suggested-feature span, .suggestion-page-group h2, .about-features span,
+.about-connections small { min-width: 0; overflow-wrap: anywhere; }
+.answer-detail .form-help { margin: 0; color: var(--secondary); font-size: 12.5px; line-height: 1.45; }
+.answer-detail .question-edit .form-error { grid-column: 1 / -1; }
+.answer-detail [aria-invalid="true"] { border-color: var(--red); }
+.answer-detail .technical-details summary { max-width: 100%; }
+.full-screen .full-screen-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin: 0 0 12px; line-height: 1.45; }
+.full-screen-caption a { flex: none; }
+.screens-view .screens-toolbar { position: sticky; top: 0; z-index: 3; padding: 10px 0; background: var(--canvas); }
+.screens-view .screens-heading { flex-wrap: wrap; }
+.screens-view .screen-missing { min-height: 160px; gap: 12px; align-content: center; }
+.screens-view .screen-missing p { margin: 0; max-width: 60ch; }
+.screens-view .screen-missing .text-button { justify-self: center; }
+.suggestions-review .suggested-feature { padding: 10px 0; line-height: 1.5; cursor: pointer; }
+.suggestions-review .suggested-feature + .suggested-feature { border-top: .5px solid var(--separator); }
+.suggestions-review .suggested-list { gap: 0; margin-bottom: 0; }
+.suggestions-review .suggested-feature input { flex: none; width: 16px; height: 16px; margin-top: 3px; }
+.suggestion-expected-label { color: var(--secondary); }
+.suggestion-page-group h2 small { display: block; margin-top: 4px; }
+.suggestions-review .form-error { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .screens-view .screens-toolbar { top: 52px; }
+  .answer-detail .panel-heading, .answer-detail .qa-result-heading { flex-wrap: wrap; }
+  .answer-detail .finding-title strong { min-width: 0; flex-basis: 100%; overflow-wrap: anywhere; }
+  .suggestions-review > .form-actions { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .about-page .about-links li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
