@@ -126,3 +126,16 @@ test('identical desktop captures across different routes fail with the other rou
   assert.match(pages[2].captures.desktop.reason, /identical to the one for \//);
   assert.equal(pages[0].captures.mobile.state, 'rendered', 'only the proven-wrong desktop capture fails');
 });
+
+test('a failed latest browser rescan leaves old evidence inspectable but not current', async () => {
+  const project = store.readProject('shop');
+  const home = store.pageById(project, 'home');
+  const previous = home.scan.scannedAt;
+  const browser = { command: async () => { throw new Error('Browser navigation timed out.'); } };
+  const result = await scanner.scanPages(browser, project, [home]);
+  assert.equal(result.failed.length, 1);
+  const current = store.pageById(store.readProject('shop'), 'home');
+  assert.equal(current.scan.scannedAt, previous);
+  assert.equal(current.scanAttempt.status, 'failed');
+  assert.equal(store.pageProgress(store.readProject('shop'), current).requirements.find(item => item.id === 'scan').met, false);
+});
