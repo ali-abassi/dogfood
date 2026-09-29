@@ -97,11 +97,11 @@ export function showError(message) {
   app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
-const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'features', 'competitors']);
+const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'features', 'competitors', 'add-project', 'suggestions']);
 
 function initialView(project, destination) {
   if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };
-  if (destination.view === 'report' && project.pages.some(page => page.id === destination.pageId)) return { view: 'report', pageId: destination.pageId };
+  if (['report', 'screens', 'works', ...answerIds].includes(destination.view) && project.pages.some(page => page.id === destination.pageId)) return { view: destination.view, pageId: destination.pageId };
   return { view: 'overview', pageId: null };
 }
 

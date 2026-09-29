@@ -1,0 +1,269 @@
+{
+  "principles": {
+    "feeling": "A calm workbench for turning intent into proven work. The project, next outcome and evidence carry the interface.",
+    "rules": [
+      "One clear next action per view.",
+      "Remove repeated explanations and decorative containers.",
+      "Keep agent work inspectable by people.",
+      "Accepted evidence must describe the current checkout."
+    ]
+  },
+  "brand": {
+    "idea": "A checkmark above a bowl: the work has been tried, not merely described.",
+    "clearSpace": "Keep at least one quarter of the tile width clear around the mark.",
+    "minSize": "24px in navigation; 40px on first run.",
+    "dont": [
+      "Stretch the tile or redraw the checkmark.",
+      "Use the logo gradient as a page background.",
+      "Replace real status with the brand mark."
+    ]
+  },
+  "visual": {
+    "colors": [
+      {
+        "name": "Canvas",
+        "hex": "#f5f5f7",
+        "role": "Quiet workspace background"
+      },
+      {
+        "name": "Group",
+        "hex": "#ffffff",
+        "role": "Grouped content and evidence"
+      },
+      {
+        "name": "Ink",
+        "hex": "#1d1d1f",
+        "role": "Primary text"
+      },
+      {
+        "name": "Secondary",
+        "hex": "#5f5f64",
+        "role": "Supporting content"
+      },
+      {
+        "name": "Tertiary",
+        "hex": "#6a6a6f",
+        "role": "Metadata"
+      },
+      {
+        "name": "Separator",
+        "hex": "#e5e5ea",
+        "role": "Related-row dividers"
+      },
+      {
+        "name": "Blue",
+        "hex": "#0066cc",
+        "role": "Actions and links"
+      },
+      {
+        "name": "Green",
+        "hex": "#1d7a33",
+        "role": "Accepted and passing evidence"
+      },
+      {
+        "name": "Orange",
+        "hex": "#b25000",
+        "role": "Blocked or waiting state"
+      },
+      {
+        "name": "Red",
+        "hex": "#c40012",
+        "role": "Failures and destructive confirmation"
+      }
+    ],
+    "colorsDark": [
+      {
+        "name": "Canvas",
+        "hex": "#1e1e20",
+        "role": "Workspace background"
+      },
+      {
+        "name": "Group",
+        "hex": "#2c2c2e",
+        "role": "Grouped content"
+      },
+      {
+        "name": "Ink",
+        "hex": "#f5f5f7",
+        "role": "Primary text"
+      },
+      {
+        "name": "Secondary",
+        "hex": "#aeaeb2",
+        "role": "Supporting content"
+      },
+      {
+        "name": "Tertiary",
+        "hex": "#98989d",
+        "role": "Metadata"
+      },
+      {
+        "name": "Separator",
+        "hex": "#3a3a3c",
+        "role": "Related-row dividers"
+      },
+      {
+        "name": "Blue",
+        "hex": "#4da3ff",
+        "role": "Links and actions; filled buttons use darker blue"
+      },
+      {
+        "name": "Green",
+        "hex": "#30d158",
+        "role": "Passing evidence"
+      },
+      {
+        "name": "Orange",
+        "hex": "#ff9f0a",
+        "role": "Blocked or waiting state"
+      },
+      {
+        "name": "Red",
+        "hex": "#ff817a",
+        "role": "Failures"
+      }
+    ],
+    "spacing": [
+      4,
+      8,
+      12,
+      16,
+      24,
+      32
+    ],
+    "radius": {
+      "control": "8px",
+      "group": "12px",
+      "action": "pill"
+    }
+  },
+  "typography": {
+    "fonts": [
+      {
+        "name": "System sans (SF Pro on macOS)",
+        "use": "UI, headings and readable project documents"
+      },
+      {
+        "name": "System mono",
+        "use": "Commands, paths and exact machine output"
+      }
+    ],
+    "scale": [
+      {
+        "role": "View heading",
+        "size": 28,
+        "weight": 600,
+        "tracking": "-.022em"
+      },
+      {
+        "role": "Group heading",
+        "size": 17,
+        "weight": 600
+      },
+      {
+        "role": "Reading text",
+        "size": 16,
+        "weight": 400
+      },
+      {
+        "role": "UI body",
+        "size": 14,
+        "weight": 400
+      },
+      {
+        "role": "Metadata",
+        "size": 12,
+        "weight": 400
+      }
+    ],
+    "rules": [
+      "Use scale and whitespace before extra color.",
+      "Keep reading paragraphs near 65 characters per line.",
+      "Allow long outcomes and evidence to wrap."
+    ]
+  },
+  "components": [
+    {
+      "name": "Navigation",
+      "rule": "Project picker, section list, then searchable page evidence. Preserve native controls."
+    },
+    {
+      "name": "Project selector",
+      "rule": "One chevron 12px inside the right edge. Reserve text padding; never layer a native arrow with a custom arrow."
+    },
+    {
+      "name": "Work list",
+      "rule": "Short outcome rows beside the selected task and its receipt; selected detail leads on phones."
+    },
+    {
+      "name": "Page report",
+      "rule": "Computer and phone captures, then six plain answers; open detail to inspect evidence."
+    },
+    {
+      "name": "Forms",
+      "rule": "Visible labels, one Save action, clear Cancel and errors; optional settings stay behind a disclosure."
+    },
+    {
+      "name": "Documents",
+      "rule": "Readable text and a real sandboxed brand guide with a full-page escape."
+    }
+  ],
+  "voice": {
+    "tone": [
+      "Plain and specific",
+      "Calm about failures",
+      "Clear about the next step"
+    ],
+    "use": [
+      "Good",
+      "Needs work",
+      "Not checked",
+      "Accepted",
+      "What did you see?"
+    ],
+    "avoid": [
+      "Implementation names in human empty states",
+      "Fabricated readiness",
+      "Repeated setup instructions"
+    ],
+    "examples": [
+      {
+        "where": "Plan",
+        "text": "Track the work and the checks that prove it is done."
+      },
+      {
+        "where": "Evidence",
+        "text": "The checkout changed. Run the checks again before accepting."
+      }
+    ]
+  },
+  "imagery": {
+    "direction": "Real project screenshots are the primary imagery.",
+    "rules": [
+      "Keep captures honest about device and age.",
+      "Show complete evidence when requested."
+    ],
+    "dont": [
+      "Stock photos, decorative AI imagery or fake browser content."
+    ]
+  },
+  "icons": {
+    "style": "Small consistent line icons for navigation; shaped status marks communicate state.",
+    "dont": [
+      "Decorative icon bubbles or duplicated dropdown arrows."
+    ]
+  },
+  "motion": {
+    "principles": [
+      "Use only restrained feedback and native disclosure behavior."
+    ],
+    "reduceMotion": "Remove nonessential transitions when reduced motion is requested."
+  },
+  "accessibility": [
+    "WCAG AA text contrast in both themes.",
+    "Visible keyboard focus and complete keyboard paths.",
+    "Every control has an accessible name; form errors explain recovery.",
+    "Test at 1280 and 390 wide with substantive content.",
+    "Status uses a word or shape as well as color."
+  ]
+}

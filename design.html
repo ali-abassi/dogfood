@@ -1,0 +1,122 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dogfood brand guide</title><style>
+:root{--canvas:#f5f5f7;--group:#ffffff;--ink:#1d1d1f;--secondary:#5f5f64;--tertiary:#6a6a6f;--separator:#e5e5ea;--blue:#0066cc;--green:#1d7a33;--orange:#b25000;--red:#c40012;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--canvas:#1e1e20;--group:#2c2c2e;--ink:#f5f5f7;--secondary:#aeaeb2;--tertiary:#98989d;--separator:#3a3a3c;--blue:#4da3ff;--green:#30d158;--orange:#ff9f0a;--red:#ff817a}}
+*{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:14.5px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,system-ui,sans-serif;letter-spacing:-.01em}
+main{max-width:980px;margin:0 auto;padding:56px 40px 96px}code{font:12px "SF Mono",ui-monospace,Menlo,monospace;color:var(--secondary)}
+.hero{display:flex;align-items:center;gap:24px;margin-bottom:56px}.hero .app-icon{width:96px;height:96px}
+.hero h1{margin:0;font-size:40px;font-weight:600;letter-spacing:-.03em}.hero p{margin:6px 0 0;color:var(--secondary);font-size:17px;max-width:60ch}
+section{margin-top:48px}section>h2{margin:0 0 4px;font-size:26px;font-weight:600;letter-spacing:-.022em}section>p.lede{margin:0 0 16px;color:var(--secondary);max-width:70ch}
+.group{background:var(--group);border-radius:12px;padding:24px}.group+.group{margin-top:16px}h3{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--secondary)}
+ul{margin:0;padding-left:18px}li{margin:4px 0}.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.app-icon{display:inline-grid;place-items:center;border-radius:22%;background:#fff;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12);overflow:hidden}.app-icon svg{width:100%;height:100%}
+.logo-row{display:flex;align-items:end;gap:32px;flex-wrap:wrap}.icon-size{margin:0;text-align:center}.icon-size figcaption{margin-top:8px;font-size:12.5px;color:var(--tertiary)}
+.on-dark{display:flex;align-items:center;gap:16px;margin-top:24px;padding:24px;border-radius:12px;background:#000;color:#f5f5f7;font-weight:600;font-size:17px}.on-dark .app-icon{width:56px;height:56px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px}.swatch{margin:0}.swatch span{display:block;height:72px;border-radius:12px;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12)}
+.swatch figcaption{display:grid;gap:2px;margin-top:8px}.swatch b{font-weight:500}.swatch small{color:var(--tertiary);font-size:12px;line-height:1.35}
+.type-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:12px 0;border-top:.5px solid var(--separator)}.type-row:first-child{border-top:0;padding-top:0}
+.space{display:flex;align-items:center;gap:16px;padding:6px 0}.space span{height:12px;border-radius:3px;background:var(--blue)}
+.demo{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.pill{min-height:36px;padding:0 18px;border:0;border-radius:980px;font:500 14px/36px inherit;font-family:inherit}
+.pill.primary{background:var(--blue);color:#fff}.pill.secondary{background:rgba(120,120,128,.14);color:var(--ink)}
+.seg{display:inline-flex;padding:2px;border-radius:9px;background:rgba(120,120,128,.14)}.seg span{padding:0 16px;line-height:32px;border-radius:7px;font-weight:500;font-size:13px}.seg span.on{background:var(--group);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.rows{margin-top:16px;border-radius:12px;background:var(--canvas);padding:0 16px}.rows div{display:flex;justify-content:space-between;padding:12px 0;border-top:.5px solid var(--separator)}.rows div:first-child{border-top:0}
+.dot{display:inline-flex;align-items:center;gap:6px}.dot:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.quotes{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:24px}.quote{padding:16px;border-radius:12px;background:var(--canvas)}.quote small{color:var(--tertiary)}.quote p{margin:4px 0 0;font-size:17px;font-weight:500}
+.rules{columns:2;column-gap:32px}.rules li{break-inside:avoid}
+@media (max-width:760px){main{padding:32px 16px 64px}.hero{flex-direction:column;align-items:start}.cols{grid-template-columns:1fr}.rules{columns:1}}
+</style></head><body><main>
+<header class="hero"><span class="app-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
+  <defs>
+    <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
+</svg></span><div><h1>Dogfood</h1><p>Plan, build and prove web projects with your coding agent.</p></div></header>
+
+<section><h2>Feeling</h2><p class="lede">A calm workbench for turning intent into proven work. The project, next outcome and evidence carry the interface.</p>
+<div class="group"><h3>Principles</h3><ul class="rules"><li>One clear next action per view.</li><li>Remove repeated explanations and decorative containers.</li><li>Keep agent work inspectable by people.</li><li>Accepted evidence must describe the current checkout.</li></ul></div></section>
+
+<section><h2>Logo</h2><p class="lede">A checkmark above a bowl: the work has been tried, not merely described.</p>
+<div class="group"><div class="logo-row"><figure class="icon-size"><span class="app-icon" style="width:22px;height:22px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
+  <defs>
+    <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
+</svg></span><figcaption>22 px</figcaption></figure><figure class="icon-size"><span class="app-icon" style="width:36px;height:36px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
+  <defs>
+    <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
+</svg></span><figcaption>36 px</figcaption></figure><figure class="icon-size"><span class="app-icon" style="width:56px;height:56px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
+  <defs>
+    <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
+</svg></span><figcaption>56 px</figcaption></figure><figure class="icon-size"><span class="app-icon" style="width:96px;height:96px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
+  <defs>
+    <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
+</svg></span><figcaption>96 px</figcaption></figure></div>
+<div class="on-dark"><span class="app-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
+  <defs>
+    <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
+</svg></span>Dogfood</div></div>
+<div class="group cols"><div><h3>Clear space</h3><p>Keep at least one quarter of the tile width clear around the mark.</p></div><div><h3>Smallest size</h3><p>24px in navigation; 40px on first run.</p></div><div><h3>Never</h3><ul><li>Stretch the tile or redraw the checkmark.</li><li>Use the logo gradient as a page background.</li><li>Replace real status with the brand mark.</li></ul></div></div></section>
+
+<section><h2>Colour</h2><p class="lede">Colour means state or the brand’s own content, never decoration.</p>
+<div class="group"><h3>Light</h3><div class="swatches"><figure class="swatch"><span style="background:#f5f5f7"></span><figcaption><b>Canvas</b><code>#f5f5f7</code><small>Quiet workspace background</small></figcaption></figure><figure class="swatch"><span style="background:#ffffff"></span><figcaption><b>Group</b><code>#ffffff</code><small>Grouped content and evidence</small></figcaption></figure><figure class="swatch"><span style="background:#1d1d1f"></span><figcaption><b>Ink</b><code>#1d1d1f</code><small>Primary text</small></figcaption></figure><figure class="swatch"><span style="background:#5f5f64"></span><figcaption><b>Secondary</b><code>#5f5f64</code><small>Supporting content</small></figcaption></figure><figure class="swatch"><span style="background:#6a6a6f"></span><figcaption><b>Tertiary</b><code>#6a6a6f</code><small>Metadata</small></figcaption></figure><figure class="swatch"><span style="background:#e5e5ea"></span><figcaption><b>Separator</b><code>#e5e5ea</code><small>Related-row dividers</small></figcaption></figure><figure class="swatch"><span style="background:#0066cc"></span><figcaption><b>Blue</b><code>#0066cc</code><small>Actions and links</small></figcaption></figure><figure class="swatch"><span style="background:#1d7a33"></span><figcaption><b>Green</b><code>#1d7a33</code><small>Accepted and passing evidence</small></figcaption></figure><figure class="swatch"><span style="background:#b25000"></span><figcaption><b>Orange</b><code>#b25000</code><small>Blocked or waiting state</small></figcaption></figure><figure class="swatch"><span style="background:#c40012"></span><figcaption><b>Red</b><code>#c40012</code><small>Failures and destructive confirmation</small></figcaption></figure></div></div><div class="group"><h3>Dark</h3><div class="swatches"><figure class="swatch"><span style="background:#1e1e20"></span><figcaption><b>Canvas</b><code>#1e1e20</code><small>Workspace background</small></figcaption></figure><figure class="swatch"><span style="background:#2c2c2e"></span><figcaption><b>Group</b><code>#2c2c2e</code><small>Grouped content</small></figcaption></figure><figure class="swatch"><span style="background:#f5f5f7"></span><figcaption><b>Ink</b><code>#f5f5f7</code><small>Primary text</small></figcaption></figure><figure class="swatch"><span style="background:#aeaeb2"></span><figcaption><b>Secondary</b><code>#aeaeb2</code><small>Supporting content</small></figcaption></figure><figure class="swatch"><span style="background:#98989d"></span><figcaption><b>Tertiary</b><code>#98989d</code><small>Metadata</small></figcaption></figure><figure class="swatch"><span style="background:#3a3a3c"></span><figcaption><b>Separator</b><code>#3a3a3c</code><small>Related-row dividers</small></figcaption></figure><figure class="swatch"><span style="background:#4da3ff"></span><figcaption><b>Blue</b><code>#4da3ff</code><small>Links and actions; filled buttons use darker blue</small></figcaption></figure><figure class="swatch"><span style="background:#30d158"></span><figcaption><b>Green</b><code>#30d158</code><small>Passing evidence</small></figcaption></figure><figure class="swatch"><span style="background:#ff9f0a"></span><figcaption><b>Orange</b><code>#ff9f0a</code><small>Blocked or waiting state</small></figcaption></figure><figure class="swatch"><span style="background:#ff817a"></span><figcaption><b>Red</b><code>#ff817a</code><small>Failures</small></figcaption></figure></div></div></section>
+
+<section><h2>Type</h2><p class="lede">System sans (SF Pro on macOS) for ui, headings and readable project documents; System mono for commands, paths and exact machine output.</p>
+<div class="group"><div class="type-row"><span style="font-size:28px;font-weight:600;letter-spacing:-.022em">View heading</span><code>28 px · 600 · -.022em</code></div><div class="type-row"><span style="font-size:17px;font-weight:600;letter-spacing:normal">Group heading</span><code>17 px · 600</code></div><div class="type-row"><span style="font-size:16px;font-weight:400;letter-spacing:normal">Reading text</span><code>16 px · 400</code></div><div class="type-row"><span style="font-size:14px;font-weight:400;letter-spacing:normal">UI body</span><code>14 px · 400</code></div><div class="type-row"><span style="font-size:12px;font-weight:400;letter-spacing:normal">Metadata</span><code>12 px · 400</code></div></div><div class="group"><h3>Rules</h3><ul><li>Use scale and whitespace before extra color.</li><li>Keep reading paragraphs near 65 characters per line.</li><li>Allow long outcomes and evidence to wrap.</li></ul></div></section>
+
+<section><h2>Space and shape</h2><p class="lede">Spacing comes only from this scale. Corners: control 8px, group 12px, action pill.</p>
+<div class="group"><div class="space"><span style="width:16px"></span><code>4 px</code></div><div class="space"><span style="width:32px"></span><code>8 px</code></div><div class="space"><span style="width:48px"></span><code>12 px</code></div><div class="space"><span style="width:64px"></span><code>16 px</code></div><div class="space"><span style="width:96px"></span><code>24 px</code></div><div class="space"><span style="width:128px"></span><code>32 px</code></div></div></section>
+
+<section><h2>Components</h2><p class="lede">One filled primary pill per view; everything else is quiet.</p>
+<div class="group"><div class="demo"><button class="pill primary">Primary action</button><button class="pill secondary">Secondary</button>
+<span class="seg"><span class="on">Selected</span><span>Second</span><span>Third</span></span></div>
+<div class="rows"><div><span>Healthy state</span><span class="dot" style="color:var(--green)">Good</span></div><div><span>Caution state</span><span class="dot" style="color:var(--orange)">Needs attention</span></div><div><span>Failure state</span><span class="dot" style="color:var(--red)">Failed</span></div></div></div>
+<div class="group"><ul><li><b>Navigation.</b> Project picker, section list, then searchable page evidence. Preserve native controls.</li><li><b>Project selector.</b> One chevron 12px inside the right edge. Reserve text padding; never layer a native arrow with a custom arrow.</li><li><b>Work list.</b> Short outcome rows beside the selected task and its receipt; selected detail leads on phones.</li><li><b>Page report.</b> Computer and phone captures, then six plain answers; open detail to inspect evidence.</li><li><b>Forms.</b> Visible labels, one Save action, clear Cancel and errors; optional settings stay behind a disclosure.</li><li><b>Documents.</b> Readable text and a real sandboxed brand guide with a full-page escape.</li></ul></div></section>
+
+<section><h2>Voice</h2><p class="lede">How Dogfood talks.</p>
+<div class="group"><div class="cols"><div><h3>Tone</h3><ul><li>Plain and specific</li><li>Calm about failures</li><li>Clear about the next step</li></ul></div><div><h3>Say</h3><ul><li>Good</li><li>Needs work</li><li>Not checked</li><li>Accepted</li><li>What did you see?</li></ul></div><div><h3>Never</h3><ul><li>Implementation names in human empty states</li><li>Fabricated readiness</li><li>Repeated setup instructions</li></ul></div></div><div class="quotes"><div class="quote"><small>Plan</small><p>“Track the work and the checks that prove it is done.”</p></div><div class="quote"><small>Evidence</small><p>“The checkout changed. Run the checks again before accepting.”</p></div></div></div></section>
+
+<section><h2>Imagery, icons and motion</h2>
+<div class="group cols"><div><h3>Imagery</h3><p>Real project screenshots are the primary imagery.</p><ul><li>Keep captures honest about device and age.</li><li>Show complete evidence when requested.</li><li>Never: Stock photos, decorative AI imagery or fake browser content.</li></ul></div>
+<div><h3>Icons</h3><p>Small consistent line icons for navigation; shaped status marks communicate state.</p><ul><li>Never: Decorative icon bubbles or duplicated dropdown arrows.</li></ul></div>
+<div><h3>Motion</h3><ul><li>Use only restrained feedback and native disclosure behavior.</li><li>Remove nonessential transitions when reduced motion is requested.</li></ul></div></div></section>
+
+<section><h2>Accessibility</h2><div class="group"><ul><li>WCAG AA text contrast in both themes.</li><li>Visible keyboard focus and complete keyboard paths.</li><li>Every control has an accessible name; form errors explain recovery.</li><li>Test at 1280 and 390 wide with substantive content.</li><li>Status uses a word or shape as well as color.</li></ul></div></section>
+</main></body></html>
