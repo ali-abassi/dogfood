@@ -87,9 +87,16 @@ code { font-family: var(--mono); }
 .search-icon::after { content: ""; position: absolute; right: -4px; bottom: -3px; width: 5px; height: 1.5px; border-radius: 1px; background: currentColor; transform: rotate(45deg); }
 .search-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; }
 .search-field input::placeholder { color: var(--tertiary); }
-.menu-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.menu-select { display: grid; gap: 4px; min-width: 0; color: var(--secondary); font-size: 11px; font-weight: 500; }
-.menu-select select { font-size: 12px; font-weight: 400; }
+.menu-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 6px 0 4px; }
+.menu-select { display: grid; min-width: 0; }
+.menu-select select { height: 26px; font-size: 12px; font-weight: 400; color: var(--secondary); }
+.project-nav { display: grid; gap: 1px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: .5px solid var(--hairline); }
+.page-option.project-view { justify-content: flex-start; gap: 9px; min-height: 30px; font-size: 13.5px; }
+.nav-icon { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--blue); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.project-view.selected .nav-icon { stroke: var(--ink); }
+.pages-head h2 { margin: 12px 8px 8px; color: var(--tertiary); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.page-list > .search-field { margin: 0 4px; }
+.page-list > .menu-controls { margin-left: 4px; margin-right: 4px; }
 .page-list { flex: 1; min-height: 0; margin: 0 -4px; padding: 0 4px; overflow-y: auto; }
 .page-group { padding-bottom: 8px; }
 .page-group p { margin: 0; padding: 8px 8px 4px; color: var(--tertiary); font-size: 11px; font-weight: 600; }
@@ -359,8 +366,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .technical-details summary { width: max-content; cursor: pointer; }
 
 /* Add an app and the first-run welcome */
-.add-project-button { align-self: start; min-height: 28px; padding: 0 4px; border: 0; background: transparent; color: var(--blue); font-size: 13px; font-weight: 500; }
-.add-project-button:hover { text-decoration: underline; }
+.add-project-button { display: grid; place-items: center; width: 26px; height: 26px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; background: var(--fill); color: var(--secondary); font-size: 17px; font-weight: 400; line-height: 1; }
+.add-project-button:hover { background: var(--fill-strong); color: var(--ink); }
 .add-project-panel { max-width: 580px; padding: 24px; }
 .add-project-heading h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .add-project-heading p:last-child { margin: 8px 0 0; color: var(--secondary); font-size: 15px; }
@@ -385,12 +392,18 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 
 /* Features: the app's core capabilities, each with the pages that deliver it. */
 .core-features { margin: 0; padding: 4px 20px; list-style: none; }
-.core-feature { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: .5px solid var(--separator); }
+.core-feature { padding: 16px 0; border-top: .5px solid var(--separator); }
+.core-feature-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.features-lede p { margin: 6px 0 0; }
+.feature-bar { display: flex; gap: 3px; width: min(420px, 100%); height: 6px; margin-top: 14px; }
+.feature-bar-part { border-radius: 3px; }
+.feature-bar-part.status-pass { background: var(--green); }
+.feature-bar-part.status-needs_work { background: var(--red); }
+.feature-bar-part.status-untested { background: var(--fill-strong); }
 .core-feature:first-child { border-top: 0; }
-.core-feature-text { min-width: 0; }
 .core-feature h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
 .core-feature p { max-width: 70ch; margin: 3px 0 0; color: var(--secondary); font-size: 13.5px; }
-.feature-pages { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.feature-pages { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .feature-page { min-height: 24px; padding: 0 10px; border: 0; border-radius: 980px; background: var(--fill); color: var(--ink); font-size: 12px; }
 .feature-page:hover { background: var(--fill-strong); }
 .features-empty p { margin: 0; color: var(--secondary); font-size: 14px; }
@@ -398,8 +411,13 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 /* Docs: a project's vision, design and plan, rendered for reading. */
 .doc-file { margin: 0 0 8px; color: var(--tertiary); font-size: 12px; }
 .doc-file a { color: var(--blue); }
-.doc-frame { display: block; width: 100%; height: calc(100vh - 190px); min-height: 480px; border: 0; border-radius: 12px; background: var(--group); }
-.doc-body { max-width: 760px; padding: 24px 32px 32px; font-size: 15px; line-height: 1.6; }
+.doc-frame { display: block; width: 100%; height: 80vh; border: 0; border-radius: 12px; background: var(--group); }
+.doc-view .overview-heading { margin-bottom: 24px; }
+.doc-view .overview-heading .doc-file { margin: 8px 0 0; color: var(--tertiary); font-size: 12.5px; }
+.doc-empty { max-width: 640px; padding: 28px 32px; }
+.doc-empty h2 { margin: 0 0 6px; font-size: 17px; font-weight: 600; }
+.doc-empty p { margin: 0 0 6px; color: var(--secondary); font-size: 14.5px; }
+.doc-body { max-width: 760px; padding: 32px 40px 40px; font-size: 16px; line-height: 1.65; }
 .doc-body > :first-child { margin-top: 0; }
 .doc-body h2 { margin: 28px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.018em; }
 .doc-body h3 { margin: 24px 0 6px; font-size: 17px; font-weight: 600; }
@@ -424,8 +442,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 }
 
 @media (max-width: 760px) {
-  .core-feature { flex-direction: column; gap: 8px; }
-  .doc-body { padding: 18px 16px 24px; }
+  .doc-body { padding: 20px 18px 24px; font-size: 15px; }
+  .doc-empty { padding: 22px 20px; }
   .overview-heading { flex-wrap: wrap; }
   .app-window { display: block; }
   .page-sidebar { position: fixed; inset: 0; z-index: 20; display: none; height: 100dvh; padding: 14px 16px; border: 0; }

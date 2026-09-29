@@ -112,7 +112,7 @@ try {
   });
   browser('set', 'viewport', '1440', '900');
   evaluate(`(() => { const real = window.fetch.bind(window); window.fetch = (input, options) => new URL(String(input), location.href).pathname.endsWith('/suggestions') ? new Promise(done => setTimeout(() => done(new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } })), 1500)) : real(input, options); return true; })()`);
-  evaluate(`(document.querySelector('[data-overview]').click(), true)`);
+  evaluate(`(document.querySelector('[data-project-view="overview"]').click(), true)`);
   browser('wait', '400');
   evaluate(`(document.querySelector('[data-action="review-suggestions"]')?.click(), true)`);
   browser('wait', '400');

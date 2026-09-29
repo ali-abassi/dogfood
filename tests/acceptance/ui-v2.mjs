@@ -156,7 +156,7 @@ try {
     assert.match(text('.report-screen-mobile'), /Not captured yet/);
   });
 
-  click('[data-overview]');
+  click('[data-project-view="overview"]');
   settle();
   click('[data-action="add-project"]');
   settle();

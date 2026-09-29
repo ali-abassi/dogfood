@@ -1,14 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="dogfood">
   <defs>
     <linearGradient id="df-tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2f95ff"/>
-      <stop offset="1" stop-color="#0071e3"/>
+      <stop offset="0" stop-color="#3b9bff"/>
+      <stop offset="1" stop-color="#0066d6"/>
     </linearGradient>
   </defs>
   <rect width="1024" height="1024" rx="228" fill="url(#df-tile)"/>
-  <path d="M272 448 492 768 752 336" fill="none" stroke="#fff" stroke-width="150" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="333" cy="369" r="88" fill="#fff"/>
-  <circle cx="177" cy="477" r="88" fill="#fff"/>
-  <circle cx="849" cy="359" r="88" fill="#fff"/>
-  <circle cx="686" cy="261" r="88" fill="#fff"/>
+  <path d="M352 378 470 492 690 256" fill="none" stroke="#fff" stroke-width="100" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 556h560c22 0 36 18 32 40l-4 12c-24 118-128 204-248 204h-120c-120 0-224-86-248-204l-4-12c-4-22 10-40 32-40z" fill="#fff"/>
 </svg>

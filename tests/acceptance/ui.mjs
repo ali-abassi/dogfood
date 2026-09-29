@@ -114,7 +114,7 @@ try {
     page(`document.querySelector('[data-fix-first] .finding-row').click() || true`);
     settle();
     assert.equal(page(`document.querySelector('#answer-heading')?.textContent`), 'Works as expected');
-    page(`document.querySelector('[data-overview]').click() || true`);
+    page(`document.querySelector('[data-project-view="overview"]').click() || true`);
     settle();
   });
   check('sidebar status marks use the server status in plain words', () => {
@@ -178,7 +178,7 @@ try {
   });
 
   browser('set', 'viewport', '390', '844');
-  page(`document.querySelector('[data-overview]')?.click() || true`);
+  page(`document.querySelector('[data-project-view="overview"]')?.click() || true`);
   settle();
   check('the overview has no horizontal overflow at 390 × 844', () => assert.equal(noHorizontalOverflow(), true));
 

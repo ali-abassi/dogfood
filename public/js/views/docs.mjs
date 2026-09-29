@@ -3,39 +3,62 @@ import { escapeHtml, markdownMarkup } from '../format.mjs';
 import { state } from '../state.mjs';
 import { render } from '../app.mjs';
 
-const docTabs = [['vision', 'Vision', 'vision.md'], ['design', 'Design', 'design.html'], ['plan', 'Plan', 'plan.md']];
+// Each document view: the document it shows, its title, the file it reads, and what belongs in it when it is
+// missing. The design view is called guide, because design already names a page's Looks right answer view.
+const docViews = {
+  vision: { doc: 'vision', title: 'Vision', file: 'vision.md', lede: 'Why the product exists and what it does.', empty: 'Why the product exists, who it is for, and what it does, in the owner’s words.' },
+  guide: { doc: 'design', title: 'Design', file: 'design.html', lede: 'The brand guide: logo, colour, type, components and voice.', empty: 'The brand guide: logo, colour, type, space, components, voice and imagery, generated from design.json.' },
+  plan: { doc: 'plan', title: 'Plan', file: 'plan.md', lede: 'Milestones, their exit criteria, and the tasks for the next one.', empty: 'The milestones, each with exit criteria, and the tasks for the first one, each with a check that proves it is done.' },
+};
 
-function tabsMarkup() {
-  const buttons = docTabs.map(([key, label]) => `<button type="button" data-action="doc-tab" data-doc-tab="${key}" aria-pressed="${state.docs.tab === key}">${label}</button>`).join('');
-  return `<div class="device-switch doc-tabs" role="group" aria-label="Document">${buttons}</div>`;
+export const docViewIds = Object.keys(docViews);
+
+function emptyMarkup(view) {
+  const why = state.docs.data?.checkout
+    ? `Add ${view.file} to the project’s main branch and it will show here.`
+    : 'This project has no local checkout, so dogfood cannot read its documents.';
+  return `<div class="doc-empty content-panel"><h2>No ${escapeHtml(view.title.toLowerCase())} yet</h2><p>${escapeHtml(view.empty)}</p><p class="muted">${escapeHtml(why)}</p></div>`;
 }
 
-function missingMarkup(file) {
-  const why = state.docs.data?.checkout ? `This project has no ${file} at its root yet.` : 'This project has no local checkout, so dogfood cannot read its documents.';
-  return `<div class="content-panel features-empty"><p>${escapeHtml(why)}</p></div>`;
+// A document's own top heading repeats the view's title, so the view drops it.
+function withoutLeadHeading(markdown) {
+  return markdown.replace(/^\s*#\s[^\n]*\n+/, '');
 }
 
-// The brand guide is a full page of its own; it runs in a sandboxed frame with no scripts.
-function designFrameMarkup(doc) {
+// The brand guide is a page of its own. It runs in a sandboxed frame with no scripts, sized to its content.
+function designFrameMarkup() {
   const src = `/api/projects/${encodeURIComponent(state.project.id)}/design`;
-  return `<p class="doc-file">${escapeHtml(doc.file)} · <a href="${src}" target="_blank" rel="noopener noreferrer">Open full page ↗</a></p><iframe class="doc-frame" title="${escapeHtml(state.project.name)} brand guide" sandbox src="${src}"></iframe>`;
+  return `<iframe class="doc-frame" title="${escapeHtml(state.project.name)} brand guide" sandbox="allow-same-origin" src="${src}"></iframe>`;
 }
 
 function docMarkup(doc) {
-  if (doc.html) return designFrameMarkup(doc);
-  return `<p class="doc-file">${escapeHtml(doc.file)}</p><article class="doc-body content-panel">${markdownMarkup(doc.markdown)}</article>`;
+  if (doc.html) return designFrameMarkup();
+  return `<article class="doc-body content-panel">${markdownMarkup(withoutLeadHeading(doc.markdown))}</article>`;
 }
 
-function docBodyMarkup() {
+function docBodyMarkup(view) {
   if (state.docs.error) return `<p class="form-error" role="alert">${escapeHtml(state.docs.error)}</p>`;
   if (state.docs.loading || !state.docs.data) return '<p class="muted" role="status">Loading…</p>';
-  const [, , file] = docTabs.find(([key]) => key === state.docs.tab);
-  const doc = state.docs.data[state.docs.tab];
-  return doc ? docMarkup(doc) : missingMarkup(file);
+  const doc = state.docs.data[view.doc];
+  return doc ? docMarkup(doc) : emptyMarkup(view);
+}
+
+function fileMarkup(view) {
+  const doc = state.docs.data?.[view.doc];
+  if (!doc) return '';
+  const open = doc.html ? ` · <a href="/api/projects/${encodeURIComponent(state.project.id)}/design" target="_blank" rel="noopener noreferrer">Open full page ↗</a>` : '';
+  return `<p class="doc-file">${escapeHtml(doc.file)} on main${open}</p>`;
 }
 
 export function docsMarkup() {
-  return `<section class="overview-content" aria-label="Docs"><header class="overview-heading"><div><h1>Docs</h1><p>What ${escapeHtml(state.project.name)} is for, how it should look and work, and the plan.</p></div>${tabsMarkup()}</header>${docBodyMarkup()}</section>`;
+  const view = docViews[state.view];
+  return `<section class="overview-content doc-view" aria-label="${escapeHtml(view.title)}"><header class="overview-heading"><div><h1>${escapeHtml(view.title)}</h1><p>${escapeHtml(view.lede)}</p>${fileMarkup(view)}</div></header>${docBodyMarkup(view)}</section>`;
+}
+
+// Sets a design frame's height to its page, so the guide scrolls with the app instead of inside a box.
+export function fitDocFrame(frame) {
+  const page = frame.contentDocument?.documentElement;
+  if (page) frame.style.height = `${page.scrollHeight}px`;
 }
 
 async function loadDocs(projectId) {
@@ -48,9 +71,9 @@ async function loadDocs(projectId) {
   render();
 }
 
-// Documents load once per project, the first time the Docs view opens.
+// Documents load once per project, the first time a document view opens.
 export function syncDocsState() {
-  if (state.view !== 'docs' || !state.project || state.docs.key === state.project.id) return;
+  if (!docViewIds.includes(state.view) || !state.project || state.docs.key === state.project.id) return;
   Object.assign(state.docs, { key: state.project.id, loading: true, data: null, error: '' });
   void loadDocs(state.project.id);
 }

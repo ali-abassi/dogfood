@@ -1,4 +1,5 @@
 import { readJson } from './api.mjs';
+import { fitDocFrame } from './views/docs.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
 import { answerIds, state, menuPages, activePage } from './state.mjs';
 import { agentPrompt, idleOnboarding, submitOnboarding } from './views/add-project.mjs';
@@ -197,7 +198,6 @@ const buttonActions = new Map([
   ['close-pages', closePages],
   ['back-to-report', backToReport],
   ['view-screens', openScreens],
-  ['doc-tab', button => { state.docs.tab = button.dataset.docTab; render(); restoreFocus(`[data-doc-tab="${state.docs.tab}"]`); }],
   ['screens-device', button => { state.screensDevice = button.dataset.screensDevice; render(); restoreFocus(`[data-screens-device="${state.screensDevice}"]`); }],
   ['edit-answer', () => openEditor('answerEditing', '#answer-form input[name="status"]')],
   ['cancel-answer', () => closeEditor('answerEditing', '[data-action="edit-answer"]')],
@@ -293,6 +293,9 @@ function handleBugButton(button) {
 }
 
 export function registerEvents() {
+  // Frame loads do not bubble, so the design guide's frame is sized from the capture phase.
+  app.addEventListener('load', event => { if (event.target.matches?.('iframe.doc-frame')) fitDocFrame(event.target); }, true);
+  window.addEventListener('resize', () => document.querySelectorAll('iframe.doc-frame').forEach(fitDocFrame));
   app.addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
