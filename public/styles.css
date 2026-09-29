@@ -525,10 +525,10 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .plan-task:hover, .plan-task.selected { background: var(--selection); }
 .plan-task strong { min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .plan-task > span:last-child { grid-column: 2; color: var(--secondary); font-size: 12.5px; overflow-wrap: anywhere; }
-.task-status { display: inline-flex; width: max-content; padding: 2px 7px; border-radius: 6px; background: var(--fill); color: var(--secondary); font-size: 11px; font-weight: 600; white-space: nowrap; }
-.task-status-doing { color: var(--blue); background: var(--fill); }
-.task-status-blocked { color: var(--orange); background: var(--orange-tint); }
-.task-status-accepted { color: var(--green); background: var(--green-tint); }
+.task-status { display: inline-flex; width: max-content; padding: 2px 7px; border-radius: 6px; background: var(--group); color: var(--secondary); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.task-status-doing { color: var(--blue); }
+.task-status-blocked { color: var(--orange); }
+.task-status-accepted { color: var(--green); }
 .plan-empty { margin: 12px 0 0; color: var(--secondary); font-size: 13px; }
 .plan-detail-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 17px; }
 .plan-detail-head strong { overflow-wrap: anywhere; }
