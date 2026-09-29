@@ -105,13 +105,19 @@ function hasReadablePages(competitor) {
   return competitor.scan?.pages.some(page => !page.error);
 }
 
+function summaryProvenanceMarkup(summary) {
+  const summarized = dateLabel(summary.summarizedAt) || 'an unknown time';
+  const scanned = dateLabel(summary.scannedAt) || 'an unknown time';
+  return `<p class="muted competitor-summary-by">${escapeHtml(summaryAuthor(summary))} · Summarized ${escapeHtml(summarized)}. Based on the scan from ${escapeHtml(scanned)}.</p>`;
+}
+
 function summaryMarkup(competitor) {
   if (!hasReadablePages(competitor)) return '';
   const summary = competitor.summary;
   if (!summary) return `<section class="content-panel competitor-summary"><div class="panel-heading"><h2>Summary</h2>${summarizeButtonMarkup('Summarize with AI')}</div><p class="muted">No summary yet. Ask your coding agent to record one, or use the configured AI provider to compare these pages with your project’s vision. AI usage may incur a cost.</p></section>`;
   const stale = summary.scannedAt !== competitor.scan.scannedAt ? `<p class="recheck-note">This summary uses an earlier scan. Summarize again to include the latest pages.</p>` : '';
   const features = summary.keyFeatures.length ? `<h3>Key features</h3>${listItemsMarkup(summary.keyFeatures)}` : '';
-  return `<section class="content-panel competitor-summary"><div class="panel-heading"><h2>Summary</h2>${summarizeButtonMarkup('Summarize again')}</div>${stale}${summaryFactsMarkup(summary)}${features}${versusMarkup(summary)}<p class="muted competitor-summary-by">${escapeHtml(summaryAuthor(summary))} on ${escapeHtml(dateLabel(summary.summarizedAt))}, from the pages below.</p></section>`;
+  return `<section class="content-panel competitor-summary"><div class="panel-heading"><h2>Summary</h2>${summarizeButtonMarkup('Summarize again')}</div>${stale}${summaryFactsMarkup(summary)}${features}${versusMarkup(summary)}${summaryProvenanceMarkup(summary)}</section>`;
 }
 
 function shotMarkup(page, device) {
