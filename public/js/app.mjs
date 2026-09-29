@@ -4,6 +4,8 @@ import { escapeHtml } from './format.mjs';
 import { activePage, answerIds, ensureSelection, isProjectView, state } from './state.mjs';
 import { addProjectFormMarkup, welcomeMarkup } from './views/add-project.mjs';
 import { answerDetailMarkup } from './views/answer.mjs';
+import { docsMarkup, syncDocsState } from './views/docs.mjs';
+import { featuresMarkup } from './views/features.mjs';
 import { overviewMarkup } from './views/overview.mjs';
 import { pageHeaderMarkup, sidebarMarkup, toolbarMarkup } from './views/page.mjs';
 import { pageReportMarkup } from './views/report.mjs';
@@ -29,6 +31,8 @@ function pageViewMarkup(page) {
 
 function projectViewMarkup() {
   if (state.view === 'overview') return overviewMarkup();
+  if (state.view === 'features') return featuresMarkup();
+  if (state.view === 'docs') return docsMarkup();
   if (state.view === 'add-project') return addProjectFormMarkup(false);
   return suggestionsReviewMarkup();
 }
@@ -70,6 +74,7 @@ export function render() {
   syncQaState();
   syncVisualState();
   syncSuggestionsState();
+  syncDocsState();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();
 }

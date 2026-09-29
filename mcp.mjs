@@ -4,7 +4,7 @@ import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
   addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
-  recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setConnections, updateFinding,
+  recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setConnections, setCoreFeatures, updateFinding,
 } from './lib/store.mjs';
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
@@ -268,6 +268,28 @@ const definitions = [
       },
     }, ['project', 'page', 'agent', 'features']),
     run: addPageFeatures,
+  },
+  {
+    name: 'dogfood_set_core_features',
+    description: 'Set the project\'s core features: its main capabilities as a person would name them (for example Brand import, Research search, Slideshow maker), each mapped to the pages that deliver it. Replaces the whole list, in order; keep it short (about 5–15). Each feature\'s status rolls up from its pages.',
+    inputSchema: objectSchema({
+      project: projectPageProperties.project,
+      agent: { type: 'string', description: 'Agent name used to attribute the change.' },
+      features: {
+        type: 'array',
+        description: 'Core features in display order.',
+        items: objectSchema({
+          id: { type: 'string', description: 'Lowercase id with letters, numbers and dashes.' },
+          name: { type: 'string', description: 'The feature as a person names it, 2–80 characters.' },
+          summary: { type: 'string', description: 'One sentence on what it lets people do, up to 240 characters.' },
+          pageIds: { type: 'array', items: { type: 'string' }, description: 'IDs of the pages that deliver this feature.' },
+        }, ['id', 'name', 'pageIds']),
+      },
+    }, ['project', 'agent', 'features']),
+    run: ({ project, agent, features }) => {
+      const saved = projectView(setCoreFeatures(project, features, byAgent(agent)));
+      return { project, coreFeatures: saved.coreFeatures.map(({ id, name, status, pageIds }) => ({ id, name, status, pageIds })) };
+    },
   },
   {
     name: 'dogfood_remove_page',

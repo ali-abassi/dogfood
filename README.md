@@ -87,6 +87,7 @@ Page-writing tools return that page's status, its six answers, and what it still
 - `dogfood_create_project` — create a project with its URL, environment, checkout, and guidelines.
 - `dogfood_register_page` — register a page, its features, tests, and untested boundary.
 - `dogfood_add_features` — add features to a page, for example ones the AI review suggested; names already listed are skipped.
+- `dogfood_set_core_features` — set the project's core features (its main capabilities, each mapped to the pages that deliver it); the app's Features tab shows each one with a status rolled up from its pages.
 - `dogfood_page` — read a page and its derived QA progress.
 - `dogfood_next` — list incomplete pages in site order with missing evidence.
 - `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker; prefer `dogfood_scan_page` for both devices and measured facts.

@@ -1,5 +1,5 @@
 import { escapeHtml, externalLinkMarkup, plainMessageMarkup, statusPill } from '../format.mjs';
-import { groupedPages, isProjectView, state, statusNames, visiblePages } from '../state.mjs';
+import { groupedPages, isProjectView, menuPages, state, statusNames } from '../state.mjs';
 
 function menuSelectMarkup(id, label, value, options) {
   const items = options.map(([key, text]) => `<option value="${key}" ${value === key ? 'selected' : ''}>${text}</option>`).join('');
@@ -25,14 +25,23 @@ export function pageOptionsMarkup(pages) {
   return groupedPages(pages).map(({ group, pages: items }) => `<div class="page-group"><p>${escapeHtml(group)}</p>${items.map(pageOptionMarkup).join('')}</div>`).join('');
 }
 
+const projectViews = [['overview', 'Overview'], ['features', 'Features'], ['docs', 'Docs']];
+
+// The project's own views sit above its pages: the overview, its core features, and its documents.
+function projectNavMarkup() {
+  return projectViews.map(([view, label]) => {
+    const selected = state.view === view;
+    return `<button type="button" class="page-option overview-option ${selected ? 'selected' : ''}" data-project-view="${view}" ${selected ? 'aria-current="page"' : ''}>${label}</button>`;
+  }).join('');
+}
+
 function projectPickerMarkup() {
   const options = state.projects.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === state.project.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('');
   return `<label class="project-picker"><span class="sr-only">Project</span><select id="project-select">${options}</select></label>`;
 }
 
 export function sidebarMarkup() {
-  const pages = visiblePages();
-  const overviewSelected = state.view === 'overview';
+  const pages = menuPages();
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project pages">
       <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
         ${projectPickerMarkup()}
@@ -40,7 +49,7 @@ export function sidebarMarkup() {
         <h2 class="sr-only">Pages</h2>
         <label class="search-field"><span class="sr-only">Search pages or things to do</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or things to do" value="${escapeHtml(state.query)}"></label>
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
-        <nav class="page-list" aria-label="Pages"><button type="button" class="page-option overview-option ${overviewSelected ? 'selected' : ''}" data-overview ${overviewSelected ? 'aria-current="page"' : ''}>Overview</button><div class="page-groups">${pageOptionsMarkup(pages)}</div></nav>
+        <nav class="page-list" aria-label="Pages">${projectNavMarkup()}<div class="page-groups">${pageOptionsMarkup(pages)}</div></nav>
         ${externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link')}
   </aside>`;
 }

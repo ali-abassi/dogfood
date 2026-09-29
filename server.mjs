@@ -9,7 +9,8 @@ import { currentReview, startReview } from './lib/reviews.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import { projectReport } from './lib/report.mjs';
 import { pendingSuggestions } from './lib/suggestions.mjs';
-import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, updateFinding, validationError } from './lib/store.mjs';
+import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, setCoreFeatures, updateFinding, validationError } from './lib/store.mjs';
+import { projectDocs } from './lib/project-docs.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
 const publicDir = join(root, 'public');
@@ -105,6 +106,8 @@ const routes = [
   ['POST', '/api/projects/([a-z0-9-]+)/scan', ([id]) => startProjectScan(id), 202],
   ['GET', '/api/projects/([a-z0-9-]+)/report', ([id]) => projectReport(id), 200, 'text/markdown; charset=utf-8'],
   ['GET', '/api/projects/([a-z0-9-]+)/suggestions', ([id]) => pendingSuggestions(id)],
+  ['GET', '/api/projects/([a-z0-9-]+)/docs', ([id]) => projectDocs(readProject(id))],
+  ['PUT', '/api/projects/([a-z0-9-]+)/core-features', async ([id], request) => projectView(setCoreFeatures(id, (await requestJson(request)).features, person))],
   ['POST', '/api/projects/([a-z0-9-]+)/features', async ([id], request) => projectView(addFeaturesToPages(id, (await requestJson(request)).pages, person))],
   ['POST', `${pagePath}/remove`, withBody((projectId, pageId, input, by) => removePage(projectId, pageId, input.reason, by))],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],
