@@ -40,17 +40,48 @@ test('dependencies and ownership govern claims; blocked handoff appears in fresh
   tasks.addTask('shop', input('dependent', { dependencies: ['later'] }), 'alice');
   assert.throws(() => tasks.claimTask('shop', 'dependent', 'alice'), /dependencies/);
   tasks.claimTask('shop', 'later', 'alice');
-  assert.throws(() => tasks.updateTask('shop', 'later', { handoff: 'Wrong owner' }, 'bob'), /owned by/);
+  assert.throws(() => tasks.updateTask('shop', 'later', { handoff: 'Wrong owner' }, 'bob'), /Another owner/);
   tasks.updateTask('shop', 'later', { status: 'blocked', blocker: 'Waiting for fixture', handoff: 'Resume from the backend fixture', releaseOwner: true }, 'alice');
   const packet = tasks.context('shop');
   assert.equal(packet.blocked[0].blocker, 'Waiting for fixture');
   assert.deepEqual(packet.blocked[0].scope, ['backend']);
-  assert.equal(packet.latestHandoff, 'Resume from the backend fixture');
+  assert.equal(packet.blocked[0].handoff, 'Resume from the backend fixture');
+  assert.ok(packet.blocked[0].handoffAt);
+  assert.equal(packet.latestHandoff, null);
   assert.deepEqual(packet.project.source, { url: 'https://example.com', environment: 'Live site', checkout });
   assert.equal(packet.steps.verify, 'dogfood verify TASK --project shop --agent NAME');
   assert.equal(packet.steps.accept, 'dogfood task accept TASK --project shop --agent NAME');
   assert.equal(packet.next.id, 'first');
+  tasks.updateTask('shop', 'dependent', { handoff: 'Dependency needs a separate design pass.' }, 'alice');
+  assert.equal(tasks.context('shop').latestHandoff, 'Dependency needs a separate design pass.');
+  tasks.updateTask('shop', 'later', { handoff: 'A newer blocked handoff is visible.' }, 'alice');
+  const latestPacket = tasks.context('shop');
+  assert.equal(latestPacket.latestHandoff, null);
+  assert.equal(latestPacket.blocked[0].handoff, 'A newer blocked handoff is visible.');
+  assert.ok(Date.parse(latestPacket.blocked[0].handoffAt) > Date.parse(tasks.workflow('shop').tasks.find(task => task.id === 'dependent').handoffAt));
   tasks.updateTask('shop', 'later', { status: 'todo', blocker: '' }, 'alice');
+});
+
+test('todo clears ownership, while another actor needs an explicit recorded recovery', async () => {
+  tasks.addTask('shop', input('reset-owner'), 'alice');
+  tasks.claimTask('shop', 'reset-owner', 'alice');
+  tasks.updateTask('shop', 'reset-owner', { status: 'todo' }, 'alice');
+  assert.equal(tasks.workflow('shop').tasks.find(task => task.id === 'reset-owner').owner, null);
+  tasks.claimTask('shop', 'reset-owner', 'bob');
+  await tasks.verifyTask('shop', 'reset-owner', 'bob');
+  assert.throws(() => tasks.updateTask('shop', 'reset-owner', { releaseOwner: true }, 'carol'), /Recovery reason/);
+  assert.throws(() => tasks.updateTask('shop', 'reset-owner', { releaseOwner: true, recoveryReason: 'A takeover with a plan edit', outcome: 'Wrong' }, 'carol'), /Another owner/);
+  const recovered = tasks.updateTask('shop', 'reset-owner', { releaseOwner: true, recoveryReason: 'Bob stopped working and handed this back.' }, 'carol');
+  assert.equal(recovered.owner, null);
+  assert.equal(recovered.status, 'todo');
+  assert.equal(recovered.receipt, null);
+  assert.deepEqual(recovered.recoveries.at(-1), { at: recovered.recoveries.at(-1).at, by: 'carol', from: 'bob', status: 'doing', reason: 'Bob stopped working and handed this back.' });
+  tasks.claimTask('shop', 'reset-owner', 'carol');
+  tasks.updateTask('shop', 'reset-owner', { status: 'blocked', blocker: 'Waiting for a safe fixture.' }, 'carol');
+  const blockedRecovery = tasks.updateTask('shop', 'reset-owner', { releaseOwner: true, recoveryReason: 'Carol stopped while the fixture is pending.' }, 'dana');
+  assert.equal(blockedRecovery.status, 'blocked');
+  assert.equal(blockedRecovery.owner, null);
+  assert.equal(blockedRecovery.recoveries.length, 2);
 });
 
 test('two processes cannot claim the same task', async () => {
@@ -94,9 +125,12 @@ test('backend source changes invalidate a passing receipt; recheck and no-op edi
   tasks.addTask('shop', input('backend'), 'alice');
   tasks.claimTask('shop', 'backend', 'alice');
   assert.equal((await tasks.verifyTask('shop', 'backend', 'alice')).passed, true);
+  assert.equal(tasks.context('shop').claimed.find(task => task.id === 'backend').receipt.current, true);
+  assert.ok(tasks.context('shop').project.checkoutFingerprint);
   tasks.updateTask('shop', 'backend', { title: 'Deliver backend' }, 'alice');
   assert.equal(tasks.workflow('shop').tasks.find(task => task.id === 'backend').receipt.passed, true);
   writeFileSync(join(checkout, 'backend.js'), 'export const value = 2;\n');
+  assert.equal(tasks.context('shop').claimed.find(task => task.id === 'backend').receipt.current, false);
   assert.throws(() => tasks.acceptTask('shop', 'backend', 'alice'), /Checkout changed/);
   assert.equal((await tasks.verifyTask('shop', 'backend', 'alice')).passed, true);
   assert.equal(tasks.acceptTask('shop', 'backend', 'alice').status, 'accepted');
@@ -122,11 +156,34 @@ test('editing an accepted prerequisite reopens its accepted dependents', async (
   tasks.claimTask('shop', 'journey', 'alice');
   await tasks.verifyTask('shop', 'journey', 'alice');
   tasks.acceptTask('shop', 'journey', 'alice');
+  tasks.updateTask('shop', 'foundation', { title: 'Retitled foundation', priority: 0 }, 'alice');
+  const cosmetic = tasks.workflow('shop').tasks.find(task => task.id === 'foundation');
+  assert.equal(cosmetic.status, 'accepted');
+  assert.equal(cosmetic.receipt.passed, true);
+  assert.deepEqual(cosmetic.reopens, []);
   tasks.updateTask('shop', 'foundation', { outcome: 'Foundation now has a stricter outcome.' }, 'alice');
   const byId = Object.fromEntries(tasks.workflow('shop').tasks.map(task => [task.id, task]));
   assert.deepEqual([byId.foundation.status, byId.journey.status], ['todo', 'todo']);
   assert.equal(byId.journey.receipt, null);
+  assert.equal(byId.foundation.reopens.at(-1).by, 'alice');
+  assert.match(byId.journey.reopens.at(-1).reason, /Dependency foundation/);
   assert.throws(() => tasks.claimTask('shop', 'journey', 'alice'), /dependencies/);
+});
+
+test('checks keep a bounded output tail and report timeout failures', async () => {
+  assert.throws(() => tasks.addTask('shop', input('bad-timeout', { checks: [{ id: 'bad', command: ['true'], timeoutSeconds: 1801 }] }), 'alice'), /timeoutSeconds/);
+  tasks.addTask('shop', input('bounded-check', { checks: [
+    { id: 'large', command: [process.execPath, '-e', "process.stdout.write('x'.repeat(100000) + 'END')"], timeoutSeconds: 5 },
+    { id: 'hang', command: [process.execPath, '-e', 'setInterval(() => {}, 1000)'], timeoutSeconds: 1 },
+  ] }), 'alice');
+  tasks.claimTask('shop', 'bounded-check', 'alice');
+  const receipt = await tasks.verifyTask('shop', 'bounded-check', 'alice');
+  assert.equal(receipt.checks[0].exitCode, 0);
+  assert.ok(receipt.checks[0].stdout.length <= 64_000);
+  assert.ok(receipt.checks[0].stdout.endsWith('END'));
+  assert.equal(receipt.checks[1].timedOut, true);
+  assert.match(receipt.checks[1].errorReason, /Timed out after 1 seconds/);
+  assert.equal(receipt.passed, false);
 });
 
 test('a check that changes checkout source cannot verify itself', async () => {
