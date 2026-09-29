@@ -4,7 +4,7 @@ import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
   addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
-  recordVerdicts, registerPage, removePage, saveAudit, setConnections, updateFinding,
+  recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setConnections, updateFinding,
 } from './lib/store.mjs';
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
@@ -280,6 +280,20 @@ const definitions = [
     run: ({ project, page, agent, reason }) => {
       const saved = removePage(project, page, reason, byAgent(agent));
       return { project, removed: page, pageCount: saved.pages.length };
+    },
+  },
+  {
+    name: 'dogfood_retire_feature',
+    description: 'Retire a feature the page no longer has because its UI was redesigned away, so the completion gate stops waiting on it. Needs a reason; the feature and its last verdict stay in the manifest. Never mark a still-present feature retired to pass the gate.',
+    inputSchema: objectSchema({
+      ...projectPageProperties,
+      agent: { type: 'string', description: 'Agent name used to attribute the retirement.' },
+      feature: { type: 'string', description: 'The feature id, as dogfood_page lists it.' },
+      reason: { type: 'string', description: 'What replaced it or why it no longer applies, in 12–400 characters.' },
+    }, ['project', 'page', 'agent', 'feature', 'reason']),
+    run: ({ project, page, agent, feature, reason }) => {
+      const saved = retireFeature(project, page, feature, reason, byAgent(agent));
+      return { project, page, retired: feature, featureCount: pageById(saved, page).features.length };
     },
   },
   {
