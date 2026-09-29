@@ -14,6 +14,7 @@ import { screensMarkup } from './views/screens.mjs';
 import { suggestionsReviewMarkup, syncSuggestionsState } from './views/suggestions.mjs';
 import { syncQaState } from './views/tests.mjs';
 import { syncHistoryState } from './views/history.mjs';
+import { syncQaAgentState } from './views/qa-agent.mjs';
 import { syncVisualState } from './views/visual.mjs';
 import { worksMarkup } from './views/works.mjs';
 
@@ -81,6 +82,7 @@ export function render() {
   syncQaState();
   syncVisualState();
   syncHistoryState();
+  syncQaAgentState();
   syncSuggestionsState();
   syncDocsState();
   syncCompetitorsState();

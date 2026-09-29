@@ -2,6 +2,7 @@ import { answerMarkMarkup, escapeHtml, plainMessageMarkup, shortReason } from '.
 import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
 import { aboutMarkup } from './about.mjs';
 import { shownShot, timelineMarkup } from './history.mjs';
+import { qaAgentMarkup } from './qa-agent.mjs';
 import { openFindingsMarkup } from './issues.mjs';
 
 function screenPictureMarkup(page, device, shot) {
@@ -61,7 +62,7 @@ function answerRowMarkup(page, answer) {
 
 function answersMarkup(page) {
   const rows = page.progress.answers.map(answer => answerRowMarkup(page, answer)).join('');
-  return `<section class="answers-panel content-panel" data-answers aria-labelledby="answers-heading"><header class="answers-heading"><h2 id="answers-heading">Is this page working?</h2>${aiCheckMarkup(page)}</header><ul class="answer-list">${rows}</ul></section>`;
+  return `<section class="answers-panel content-panel" data-answers aria-labelledby="answers-heading"><header class="answers-heading"><h2 id="answers-heading">Is this page working?</h2><div class="answers-actions">${qaAgentMarkup(page)}${aiCheckMarkup(page)}</div></header><ul class="answer-list">${rows}</ul></section>`;
 }
 
 export function pageReportMarkup(page) {

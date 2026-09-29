@@ -72,6 +72,17 @@ List a page's test files under `qa.tests` in the manifest, and point `source.che
 
 A page's report shows its full-page computer and phone screenshots in frames you scroll top to bottom. **History** steps back through every day the page was captured (dogfood keeps each replaced screenshot under `data/captures/<project>/history/`; `GET /api/projects/<id>/pages/<page>/history` lists them). **About this page** gives what the page is for (from the AI check), its title and search description, the features on it with their status, every link on it split into this site and elsewhere, and the API calls it makes, from the code map and from the traffic each page check records.
 
+### The QA agent
+
+A page that is not complete offers **Ask the QA agent**. dogfood starts the command in `DOGFOOD_QA_AGENT` (set in the git-ignored `.env`) with a brief naming what the page still needs, how to record evidence through dogfood's tools, and the rules (never publish, pay, delete, change settings, or type a password). While it works the page shows its status and reloads its evidence. For example, `.env` might hold:
+
+```
+DOGFOOD_QA_AGENT=my-agent run --name qa-{page}-{run} --cwd {workdir} --background
+META_API_KEY=...
+```
+
+`{project}`, `{page}`, `{run}` and `{workdir}` are filled in; an agent runner can keep the agent working until `dogfood_complete` accepts the page. When a signed-in page's saved session expires, point the project's scans at a profile that is still signed in with `dogfood_set_browser_profile` rather than typing a password.
+
 ### Competitors
 
 Each project keeps up to five competitors. Add one by its website and dogfood reads its key pages as a signed-out visitor (the landing page, then pricing, features, product and about pages before anything else), keeping full-page computer and phone screenshots, each page's title, description and headings, and its text. **Summarize with AI** sends that text (no screenshots) with the project's `vision.md` to DeepSeek (`deepseek-flash`) and records what they do, who it is for, pricing, how they sell, key features, and how they compare with the project. It costs well under a cent. Competitors live in `data/competitors/<project>.json`, and their screenshots under `data/captures/<project>/competitors/`.
@@ -93,6 +104,7 @@ Page-writing tools return that page's status, its six answers, and what it still
 - `dogfood_scan_page` — rescan a registered page at desktop and mobile sizes.
 - `dogfood_scan_project` — rescan every page of a project and list which pages changed visually since the previous scan.
 - `dogfood_create_project` — create a project with its URL, environment, checkout, and guidelines.
+- `dogfood_set_browser_profile` — point a project's scans at a Chrome profile that is signed in, when a saved session expired.
 - `dogfood_register_page` — register a page, its features, tests, and untested boundary.
 - `dogfood_add_features` — add features to a page, for example ones the AI review suggested; names already listed are skipped.
 - `dogfood_set_core_features` — set the project's core features (its main capabilities, each mapped to the pages that deliver it); the app's Features tab shows each one with a status rolled up from its pages.

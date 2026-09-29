@@ -181,3 +181,31 @@ test('DeepSeek cost comes from its tokens at the peak or off-peak price of the m
   assert.equal(usageReceipt(usage, new Date('2026-09-27T07:00:00Z')).costUsd, 0.75, 'Sunday is off-peak');
   assert.equal(usageReceipt({ prompt_tokens: 1_000_000, prompt_cache_hit_tokens: 1_000_000, completion_tokens: 0 }, new Date('2026-09-27T07:00:00Z')).costUsd, 0.003);
 });
+
+test('a screenshot taller than DeepSeek accepts is sent as its top 8,192 px', async () => {
+  const { sendableImage } = await import('../lib/visual-review.mjs');
+  const { encodePng } = await import('../lib/diff.mjs');
+  const tall = encodePng(2, 9000, Buffer.alloc(2 * 9000 * 3, 200));
+  const sent = sendableImage({ bytes: tall, height: 9000 });
+  assert.equal(sent.cropped, true);
+  assert.deepEqual([sent.bytes.readUInt32BE(16), sent.bytes.readUInt32BE(20)], [2, 8192]);
+  assert.equal(sendableImage({ bytes: png, height: 20 }).cropped, false);
+});
+
+test('an answer that breaks the schema gets one more try, and the good second answer is kept', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'qa-visual-retry-'));
+  const captures = fixtureCaptures(root);
+  const oldFetch = globalThis.fetch;
+  const replies = [{ ...analysis, evidence: [] }, analysis];
+  let calls = 0;
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(replies[calls++]) } }], usage: { prompt_tokens: 10, completion_tokens: 10 } }), { status: 200 });
+  process.env.DEEPSEEK_API_KEY = 'fixture-key';
+  try {
+    const result = await runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures });
+    assert.equal(calls, 2);
+    assert.deepEqual(result.review.analysis.evidence, analysis.evidence);
+  } finally {
+    globalThis.fetch = oldFetch;
+    rmSync(root, { recursive: true, force: true });
+  }
+});

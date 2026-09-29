@@ -1,10 +1,11 @@
+import './lib/env.mjs';
 import { createInterface } from 'node:readline';
 import { readFileSync } from 'node:fs';
 import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
   addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
-  recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setConnections, setCoreFeatures, updateFinding,
+  recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setBrowserProfile, setConnections, setCoreFeatures, updateFinding,
 } from './lib/store.mjs';
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
@@ -355,6 +356,12 @@ const definitions = [
       }, ['whatTheyDo', 'whoItsFor', 'pricing', 'howTheySell', 'keyFeatures', 'theyDoBetter', 'weDoBetter', 'ideasToTake']),
     }, ['project', 'competitor', 'agent', 'summary']),
     run: ({ project, competitor, agent, summary }) => competitorView(competitorOf(recordCompetitorSummary(project, competitor, summary, byAgent(agent)), competitor)),
+  },
+  {
+    name: 'dogfood_set_browser_profile',
+    description: 'Set the Chrome profile a project\'s scans sign in with (for example Default). Use it when scans of signed-in pages capture a sign-in or passphrase screen because the saved session expired; then rescan. Never type a password to get past a sign-in screen.',
+    inputSchema: objectSchema({ project: projectPageProperties.project, browserProfile: { type: 'string', description: 'Chrome profile name or path, such as Default.' } }, ['project', 'browserProfile']),
+    run: ({ project, browserProfile }) => ({ project, browserProfile: setBrowserProfile(project, browserProfile).source.browserProfile }),
   },
   {
     name: 'dogfood_remove_page',

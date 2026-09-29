@@ -208,6 +208,15 @@ code { font-family: var(--mono); }
 .competitor-outline .depth-3 { padding-left: 28px; color: var(--secondary); }
 .competitor-remove { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; white-space: normal; }
 
+/* The QA agent: offered on an incomplete page, then a quiet status while it works */
+.answers-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: end; gap: 8px 14px; }
+.qa-agent { display: flex; flex-direction: column; align-items: end; }
+.qa-agent .form-error { margin: 4px 0 0; font-size: 12px; }
+.qa-agent-status { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--secondary); font-size: 13px; white-space: nowrap; }
+.qa-agent-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); animation: qa-agent-pulse 1.6s ease-in-out infinite; }
+@keyframes qa-agent-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .qa-agent-dot { animation: none; } }
+
 .screen-missing { display: grid; place-items: center; height: 100%; margin: 0; padding: 16px; color: var(--secondary); font-size: 13px; text-align: center; }
 .screens-empty { display: grid; justify-items: center; gap: 6px; padding: 32px 16px; text-align: center; }
 .screens-empty strong { font-size: 17px; font-weight: 600; }
@@ -516,7 +525,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
   .screen-frame { height: 320px; }
   .about-links li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .answers-heading { flex-direction: column; align-items: stretch; }
-  .ai-check { justify-content: start; }
+  .ai-check, .answers-actions { justify-content: start; }
+  .qa-agent { align-items: start; }
   .answer-row { grid-template-columns: 22px minmax(0, 1fr) 24px 10px; grid-template-areas: "mark name tag chevron" "mark summary summary summary"; gap: 2px 12px; }
   .answer-row .answer-mark { grid-area: mark; }
   .answer-name { grid-area: name; }

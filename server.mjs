@@ -1,3 +1,4 @@
+import './lib/env.mjs';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -12,6 +13,7 @@ import { pendingSuggestions } from './lib/suggestions.mjs';
 import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, setCoreFeatures, updateFinding, validationError } from './lib/store.mjs';
 import { designGuide, projectDocs } from './lib/project-docs.mjs';
 import { captureHistory } from './lib/history.mjs';
+import { qaAgentConfigured, qaAgentRuns, startQaAgent } from './lib/qa-agent.mjs';
 import { addCompetitor, listCompetitors, removeCompetitor, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
@@ -138,6 +140,7 @@ const routes = [
   ['GET', '/api/projects/([a-z0-9-]+)/design', ([id]) => designGuide(readProject(id)), 200, 'text/html; charset=utf-8'],
   ['PUT', '/api/projects/([a-z0-9-]+)/core-features', async ([id], request) => projectView(setCoreFeatures(id, (await requestJson(request)).features, person))],
   ['POST', '/api/projects/([a-z0-9-]+)/features', async ([id], request) => projectView(addFeaturesToPages(id, (await requestJson(request)).pages, person))],
+  ['GET', '/api/projects/([a-z0-9-]+)/qa-agent', ([id]) => ({ configured: qaAgentConfigured(), runs: qaAgentRuns(id) })],
   ['GET', '/api/projects/([a-z0-9-]+)/competitors', ([id]) => listCompetitors(id)],
   ['POST', '/api/projects/([a-z0-9-]+)/competitors', async ([id], request) => addCompetitor(id, await requestJson(request))],
   ['POST', `${competitorPath}/remove`, ([id, competitorId]) => removeCompetitor(id, competitorId)],
@@ -145,6 +148,7 @@ const routes = [
   ['POST', `${competitorPath}/summary`, ([id, competitorId]) => competitorSummary(id, competitorId)],
   ['POST', `${pagePath}/remove`, withBody((projectId, pageId, input, by) => removePage(projectId, pageId, input.reason, by))],
   ['GET', `${pagePath}/history`, params => captureHistory(...params)],
+  ['POST', `${pagePath}/qa-agent`, async params => ({ configured: true, runs: await startQaAgent(...params) })],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],
   ['POST', `${pagePath}/visual-review`, params => startReview(...params)],
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],
