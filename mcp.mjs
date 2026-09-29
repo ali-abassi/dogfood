@@ -247,6 +247,7 @@ const definitions = [
         route: { type: 'string', description: 'Route checked within the product.' },
         url: { type: 'string', description: 'Optional full page URL when the route alone does not locate it, for example https://app.example/#/billing in a hash-routed app. Scans open this URL.' },
         signedIn: { type: 'boolean', description: 'Optional: true when the page needs a signed-in visitor; a scan that lands signed out fails its captures instead of passing.' },
+        expectedStatus: { type: 'integer', description: 'Optional: the HTTP status the page itself is meant to answer with, such as 404 for a not-found page, so a scan does not count it as a failed request.' },
         features: { type: 'array', items: objectSchema({ id: { type: 'string' }, name: { type: 'string' } }, ['id', 'name']) },
         tests: { type: 'array', items: objectSchema({ id: { type: 'string' }, label: { type: 'string' }, file: { type: 'string' }, reason: { type: 'string' } }, ['id', 'label', 'file', 'reason']) },
         untestedNote: { type: 'string', description: 'A clear boundary that this page QA does not cover.' },
