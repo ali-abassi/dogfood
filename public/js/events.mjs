@@ -1,4 +1,5 @@
 import { readJson } from './api.mjs';
+import { addCompetitor, removeOpenCompetitor, rescanOpenCompetitor, summarizeOpenCompetitor } from './views/competitors.mjs';
 import { fitDocFrame } from './views/docs.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
 import { answerIds, state, menuPages, activePage } from './state.mjs';
@@ -224,6 +225,13 @@ const buttonActions = new Map([
   ['cancel-remove-page', () => { if (promptIfChanged()) return; state.removingPage = null; render(); restoreFocus('[data-action="remove-page"]'); }],
   ['cancel-add-project', () => { state.view = 'overview'; render(); }],
   ['discard-changes', discardChanges],
+  ['open-competitor', button => { Object.assign(state.competitors, { open: button.dataset.competitorId, removing: '', error: '' }); render(); window.scrollTo(0, 0); restoreFocus('#competitor-heading'); }],
+  ['close-competitor', () => { const id = state.competitors.open; Object.assign(state.competitors, { open: '', removing: '', error: '' }); render(); restoreFocus(`[data-competitor-id="${id}"]`); }],
+  ['scan-competitor', rescanOpenCompetitor],
+  ['summarize-competitor', summarizeOpenCompetitor],
+  ['remove-competitor', () => { state.competitors.removing = state.competitors.open; render(); restoreFocus('[data-action="cancel-remove-competitor"]'); }],
+  ['cancel-remove-competitor', () => { state.competitors.removing = ''; render(); restoreFocus('[data-action="remove-competitor"]'); }],
+  ['confirm-remove-competitor', removeOpenCompetitor],
 ]);
 
 function navigationRequested(button) {
@@ -282,6 +290,7 @@ const formHandlers = new Map([
   ['resolution-form', resolveFinding],
   ['add-project-form', submitOnboarding],
   ['remove-page-form', submitRemovePage],
+  ['competitor-form', addCompetitor],
 ]);
 
 function handleSuggestionToggle(target) {

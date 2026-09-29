@@ -12,6 +12,7 @@ import { pendingSuggestions } from './lib/suggestions.mjs';
 import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, setCoreFeatures, updateFinding, validationError } from './lib/store.mjs';
 import { designGuide, projectDocs } from './lib/project-docs.mjs';
 import { captureHistory } from './lib/history.mjs';
+import { addCompetitor, listCompetitors, removeCompetitor, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
 const publicDir = join(root, 'public');
@@ -93,6 +94,32 @@ function startProjectScan(projectId) {
   return { job: id };
 }
 
+function runningCompetitorScan(projectId, competitorId) {
+  return [...jobs].find(([, job]) => job.kind === 'competitor' && job.projectId === projectId && job.competitorId === competitorId && job.status === 'running')?.[0];
+}
+
+// A competitor scan reads several of their pages at two sizes, so it runs in the background like a project scan.
+function startCompetitorScan(projectId, competitorId) {
+  if (!listCompetitors(projectId).some(item => item.id === competitorId)) throw Object.assign(new Error(`Competitor ${competitorId} does not exist.`), { status: 404 });
+  const running = runningCompetitorScan(projectId, competitorId);
+  if (running) return { job: running };
+  const id = randomUUID();
+  const job = { kind: 'competitor', status: 'running', total: null, scanned: 0, current: '', projectId, competitorId, error: '' };
+  jobs.set(id, job);
+  scanCompetitor(projectId, competitorId, progress => Object.assign(job, progress)).then(
+    () => Object.assign(job, { status: 'done', current: '' }),
+    error => Object.assign(job, { status: 'failed', error: error.message }),
+  );
+  return { job: id };
+}
+
+// A failed summary is the model provider's failure, not a bad request.
+async function competitorSummary(projectId, competitorId) {
+  try { return await summarizeCompetitor(projectId, competitorId); }
+  catch (error) { error.status ??= 502; throw error; }
+}
+
+const competitorPath = '/api/projects/([a-z0-9-]+)/competitors/([a-z0-9-]+)';
 const pagePath = '/api/projects/([a-z0-9-]+)/pages/([a-z0-9-]+)';
 const withBody = handler => async (params, request) => projectView(handler(...params, await requestJson(request), person));
 
@@ -111,6 +138,11 @@ const routes = [
   ['GET', '/api/projects/([a-z0-9-]+)/design', ([id]) => designGuide(readProject(id)), 200, 'text/html; charset=utf-8'],
   ['PUT', '/api/projects/([a-z0-9-]+)/core-features', async ([id], request) => projectView(setCoreFeatures(id, (await requestJson(request)).features, person))],
   ['POST', '/api/projects/([a-z0-9-]+)/features', async ([id], request) => projectView(addFeaturesToPages(id, (await requestJson(request)).pages, person))],
+  ['GET', '/api/projects/([a-z0-9-]+)/competitors', ([id]) => listCompetitors(id)],
+  ['POST', '/api/projects/([a-z0-9-]+)/competitors', async ([id], request) => addCompetitor(id, await requestJson(request))],
+  ['POST', `${competitorPath}/remove`, ([id, competitorId]) => removeCompetitor(id, competitorId)],
+  ['POST', `${competitorPath}/scan`, ([id, competitorId]) => startCompetitorScan(id, competitorId), 202],
+  ['POST', `${competitorPath}/summary`, ([id, competitorId]) => competitorSummary(id, competitorId)],
   ['POST', `${pagePath}/remove`, withBody((projectId, pageId, input, by) => removePage(projectId, pageId, input.reason, by))],
   ['GET', `${pagePath}/history`, params => captureHistory(...params)],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],

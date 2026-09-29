@@ -11,6 +11,24 @@ import { runTests } from './lib/test-runs.mjs';
 import { projectReport } from './lib/report.mjs';
 import { pendingSuggestions } from './lib/suggestions.mjs';
 import { startReview } from './lib/reviews.mjs';
+import { addCompetitor, listCompetitors, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
+import { dataDir } from './lib/paths.mjs';
+
+function competitorOf(competitors, id) {
+  return competitors.find(item => item.id === id);
+}
+
+// Agents get what each page says and where its screenshots are, not the stored page text.
+function competitorPageView(page) {
+  if (page.error) return { name: page.name, url: page.url, error: page.error };
+  const screenshots = Object.fromEntries(Object.entries(page.captures).map(([device, shot]) => [device, `${dataDir}${shot.path}`]));
+  return { name: page.name, url: page.url, title: page.title, description: page.description, headings: page.headings.map(heading => heading.text), screenshots };
+}
+
+function competitorView(competitor) {
+  const { id, name, url, summary, scan } = competitor;
+  return { id, name, url, scannedAt: scan?.scannedAt ?? null, summary, pages: (scan?.pages ?? []).map(competitorPageView) };
+}
 
 const supportedVersions = new Set(['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']);
 const agentPattern = /^[A-Za-z0-9-]{1,40}$/;
@@ -290,6 +308,33 @@ const definitions = [
       const saved = projectView(setCoreFeatures(project, features, byAgent(agent)));
       return { project, coreFeatures: saved.coreFeatures.map(({ id, name, status, pageIds }) => ({ id, name, status, pageIds })) };
     },
+  },
+  {
+    name: 'dogfood_competitors',
+    description: 'List the project\'s competitors (at most five): each one\'s AI summary (what they do, who it is for, pricing, how they sell, key features, and how they compare with this project) and its scanned pages with title, description, headings, and full-page screenshot files you can open.',
+    inputSchema: objectSchema({ project: projectPageProperties.project }, ['project']),
+    run: ({ project }) => ({ project, competitors: listCompetitors(project).map(competitorView) }),
+  },
+  {
+    name: 'dogfood_add_competitor',
+    description: 'Add a competitor by its website and scan it now: dogfood finds its key pages (the landing page, then pricing, features, product, about), takes full-page computer and phone screenshots, and records what each page says. Takes a minute or two. A project keeps at most five competitors.',
+    inputSchema: objectSchema({ project: projectPageProperties.project, url: { type: 'string', description: 'The competitor\'s website, http(s).' }, name: { type: 'string', description: 'Optional display name; defaults to the host name.' } }, ['project', 'url']),
+    run: async ({ project, url, name }) => {
+      const added = addCompetitor(project, { url, name }).at(-1);
+      return competitorView(competitorOf(await scanCompetitor(project, added.id), added.id));
+    },
+  },
+  {
+    name: 'dogfood_scan_competitor',
+    description: 'Rescan a competitor\'s key pages, replacing its screenshots and page text. Takes a minute or two.',
+    inputSchema: objectSchema({ project: projectPageProperties.project, competitor: { type: 'string', description: 'Competitor ID from dogfood_competitors.' } }, ['project', 'competitor']),
+    run: async ({ project, competitor }) => competitorView(competitorOf(await scanCompetitor(project, competitor), competitor)),
+  },
+  {
+    name: 'dogfood_summarize_competitor',
+    description: 'Have the AI summarize a scanned competitor from its page text and compare it with this project\'s vision.md. Spends model-provider usage (about a cent through OpenRouter).',
+    inputSchema: objectSchema({ project: projectPageProperties.project, competitor: { type: 'string', description: 'Competitor ID from dogfood_competitors.' } }, ['project', 'competitor']),
+    run: async ({ project, competitor }) => competitorView(competitorOf(await summarizeCompetitor(project, competitor), competitor)),
   },
   {
     name: 'dogfood_remove_page',

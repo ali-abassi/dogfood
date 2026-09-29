@@ -3,7 +3,7 @@
 // (needs agent-browser).
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +37,18 @@ manifest.pages.find(item => item.id === 'book').features[0].expected = 'Lists al
 Object.assign(manifest.pages.find(item => item.id === 'home'), { scan: null });
 manifest.pages.find(item => item.id === 'home').captures.mobile = { state: 'blocked', reason: 'Not captured yet.' };
 writeFileSync(manifestFile, JSON.stringify(manifest, null, 2));
+
+// A competitor already scanned and summarized; the demo screenshot stands in for its page.
+const rivalShots = join(data, 'captures/tidepool/competitors/rival-example');
+mkdirSync(rivalShots, { recursive: true });
+for (const file of ['landing.png', 'landing-mobile.png']) cpSync(join(repo, 'demo/captures/tidepool/book.png'), join(rivalShots, file));
+const rivalShot = file => ({ path: `/captures/tidepool/competitors/rival-example/${file}`, pixelWidth: 1440, pixelHeight: 900 });
+mkdirSync(join(data, 'competitors'), { recursive: true });
+writeFileSync(join(data, 'competitors/tidepool.json'), JSON.stringify({ competitors: [{
+  id: 'rival-example', name: 'Rival Swim', url: 'https://rival.example/', addedAt: '2026-09-29T08:00:00.000Z',
+  scan: { scannedAt: '2026-09-29T08:00:00.000Z', pages: [{ id: 'landing', name: 'Home', url: 'https://rival.example/', title: 'Rival Swim', description: 'Swim lessons near you.', siteName: 'Rival Swim', headings: [{ level: 1, text: 'Book in seconds' }], text: 'Lessons from $12.', captures: { desktop: rivalShot('landing.png'), mobile: rivalShot('landing-mobile.png') } }] },
+  summary: { whatTheyDo: 'Swim lessons booked online.', whoItsFor: 'Parents.', pricing: 'From $12 a lesson.', howTheySell: 'Speed.', keyFeatures: ['Book a lesson'], theyDoBetter: ['Weekend classes'], weDoBetter: ['Age-matched classes'], ideasToTake: ['Show prices up front'], summarizedAt: '2026-09-29T08:05:00.000Z', scannedAt: '2026-09-29T08:00:00.000Z' },
+}] }));
 
 const session = `dogfood-ui2-proof-${process.pid}`;
 let passed = 0;
@@ -163,6 +175,24 @@ try {
   check('a page without a phone screenshot says why', () => {
     assert.match(text('.report-screen-mobile'), /Not captured yet/);
   });
+
+  click('[data-project-view="competitors"]');
+  settle();
+  check('Competitors lists each competitor with its screenshot and what they do, under a form to add another', () => {
+    assert.match(text('.competitor-card'), /Rival Swim/);
+    assert.match(text('.competitor-card'), /Swim lessons booked online/);
+    assert.equal(page(`Boolean(document.querySelector('.competitor-card img'))`), true);
+    assert.equal(page(`document.querySelector('#competitor-url')?.type`), 'url');
+  });
+  click('[data-competitor-id="rival-example"]');
+  settle();
+  check('a competitor shows its summary compared with the project, then each page with both screenshots and its headings', () => {
+    const detail = text('.competitor-detail');
+    for (const expected of ['What they do', 'From $12 a lesson.', 'They do better', 'Weekend classes', 'We do better', 'Book in seconds']) assert.ok(detail.includes(expected), `detail should show ${expected}`);
+    assert.equal(page(`document.querySelectorAll('.competitor-page .screen-frame img').length`), 2);
+  });
+  click('[data-action="close-competitor"]');
+  settle();
 
   click('[data-project-view="overview"]');
   settle();
