@@ -20,9 +20,12 @@ function hostOf(url) {
 function scanWords(competitor) {
   const progress = state.competitors.scanning[competitor.id];
   if (progress) return progress.total ? `Reading their pages… ${progress.scanned + 1} of ${progress.total}${progress.current ? ` · ${progress.current}` : ''}` : 'Finding their pages…';
-  if (!competitor.scan) return 'Not scanned yet';
-  const pages = competitor.scan.pages.filter(page => !page.error).length;
-  return `${plural(pages, 'page', 'pages')} · ${relativeCaptureAge({ state: 'rendered', capturedAt: competitor.scan.scannedAt }).replace('Taken', 'scanned')}`;
+  return competitor.scan ? `${pagesWords(competitor.scan.pages)} · ${relativeCaptureAge({ state: 'rendered', capturedAt: competitor.scan.scannedAt }).replace('Taken', 'scanned')}` : 'Not scanned yet';
+}
+
+function pagesWords(pages) {
+  const unread = pages.filter(page => page.error).length;
+  return `${plural(pages.length - unread, 'page', 'pages')}${unread ? ` · ${unread} couldn’t be read` : ''}`;
 }
 
 function thumbnailMarkup(competitor) {
