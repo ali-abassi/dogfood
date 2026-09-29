@@ -1,86 +1,74 @@
 ---
 name: dogfood
-description: Check whether every page of a web app works, page by page, with dogfood, and show the owner six plain answers per page. Use when someone asks to QA their app, to check whether their app or site is working, or to set up or use dogfood.
+description: Plan, build, verify and resume a web project with Dogfood's task workflow and evidence gates. Use to set up Dogfood, work through a project's plan, or QA its pages.
 ---
 
-# Check an app with dogfood
+# Work on a project with Dogfood
 
-The person you are helping built an app and wants to know if it works. They may not be technical. dogfood gives every page of their app a screenshot on a computer and a phone, and six plain answers:
+Dogfood holds the structured work plan and evidence. You build with your normal coding tools. The person sees the Plan and page reports in the local dashboard. Task acceptance, a finished audit, and a production deployment are different outcomes.
 
-| Answer | The question it answers | Where the answer comes from |
-|---|---|---|
-| Looks right | Does it look finished and match the rest of the app? | The AI check of the screenshots, or your verdict `design` |
-| Clear purpose | Is it clear why this page exists? | The AI check, or your verdict `purpose` |
-| Easy to use | Can people find and do things easily, on a phone and a computer? | The AI check or your verdict `ease`, the page check (sideways scrolling, unnamed buttons), and the accessibility questions |
-| Safe | Is it protected from hackers and from people copying its data? | The security and scraping questions |
-| Fast & findable | Does it load quickly and show up properly in search? | The page check's load time and the search questions |
-| Works as expected | Does everything you can do here work, with no bugs? | Your verdict on each thing a person can do there, open bugs, and errors the page check found |
+## Set up or resume
 
-Your job: set dogfood up, add the app, write down what people can do on each page, answer the six questions with real evidence, and tell the person what you found. A page is not done until `dogfood_complete` accepts it.
+Dogfood needs Node 20+. Clone it once if unavailable; its server has no runtime dependencies. Use `node /absolute/path/to/dogfood/bin/dogfood.mjs` for every command below, or optionally run `npm link` from the Dogfood checkout to install the `dogfood` command. Start the dashboard with `npm start`; use `DOGFOOD_PORT` if the default 4321 is occupied. Leave existing sessions and servers alone.
 
-## 1. Set up dogfood (once)
-
-You need Node 20 or newer.
+From the project checkout:
 
 ```sh
-git clone https://github.com/ali-abassi/dogfood.git ~/dogfood   # skip if it is already there
-npm install --global agent-browser && agent-browser install      # the browser dogfood uses to check pages
-cd ~/dogfood && npm start                                        # keep it running; the app is at http://127.0.0.1:4321
+dogfood init --checkout . --id my-app --name "My App"
+dogfood doctor --project my-app
+dogfood context --project my-app --json
 ```
 
-If port 4321 is taken, start it with another, for example `DOGFOOD_PORT=4400 npm start`, and use that address everywhere below.
+Initialization is idempotent for the same project and checkout. No running website, browser, model API, or agent runner is needed to plan. Verification needs a Git checkout with a commit so receipts can bind to its source. Initialize Git if that is part of the authorized new-project work; preserve existing history.
 
-Every step below names a dogfood tool. Call it either way:
+Always read `context` first when continuing. It identifies the next available task, current owners, blockers, documents, and handoff. Read the project's current vision, design, plan and decisions when relevant. Do not claim somebody else's work. Release your own claim with a useful handoff before another agent takes it.
 
-- **MCP (preferred for long work).** Register it once, for example `claude mcp add --scope user dogfood -- node ~/dogfood/mcp.mjs` in Claude Code. Most clients load new MCP servers only in a new session.
-- **Shell (works right away).** `node ~/dogfood/mcp.mjs <tool> '<json arguments>'` runs one tool and prints its result, for example `node ~/dogfood/mcp.mjs dogfood_next '{"project":"my-app"}'`. A failure exits with status 1 and says why.
+MCP equivalents are `dogfood_init`, `dogfood_context`, `dogfood_tasks`, `dogfood_next_task`, `dogfood_add_task`, `dogfood_claim_task`, `dogfood_update_task`, `dogfood_verify_task`, and `dogfood_accept_task`. Inspect exact arguments with `dogfood schema TOOL`. Existing `dogfood_next` lists page QA gaps, not build tasks. Use `dogfood tool TOOL --input args.json` for any underlying operation; `--input -` reads JSON from stdin. Shell/MCP errors do not prove that a write happened; reread the resulting state.
 
-Every tool that changes something takes an `agent` argument: your name, for example `"agent": "claude"`. dogfood records who did what, and shows the person which answers came from you.
+## Plan the smallest complete outcome
 
-Keep dogfood's data where it is (`~/dogfood/data`, which git ignores). Never edit `data/projects/*.json` by hand: dogfood signs every change it writes and flags edits made outside it.
+Keep intent in `vision.md`, visual direction in `design.html`/`design.md`, and milestones in `plan.md`. Dogfood's structured tasks are the task-status source of truth; don't maintain another checkbox ledger independently.
 
-## 2. Add the app
+Turn each outcome into a bounded task. Specify scope, dependencies, the native commands that prove it (optional `timeoutSeconds` from 1 to 1800, default 300), and related pages plus visible criteria for UI work. A task can describe a journey across several pages. Avoid tasks that just say “improve quality” or checks that merely exit 0.
 
-1. Ask the person for the app's address: a local dev server such as `http://localhost:3000` or the live site. Ask whether some pages need signing in; if they do, ask which Chrome profile is signed in (usually `Default`).
-2. The AI check costs about half a cent per page. Say so and ask before the first time you use it. A yes covers this app until they say otherwise.
-3. Call `dogfood_onboard_project` with `url`, a `name`, and `browserProfile` when needed. Leave `confirmAiReviewUsage` out: it would run the AI check on every page it finds, before you can remove duplicates. Onboarding finds the pages, takes both screenshots of each, and measures them.
-4. Read the page list it returns. Remove anything that is not a real page (a duplicate, a redirect, a file) with `dogfood_remove_page` and a reason. Add important pages it could not find, such as pages behind sign-in or inside a single-page app, with `dogfood_register_page` (give `url` for hash routes like `https://app.example/#/billing`, `signedIn: true` for pages that need a signed-in visitor so a signed-out scan fails instead of passing, and `untestedNote` for what you will not be able to check there), then `dogfood_scan_page`.
-5. If the person said yes to the AI check, run `dogfood_ai_review` with `confirmUsage: true` on each real page now. Stay within any page limit they gave you.
+Example `task.json`:
 
-## 3. Write down what people can do on each page
+```json
+{
+  "id": "booking",
+  "title": "Let a visitor book a lesson",
+  "outcome": "A confirmed booking survives reload and removes that slot from availability.",
+  "scope": ["src/booking", "tests/booking.test.mjs"],
+  "dependencies": [],
+  "checks": [{"id": "booking", "command": ["node", "--test", "tests/booking.test.mjs"]}],
+  "pageIds": [],
+  "look": "At 1280 and 390 wide, the booking confirmation and next action are visible."
+}
+```
 
-For each page, list the things a person comes there to do, each with what should happen when it works. These are what Works as expected checks.
+```sh
+dogfood task add --project my-app --agent codex --input task.json
+dogfood next --project my-app --json
+dogfood task claim booking --project my-app --agent codex
+```
 
-- Name them as jobs, in a few words: "Book a lesson for a child", "Compare plans by price", "Reset a forgotten password". A menu, a button, a link, a header, or a form field is never one.
-- Read the app's code for each route (what the page loads, what its forms send, what its handlers do) and write what should happen end to end: "The booking is saved, the slot disappears for others, and a confirmation email arrives."
-- `dogfood_suggestions` lists what the AI check proposed, for the whole project at once (call it once, not per page). Keep the ones that match the code, reword the rest, and add them with `dogfood_add_features`.
-- Usually two to five per page. Show the person the list for any page where you are unsure what it is for, and use their words.
+Use your stable agent name. Checks are argv arrays executed directly in the registered checkout; quotes and shell operators aren't parsed. Configure deliberate native test commands, not deployment, purchase or destructive commands. Register pages once an app exists, then link UI tasks to them with `task update` before acceptance. Checks alone cannot accept a task with linked pages that haven't passed page acceptance.
 
-## 4. Answer the six questions, page by page
+## Build, verify, accept
 
-Work through `dogfood_next` in order. It lists each unfinished page with what is missing and the tool that answers it. Record answers with `dogfood_record_verdicts`, passing your agent name. Every Good or Needs work needs a note. When you cannot check something because you need access, a provider, or a human, record `blocked` with what you need instead of guessing.
+Build the claimed scope and preserve unrelated edits. Isolated worktree builds need authorized integration into the registered checkout before final verification; Dogfood runs checks in that registered checkout. Run the meaningful native checks, then use the real browser for the intended user outcome. For page QA read [references/qa.md](references/qa.md). Attach a running URL to this project with `dogfood attach-url URL --project my-app`; register/scan its pages with existing Dogfood tools. Loopback URLs are treated as serving the checkout. For a remote preview, use `attach-url URL --serves-checkout` only when you have verified it runs the registered code; this declaration does not independently prove deployment. A remote URL without that declaration cannot accept checkout-linked evidence. Read `project.checkoutFingerprint` from context or `checkoutFingerprint` from `dogfood_page` before manual QA, then pass it as `checkoutFingerprint` when recording verdicts or captures so a concurrent source change rejects the write. Onboarding creates a separate project, so don't onboard again to attach an app to an existing plan.
 
-**Write notes a non-technical person understands.** Start with what you did and what you saw: "Pressed Reserve with a real email on a phone; the confirmation showed and the email arrived within a minute." Do not start with tooling, URLs, or commit hashes.
+```sh
+dogfood verify booking --project my-app --agent codex
+dogfood task accept booking --project my-app --agent codex
+```
 
-- **Looks right, Clear purpose, Easy to use.** A current AI check (step 2.5) answers all three from both screenshots; after a page changes, run `dogfood_ai_review` again if the person agreed to the cost. Then open the page yourself. Confirm or correct the AI with `checks.design`, `checks.purpose`, or `checks.ease` whenever you saw something it could not, such as a layout that breaks while you use it. Your verdict outranks the AI's.
-- **Easy to use** also needs the accessibility questions (`audit.accessibility`). Tab through the page, check that buttons, fields, and images have names, check contrast in each theme the app has (light, and dark if it has one), and zoom to 200%.
-- **Safe.** Answer `audit.security` and `audit.scraping` from the code and the page: are inputs checked on the server, can one person reach another's data by changing an ID, are data endpoints limited against bulk copying, is only public content visible to crawlers. Say Needs work, with the reason, when you find a gap. When you cannot tell, leave it Not checked and say why in your report.
-- **Fast & findable.** The page check measures load time (over 3 seconds on either device is Needs work). Answer `audit.seo`: a specific title and description, and indexing only for pages meant to be public.
-- **Works as expected.** Do each thing in a real browser, for example with agent-browser, the way a person would: fill the form, press the button, wait for the result, and check that the data really saved (reload, or look where it should appear). Record one verdict per thing in `features`, with what you did and saw. Report every bug with `dogfood_add_issue`:
-  - P0 when it breaks the app.
-  - P1 when it blocks this page.
-  - P2 when it is annoying.
-  - P3 when it is cosmetic.
+For a crashed or renamed owner, explicitly recover the claim with `task update` input `{"releaseOwner":true,"recoveryReason":"Previous agent stopped; continuing from its handoff."}`; the recovery is recorded and clears the old receipt.
 
-  Use a title a person can read, and steps that reproduce it. When a fix lands, check again and close it with `dogfood_resolve_issue` and what you retested.
-- After a deploy, `dogfood_scan_project` retakes every page and names the ones that look different; look at those again.
-- Call `dogfood_complete` for each page. Report a page as done only when it accepts; otherwise it lists exactly what is still missing.
+Verification stores command exits and bounded output tied to the current task definition and source fingerprint. If checks change files, verification fails and must be repeated after the generated state is stable. Changing source after verification invalidates acceptance. Finish edits and commits before collecting the final evidence; a later commit changes the revision too.
 
-Do not fix the app while checking it unless the person asks. Report what you found; fixing is a separate job.
+Before there are pages, the page gate reports that there is nothing to audit; use task acceptance. Audit completion means every required item was checked, including recorded failures. `dogfood gate --project my-app` checks that. `dogfood gate --accept --project my-app` also requires all answers Good, no unresolved findings, current checkout and environment evidence. `dogfood_accept_page` checks a single page. Never resolve or retire a real problem to force a pass. Never manually edit Dogfood's project/workflow JSON files.
 
-## 5. Tell the person
+If blocked, update your task using `{"status":"blocked","blocker":"What is missing","handoff":"What was done and how to continue","releaseOwner":true}`. To hand off available work use status `todo` with `handoff` and `releaseOwner:true`. The next agent can claim it. Plan changes invalidate the earlier verification and dependent acceptance where appropriate.
 
-- Leave dogfood running so they can look (stop only processes you started, by their own PID; never `pkill` by name, which stops other people's servers too).
-- Point them to <http://127.0.0.1:4321>. Each page shows its screenshots and six answers, and each answer opens to show its evidence.
-- Summarise from `dogfood_report` in plain words: how many pages are good, which need work and why, the open bugs by how bad they are, and what you could not check.
-- Never call something checked that you did not check. Not checked stays Not checked, and a screenshot alone does not prove that anything works.
+Report the accepted outcome, concrete evidence and remaining blockers. Do not call an accepted local task deployed or production-ready: run the project's authorized shipping gate and verify its real environment separately. Paid model checks, public posting, account actions and production effects retain the user's authorization boundaries. No screenshot or model opinion proves an untested integration.

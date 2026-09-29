@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import '../lib/env.mjs';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -37,7 +37,7 @@ Audit completion and acceptance are separate. gate --accept requires acceptance.
 `;
 
 const options = Object.fromEntries(['project', 'input', 'checkout', 'id', 'name', 'url', 'environment', 'agent'].map(name => [name, { type: 'string' }]));
-Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' } });
+Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' }, 'serves-checkout': { type: 'boolean' } });
 
 function inputJson(values) {
   if (!values.input) throw new Error('Provide --input FILE, or --input - for JSON from stdin.');
@@ -79,12 +79,15 @@ async function taskCommand([action, task], values) {
   return runNamedTool(operations[action], args);
 }
 
+function gateMode(values) { return values.accept ? 'acceptance' : 'audit'; }
+
 function gate(pageIds, values) {
   const project = projectView(readProject(projectId(values)));
   const pages = pageIds.length ? pageIds.map(id => pageById(project, id)) : project.pages;
-  const result = pagesGate(pages, values.accept ? 'acceptance' : 'audit');
+  const result = pagesGate(pages, gateMode(values));
+  if (!pages.length) result.lines = ['This project has no pages. Register pages once the app runs; use task acceptance for work before a UI exists.'];
   if (!result.complete) process.exitCode = 1;
-  return { project: project.id, mode: values.accept ? 'acceptance' : 'audit', ...result };
+  return { project: project.id, mode: gateMode(values), ...result };
 }
 
 function schema(name) {
@@ -96,13 +99,13 @@ function schema(name) {
 }
 
 const commands = {
-  init: async (args, values) => initialized(await runNamedTool('dogfood_init', { ...values, checkout: resolve(values.checkout ?? '.') })),
+  init: async (args, values) => initialized(await runNamedTool('dogfood_init', { ...values, servesCheckout: values['serves-checkout'], checkout: resolve(values.checkout ?? '.') })),
   doctor: (args, values) => doctor(values.project ?? projectFromCheckout()),
   context: (args, values) => runNamedTool('dogfood_context', { project: projectId(values) }),
   next: (args, values) => runNamedTool('dogfood_next_task', { project: projectId(values) }),
   task: taskCommand,
   verify: (args, values) => taskCommand(['verify', ...args], values),
-  'attach-url': (args, values) => runNamedTool('dogfood_attach_url', { project: projectId(values), url: args[0] ?? values.url }),
+  'attach-url': (args, values) => runNamedTool('dogfood_attach_url', { project: projectId(values), url: args[0] ?? values.url, servesCheckout: values['serves-checkout'] }),
   gate,
   report: (args, values) => runNamedTool('dogfood_report', { project: projectId(values) }),
   tool: (args, values) => runNamedTool(args[0], inputJson(values)),
@@ -111,7 +114,8 @@ const commands = {
 };
 
 function failedResult(result) {
-  return result?.passed === false || result?.receipt?.passed === false || result?.ok === false;
+  if (!result) return false;
+  return [result.passed, result.ok, result.receipt?.passed].includes(false);
 }
 
 function printResult(result, compact) {
@@ -132,7 +136,7 @@ async function main() {
   printResult(await run(args, values), values.json);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => {
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 2;
