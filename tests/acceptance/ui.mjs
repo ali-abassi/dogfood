@@ -148,11 +148,12 @@ try {
   check('choosing a page from the overview opens that page', () => {
     assert.equal(page(`document.querySelector('#selected-page-heading')?.textContent`), book.name);
   });
-  check('the report shows the backend acceptance gate and only unmet requirements', () => {
+  check('the report shows the backend acceptance gate and only unmet acceptance requirements', () => {
     const expected = book.progress.accepted === true ? 'Accepted' : book.progress.complete === true ? 'Checked · Not accepted' : 'Not fully checked';
     assert.equal(page(`document.querySelector('[data-gate-status]')?.textContent`), expected);
     const shown = page(`[...document.querySelectorAll('.page-gate-requirements li strong')].map(item => item.textContent)`);
-    assert.deepEqual(shown, book.progress.requirements.filter(item => !item.met).map(item => item.label));
+    const requirements = book.progress.acceptanceRequirements ?? book.progress.requirements;
+    assert.deepEqual(shown, requirements.filter(item => !item.met).map(item => item.label));
   });
   check('the page shows the server\'s six answers with one-line reasons', () => {
     const rows = page(`[...document.querySelectorAll('[data-answer-row]')].map(row => ({ id: row.dataset.answerRow, mark: row.querySelector('[data-answer-mark]').getAttribute('aria-label'), summary: row.querySelector('.answer-summary').textContent }))`);
