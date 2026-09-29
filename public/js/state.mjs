@@ -7,7 +7,7 @@ export const severityNames = { P0: 'Breaks the app', P1: 'Blocks this page', P2:
 const severityRank = { P0: 0, P1: 1, P2: 2, P3: 3 };
 export const questionTopics = { security: 'Security', scraping: 'Copying', seo: 'Search', accessibility: 'Accessibility' };
 export const deviceNames = { desktop: 'Computer', mobile: 'Phone' };
-export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null, screensDevice: 'desktop', copied: false, suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, docs: { key: '', loading: false, data: null, error: '' }, history: { key: '', loading: false, shots: null, error: '', day: '' }, competitors: { key: '', loading: false, items: [], error: '', open: '', adding: false, scanning: {}, summarizing: '', removing: '' }, qaAgent: { key: '', configured: false, runs: {}, starting: '', error: '' }, message: '' };
+export const state = { projects: [], project: null, pageId: null, view: 'overview', query: '', filter: 'all', sort: 'navigation', browseOpen: false, answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null, screensDevice: 'desktop', copied: false, suggestions: { key: '', loading: false, items: [], error: '' }, scan: { key: '', running: false, error: '' }, scanAll: { running: false, total: null, scanned: 0, current: '', error: '' }, onboarding: { job: '', running: false, total: null, scanned: 0, current: null, error: '' }, projectDraft: { url: '', name: '', browserProfile: '' }, qa: { key: '', version: 0, runs: [], plan: [], planError: '', loading: false, running: false, error: '' }, visual: { key: '', loading: false, running: false, result: null, error: '' }, docs: { key: '', loading: false, data: null, error: '' }, workflow: { key: '', loading: false, data: null, error: '', action: '', formOpen: false, selected: '' }, history: { key: '', loading: false, shots: null, error: '', day: '' }, competitors: { key: '', loading: false, items: [], error: '', open: '', adding: false, scanning: {}, summarizing: '', removing: '' }, qaAgent: { key: '', configured: false, runs: {}, starting: '', error: '' }, message: '' };
 
 // While any inline form is open, its Save is the view's one blue button.
 export function editorOpen() {
@@ -53,15 +53,8 @@ export function activePage() {
   return state.project?.pages.find(page => page.id === state.pageId) ?? null;
 }
 
-// A Good answer reads Recheck, not Good, when any of its evidence predates the page's last visual
-// change: verdicts and reviews from before describe a page that no longer looks like this one.
-// Measurements come from the current scan, so they never go stale; evidence without a time cannot
-// prove it is fresh, so it reads Recheck too.
 export function displayAnswerStatus(page, answer) {
-  if (answer.status !== 'pass' || !page.progress.changedSinceReview) return answer.status;
-  const lastChangedAt = Date.parse(page.scan?.lastChangedAt);
-  const stale = answer.parts.some(part => part.source !== 'scan' && !(Date.parse(part.at) >= lastChangedAt));
-  return stale ? 'recheck' : answer.status;
+  return answer.status;
 }
 
 export function isProjectView() {
