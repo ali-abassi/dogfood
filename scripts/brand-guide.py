@@ -12,7 +12,7 @@ def esc(value):
 
 ALIASES = {"Canvas": ["canvas", "bg"], "Group": ["group", "panel", "surface"], "Ink": ["ink", "text"],
            "Secondary": ["secondary", "muted"], "Tertiary": ["tertiary", "muted"], "Separator": ["separator", "border"],
-           "Blue": ["blue", "accent", "gain"], "Green": ["green", "gain"], "Orange": ["orange", "amber"], "Red": ["red", "loss"]}
+           "Blue": ["blue", "accent", "gain"], "Blue-fill": ["action fill", "blue-fill", "blue", "accent", "gain"], "Green": ["green", "gain"], "Orange": ["orange", "amber"], "Red": ["red", "loss"]}
 
 
 def normal(colors):
@@ -102,7 +102,7 @@ def logo_sizes(mark):
 
 
 CSS = """
-:root{--canvas:%(Canvas)s;--group:%(Group)s;--ink:%(Ink)s;--secondary:%(Secondary)s;--tertiary:%(Tertiary)s;--separator:%(Separator)s;--blue:%(Blue)s;--green:%(Green)s;--orange:%(Orange)s;--red:%(Red)s;color-scheme:light dark}
+:root{--canvas:%(Canvas)s;--group:%(Group)s;--ink:%(Ink)s;--secondary:%(Secondary)s;--tertiary:%(Tertiary)s;--separator:%(Separator)s;--blue:%(Blue)s;--blue-fill:%(Blue-fill)s;--green:%(Green)s;--orange:%(Orange)s;--red:%(Red)s;color-scheme:light dark}
 %(dark)s
 *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:14.5px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,system-ui,sans-serif;letter-spacing:-.01em}
 main{max-width:980px;margin:0 auto;padding:56px 40px 96px}code{font:12px "SF Mono",ui-monospace,Menlo,monospace;color:var(--secondary)}
@@ -118,8 +118,8 @@ ul{margin:0;padding-left:18px}li{margin:4px 0}.cols{display:grid;grid-template-c
 .swatch figcaption{display:grid;gap:2px;margin-top:8px}.swatch b{font-weight:500}.swatch small{color:var(--tertiary);font-size:12px;line-height:1.35}
 .type-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:12px 0;border-top:.5px solid var(--separator)}.type-row:first-child{border-top:0;padding-top:0}
 .space{display:flex;align-items:center;gap:16px;padding:6px 0}.space span{height:12px;border-radius:3px;background:var(--blue)}
-.demo{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.pill{min-height:36px;padding:0 18px;border:0;border-radius:980px;font:500 14px/36px inherit;font-family:inherit}
-.pill.primary{background:var(--blue);color:#fff}.pill.secondary{background:rgba(120,120,128,.14);color:var(--ink)}
+.demo{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.pill{min-height:36px;padding:0 18px;border:0;border-radius:980px;font-size:14px;font-weight:500;line-height:36px;font-family:inherit}
+.pill.primary{background:var(--blue-fill);color:#fff}.pill.secondary{background:rgba(120,120,128,.14);color:var(--ink)}
 .seg{display:inline-flex;padding:2px;border-radius:9px;background:rgba(120,120,128,.14)}.seg span{padding:0 16px;line-height:32px;border-radius:7px;font-weight:500;font-size:13px}.seg span.on{background:var(--group);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .rows{margin-top:16px;border-radius:12px;background:var(--canvas);padding:0 16px}.rows div{display:flex;justify-content:space-between;padding:12px 0;border-top:.5px solid var(--separator)}.rows div:first-child{border-top:0}
 .dot{display:inline-flex;align-items:center;gap:6px}.dot:before{content:"";width:8px;height:8px;border-radius:50%%;background:currentColor}

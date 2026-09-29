@@ -247,3 +247,7 @@ export function markdownMarkup(markdown) {
   }
   return blocks.join('');
 }
+
+export function isHttpUrl(value) {
+  return URL.canParse(value ?? '') && ['http:', 'https:'].includes(new URL(value).protocol);
+}

@@ -28,9 +28,6 @@ const jobs = new Map();
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
-  ['/styles/docs-polish.css', ['styles/docs-polish.css', 'text/css; charset=utf-8']],
-  ['/styles/research-polish.css', ['styles/research-polish.css', 'text/css; charset=utf-8']],
-  ['/styles/reports-polish.css', ['styles/reports-polish.css', 'text/css; charset=utf-8']],
   ['/favicon.svg', ['favicon.svg', 'image/svg+xml']],
   ['/logo.svg', ['logo.svg', 'image/svg+xml']],
 ]);
@@ -200,12 +197,17 @@ function rejectedRequest(request) {
   return null;
 }
 
+function sendApi(response, api) {
+  if (api.type.startsWith('text/html')) response.setHeader('Content-Security-Policy', 'sandbox allow-same-origin');
+  return send(response, api.status, api.body, api.type);
+}
+
 async function handleRequest(request, response) {
   const rejection = rejectedRequest(request);
   if (rejection) return send(response, 403, { error: rejection });
   const pathname = new URL(request.url, 'http://localhost').pathname;
   const api = await apiResponse(request, pathname);
-  if (api) return send(response, api.status, api.body, api.type);
+  if (api) return sendApi(response, api);
   const asset = request.method === 'GET' && staticFile(pathname);
   if (asset) return send(response, 200, readFileSync(asset.path), asset.type);
   return send(response, 404, { error: 'Not found' });

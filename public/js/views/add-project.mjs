@@ -1,5 +1,5 @@
 import { readJson } from '../api.mjs';
-import { escapeHtml, plainMessageMarkup, scanPosition } from '../format.mjs';
+import { isHttpUrl, escapeHtml, plainMessageMarkup, scanPosition } from '../format.mjs';
 import { state } from '../state.mjs';
 import { loadProject, render } from '../app.mjs';
 
@@ -40,9 +40,13 @@ function addressFieldMarkup(draft) {
   return `<label for="product-url">Your app’s address<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}" ${invalid}></label>`;
 }
 
+function hasOptionalSettings(draft) {
+  return Boolean(draft.name || draft.browserProfile || draft.aiReview);
+}
+
 function optionalSettingsMarkup(draft) {
-  const expanded = draft.name || draft.browserProfile || draft.aiReview;
-  return `<details class="onboarding-options" ${expanded ? 'open' : ''}><summary>Optional settings</summary><div class="onboarding-option-fields">
+  const expanded = draft.optionsOpen ?? hasOptionalSettings(draft);
+  return `<details id="onboarding-options" class="onboarding-options" ${expanded ? 'open' : ''}><summary>Optional settings</summary><div class="onboarding-option-fields">
     <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
     <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
     <p class="field-hint" id="browser-profile-hint">For pages you sign in to, use their Chrome profile name, such as Default.</p>
@@ -82,10 +86,6 @@ function onboardingProgressText() {
 
 export function welcomeMarkup() {
   return `<main class="welcome-state">${addProjectFormMarkup(true)}</main>`;
-}
-
-function isHttpUrl(value) {
-  return URL.canParse(value ?? '') && ['http:', 'https:'].includes(new URL(value).protocol);
 }
 
 // Only fields the person filled in are sent; the server fills in the rest.

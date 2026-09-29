@@ -1,10 +1,12 @@
 # dogfood design system
 
-Revision 5, 2026-09-26. Each page is a report card: screenshots, then six plain answers. Supersedes revision 4's tabs and requirement list; tokens, type, and brand carry over.
+Revision 6, 2026-09-29. Plan, build, check and resume share one calm workbench. This release extends the approved Plan to project documents, features, research and QA. The generated visual brand guide is design.html; its source tokens are design.json.
+
+Report-card foundation, 2026-09-26: Each page is a report card: screenshots, then six plain answers. Supersedes revision 4's tabs and requirement list; tokens, type, and brand carry over.
 
 ## Product and register
 
-- **Product:** a local app that tells the owner of an app whether each page works.
+- **Product:** a lightweight local workspace for a person and their coding agent to plan, build, prove and resume a web project.
 - **User and moment (user-stated, 2026-09-26):** a non-technical person who built an app with an AI coding agent and wants to know if it is working; their agent fills dogfood in, and they open it to read the answer.
 - **Job:** see each page on a computer and a phone, and know six things about it: does it look right, is its purpose clear, is it easy to use, is it safe, is it fast and findable, and does it work as expected.
 - **Register:** a calm report in a native-feeling macOS utility; read far more than edited.
@@ -34,7 +36,7 @@ For a non-technical builder asking "is my app working?", dogfood feels like a ch
 - **Answer detail** (one per answer): a back link to the page, the answer name as the title, its question, the answer panel (big mark, word, full answer, where it came from and when, the pieces it is made of, Update answer, Check again when it reads Recheck), then the evidence in plain words: what the AI saw and would improve, measured facts ("Load time on a phone 1.8 s", "Page title Present: …"), the questions with their answers and an Answer questions form, and folded extras (design rules, protections the page asks browsers for).
 - **Works as expected** adds Things you can do here (mark, name, what should happen, what was seen), the AI's suggested things with one Add button, Bugs (Report a bug is the blue button; each bug names how bad it is in words), what the page check found, automated tests when the page has them, and folded data connections.
 - **Screenshots** view: back link, Computer | Phone switch, the full screenshot, then What changed (Before, Now, What changed) with "About N% of the page looks different".
-- **Add an app / welcome**: the logo, "Is your app working?", one sentence of promise, the sentence to give a coding agent with Copy, then "Or add it here" with the address field.
+- **Add an app / welcome**: the logo, plan/build/check/resume promise and copyable agent workflow; an existing app address follows, with optional settings folded away.
 - Phone (≤760px): a sticky bar with Pages; the sidebar becomes a full-screen sheet. The report stacks screenshots over answers; each answer row puts its one-line answer under its name. Overview rows put the six marks under the name, with a legend line above the panel.
 
 ### Typography
@@ -106,3 +108,9 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 - **Agent-selected working policy, 2026-09-27:** a scan that captures the wrong state fails instead of passing: identical desktop bytes at different routes, or a signed-out screen on a page registered as signed-in, records failed captures with a plain reason. A Good answer with evidence older than the page's last visual change reads Recheck (orange ↻) with a Check again action, replacing the "Changed since last check" tag; one-line reasons hide evidence paths, rule numbers, and file names, which stay in the detail behind the chevron.
 - **Agent-selected working policy, 2026-09-27:** each page lists its open bugs above its answers, and the overview lists open P0–P2 bugs across pages as Fix first, worst and oldest first, so open issues are visible without opening Works as expected. PR-1 now promises first-paint fit on pages with no open bugs, since the list takes the room it needs.
 - **Agent-selected working policy, 2026-09-27:** Blocked (orange ×) is a verdict state for checks, questions, and things that need access, a provider, or a human, distinct from Needs work and always with a reason; Needs work outranks it, it never completes a page, and the overview counts blocked pages separately so red means actionable. Nothing migrates to it automatically; agents set it explicitly.
+
+## Whole-app continuity, 2026-09-29
+
+Project selection uses its native keyboard behavior with one inset CSS indicator. Documents name their source and provide section navigation, refresh and a route to Plan. Saved competitor research stays readable while loading or retrying; summaries name the scan they describe. Suggestions retain choices during refresh and failed saves. Forms keep drafts, name refused fields and return focus on Cancel. Phone controls have a 40px minimum height, and Back links stay below the sticky menu when scrolled into view. Acceptance counts are labeled separately from answer status.
+
+Verification contract: app-polish-contract.md freezes normal, long, empty, loading, failed and interaction checks at 1280 and390 wide; root evidence also checks640 at DPR2 and reduced motion. No runtime dependencies were added.

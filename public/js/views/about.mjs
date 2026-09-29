@@ -31,7 +31,7 @@ function featureMarkup(feature) {
 function featuresMarkup(page) {
   const body = page.features.length
     ? `<ul class="about-features">${page.features.map(featureMarkup).join('')}</ul>`
-    : '<p class="muted">No things to do are listed yet.</p>';
+    : '<p class="muted">Nothing listed yet.</p>';
   return `<section class="about-part" data-about-features><div class="panel-heading"><h3>Things people can do · ${page.features.length}</h3><button type="button" class="text-button" data-view="works">Open checks</button></div>${body}</section>`;
 }
 

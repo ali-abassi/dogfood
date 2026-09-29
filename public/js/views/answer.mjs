@@ -173,6 +173,7 @@ function showFormError(form, selector, message, field) {
   const box = form.querySelector(selector);
   box.hidden = false;
   box.textContent = message;
+  if (!field) form.querySelector('.form-actions')?.insertAdjacentElement('beforebegin', box);
   if (field) {
     field.setAttribute('aria-invalid', 'true');
     if (field.tagName === 'TEXTAREA') field.insertAdjacentElement('afterend', box);
@@ -224,12 +225,13 @@ function questionsFromForm(form) {
 
 function incompleteEvidenceRow(row) {
   const note = row.querySelector('textarea');
-  note.removeAttribute('aria-invalid');
   return row.querySelector('select').value !== 'untested' && note.value.trim().length < 12;
 }
 
 function hasIncompleteEvidence(form, rows, errorSelector) {
-  const row = [...form.querySelectorAll(rows)].find(incompleteEvidenceRow);
+  const evidence = [...form.querySelectorAll(rows)];
+  evidence.forEach(row => row.querySelector('textarea').removeAttribute('aria-invalid'));
+  const row = evidence.find(incompleteEvidenceRow);
   if (!row) return false;
   showFormError(form, errorSelector, 'Write at least 12 characters about what you checked or need for each Good, Needs work, or Blocked answer.', row.querySelector('textarea'));
   return true;

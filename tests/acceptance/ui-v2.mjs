@@ -50,6 +50,11 @@ writeFileSync(join(data, 'competitors/tidepool.json'), JSON.stringify({ competit
   summary: { whatTheyDo: 'Swim lessons booked online.', whoItsFor: 'Parents.', pricing: 'From $12 a lesson.', howTheySell: 'Speed.', keyFeatures: ['Book a lesson'], theyDoBetter: ['Weekend classes'], weDoBetter: ['Age-matched classes'], ideasToTake: ['Show prices up front'], summarizedAt: '2026-09-29T08:05:00.000Z', scannedAt: '2026-09-29T08:00:00.000Z' },
 }] }));
 
+const guideCheckout = join(data, 'guide-checkout');
+mkdirSync(guideCheckout);
+writeFileSync(join(guideCheckout, 'design.html'), '<!doctype html><html lang="en"><head><title>Guide security fixture</title></head><body><main><h1>Guide fixture</h1><script>window.guideScriptRan=true</script><button onclick="window.guideEventRan=true">Example control</button></main></body></html>');
+store.createProject({ id: 'zz-guide-security', name: 'ZZ Guide security fixture', checkout: guideCheckout });
+
 const session = `dogfood-ui2-proof-${process.pid}`;
 let passed = 0;
 const servers = [];
@@ -226,6 +231,20 @@ try {
       click('[data-action="back-to-report"]');
       settle();
     }
+  });
+
+  const guideUrl = `${url}/api/projects/zz-guide-security/design`;
+  const guideResponse = await fetch(guideUrl);
+  check('standalone project HTML guides have a response-level sandbox', () => {
+    assert.equal(guideResponse.status, 200);
+    assert.equal(guideResponse.headers.get('content-security-policy'), 'sandbox allow-same-origin');
+  });
+  browser('open', guideUrl);
+  browser('wait', 'h1');
+  check('standalone guide scripts and inline events cannot run on the Dogfood origin', () => {
+    assert.equal(page('window.guideScriptRan === undefined'), true);
+    click('button');
+    assert.equal(page('window.guideEventRan === undefined'), true);
   });
 
   const emptyUrl = await startServer(empty);
