@@ -9,6 +9,7 @@ import { crc32, deflateSync } from 'node:zlib';
 const data = mkdtempSync(join(tmpdir(), 'dogfood-completion-'));
 process.env.DOGFOOD_DATA = data;
 const store = await import('../lib/store.mjs');
+const scanner = await import('../lib/scanner.mjs');
 const { pagesGate } = await import('../lib/completion.mjs');
 const { checkoutRevision } = await import('../lib/revision.mjs');
 after(() => rmSync(data, { recursive: true, force: true }));
@@ -252,6 +253,16 @@ test('audit and acceptance distinguish unfinished rows, findings, checkout chang
   store.recordVerdicts('revision', 'home', { audit: { security: audit.security } }, 'agent:test');
   assert.equal(progress().accepted, true);
 
+  const changedEnvironment = store.readProject('revision');
+  changedEnvironment.source.url = 'https://preview.example.com';
+  store.writeProject(changedEnvironment);
+  assert.equal(progress().complete, true, 'an older audit remains inspectable after changing environments');
+  assert.equal(progress().accepted, false, 'the old scan does not accept the new environment');
+  assert.equal(progress().acceptanceRequirements.find(item => item.id === 'environment').met, false);
+  changedEnvironment.source.url = 'https://example.com';
+  store.writeProject(changedEnvironment);
+  assert.equal(progress().accepted, true);
+
   store.registerPage('revision', { id: 'home', name: 'Home', group: 'Public', route: '/', features: [{ id: 'hero', name: 'Hero' }, { id: 'footer', name: 'Footer' }] });
   store.recordVerdicts('revision', 'home', { features: [{ id: 'hero', status: 'needs_work', note }] }, 'agent:test');
   assert.equal(progress().answers.find(answer => answer.id === 'works').status, 'needs_work');
@@ -283,4 +294,32 @@ test('audit and acceptance distinguish unfinished rows, findings, checkout chang
   const afterUntracked = checkoutRevision(checkout).fingerprint;
   writeFileSync(join(checkout, 'ignored-build', 'bundle.js'), 'changed generated output');
   assert.equal(checkoutRevision(checkout).fingerprint, afterUntracked, 'ignored build output does not invalidate evidence');
+});
+
+test('a checkout edit during browser collection fails the rescan without replacing old evidence', async () => {
+  const project = store.readProject('revision');
+  const page = store.pageById(project, 'home');
+  const previous = page.scan.scannedAt;
+  let changed = false;
+  const responses = { network: { requests: [] }, console: { messages: [] }, errors: { errors: [] } };
+  const browser = {
+    command: async args => {
+      if (args[0] === 'open' && !changed) {
+        writeFileSync(join(project.source.checkout, 'backend.js'), 'export const value = 3;\n');
+        changed = true;
+      }
+      if (args[0] === 'screenshot') writeFileSync(args[2], png(40, 20, 40));
+      return responses[args[0]] ?? {};
+    },
+    evaluate: async () => ({ url: 'https://example.com/', loadMs: 420, horizontalOverflow: false, links: [],
+      seo: { title: 'Home', h1: 'Home', description: null, canonical: null, robots: null, lang: 'en', h1Count: 1 },
+      accessibility: { imagesWithoutAlt: 0, unlabeledFields: 0, unnamedButtons: 0 } }),
+  };
+  const result = await scanner.scanPages(browser, project, [page]);
+  assert.equal(result.scanned, 0);
+  assert.match(result.failed[0].error, /checkout changed during its page check/);
+  const current = store.pageById(store.readProject('revision'), 'home');
+  assert.equal(current.scan.scannedAt, previous);
+  assert.equal(current.scanAttempt.status, 'failed');
+  assert.equal(store.pageProgress(store.readProject('revision'), current).requirements.find(item => item.id === 'scan').met, false);
 });
