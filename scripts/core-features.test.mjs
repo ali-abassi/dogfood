@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,7 +9,7 @@ const data = mkdtempSync(join(tmpdir(), 'dogfood-core-'));
 const checkout = join(data, 'repo');
 process.env.DOGFOOD_DATA = data;
 const store = await import('../lib/store.mjs');
-const { projectDocs } = await import('../lib/project-docs.mjs');
+const { designGuide, projectDocs } = await import('../lib/project-docs.mjs');
 const { markdownMarkup } = await import('../public/js/format.mjs');
 after(() => rmSync(data, { recursive: true, force: true }));
 
@@ -57,4 +58,24 @@ test('markdown renders structure and escapes everything else', () => {
   assert.match(html, /<a href="https:\/\/example.com" target="_blank" rel="noopener noreferrer">site<\/a>/);
   assert.doesNotMatch(html, /<script>|href="javascript/);
   assert.match(html, /&lt;script&gt;/);
+});
+
+test('the design.html brand guide wins over design.md and is served as its own page', () => {
+  writeFileSync(join(checkout, 'design.html'), '<h1>Guide</h1>');
+  const docs = projectDocs(store.readProject('docs'));
+  assert.deepEqual([docs.design.file, docs.design.html], ['design.html', '<h1>Guide</h1>']);
+  assert.equal(designGuide(store.readProject('docs')), '<h1>Guide</h1>');
+  assert.throws(() => designGuide(store.readProject('shop')), /no design.html/);
+});
+
+test('docs come from origin/main when the checkout has it, not from whatever is checked out', () => {
+  const repo = join(data, 'gitrepo');
+  mkdirSync(repo, { recursive: true });
+  const git = (...args) => execFileSync('git', ['-C', repo, ...args], { stdio: 'ignore' });
+  git('init', '-q'); git('config', 'user.email', 't@example.com'); git('config', 'user.name', 'Test');
+  writeFileSync(join(repo, 'vision.md'), '# Shipped vision\n');
+  git('add', 'vision.md'); git('commit', '-qm', 'vision'); git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+  writeFileSync(join(repo, 'vision.md'), '# Local edit\n');
+  store.createProject({ id: 'gitdocs', name: 'Git docs', url: 'https://example.com', checkout: repo });
+  assert.equal(projectDocs(store.readProject('gitdocs')).vision.markdown, '# Shipped vision\n');
 });

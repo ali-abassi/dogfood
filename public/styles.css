@@ -397,6 +397,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 
 /* Docs: a project's vision, design and plan, rendered for reading. */
 .doc-file { margin: 0 0 8px; color: var(--tertiary); font-size: 12px; }
+.doc-file a { color: var(--blue); }
+.doc-frame { display: block; width: 100%; height: calc(100vh - 190px); min-height: 480px; border: 0; border-radius: 12px; background: var(--group); }
 .doc-body { max-width: 760px; padding: 24px 32px 32px; font-size: 15px; line-height: 1.6; }
 .doc-body > :first-child { margin-top: 0; }
 .doc-body h2 { margin: 28px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.018em; }
