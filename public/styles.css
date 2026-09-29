@@ -538,12 +538,13 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .task-form { display: grid; gap: 8px; max-width: 720px; margin: 0 0 16px; }
 .task-form h2 { margin-bottom: 4px; }
 .task-form > label, .task-pages legend { color: var(--secondary); font-size: 12.5px; font-weight: 600; }
-.task-form input:not([type="checkbox"]), .task-form textarea { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--separator); border-radius: 8px; background: var(--canvas); font-size: 13.5px; }
+.task-form input:not([type="checkbox"]), .task-form textarea, .task-form select { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--separator); border-radius: 8px; background: var(--canvas); font-size: 13.5px; }
 .task-form .field-hint { margin: -4px 0 3px; }
 .task-form .field-hint code { overflow-wrap: anywhere; }
 .task-pages { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 0; padding: 8px 0 0; border: 0; border-top: .5px solid var(--separator); }
 .task-pages legend { padding: 0 0 4px; }
 .task-pages label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.task-form .task-release { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 13px; font-weight: 400; }
 .plan-document { margin-top: 18px; }
 .plan-document > summary { padding: 8px 0; }
 .plan-document .doc-body { margin-top: 8px; }

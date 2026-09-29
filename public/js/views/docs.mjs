@@ -46,8 +46,12 @@ function docBodyMarkup(view) {
 function fileMarkup(view) {
   const doc = state.docs.data?.[view.doc];
   if (!doc) return '';
-  const open = doc.html ? ` · <a href="/api/projects/${encodeURIComponent(state.project.id)}/design" target="_blank" rel="noopener noreferrer">Open full page ↗</a>` : '';
-  return `<p class="doc-file">${escapeHtml(doc.file)} in ${escapeHtml(state.docs.data?.ref || 'main')}${open}</p>`;
+  const open = designFullPageLink(doc);
+  return `<p class="doc-file">${escapeHtml(doc.file)} in ${escapeHtml(state.docs.data.ref || 'main')}${open}</p>`;
+}
+
+function designFullPageLink(doc) {
+  return doc.html ? ` · <a href="/api/projects/${encodeURIComponent(state.project.id)}/design" target="_blank" rel="noopener noreferrer">Open full page ↗</a>` : '';
 }
 
 export function docsMarkup() {
