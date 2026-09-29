@@ -35,6 +35,12 @@ test('a scan reads the landing page, then pricing and features before other page
   assert.equal(chosen[1].url, 'https://rival.example/pricing');
 });
 
+test('a site is named by the part of its title that matches its host', () => {
+  assert.equal(competitors.brandInTitle('AI Ad Generator - Make AI ads | Predis.ai', 'https://predis.ai/'), 'Predis.ai');
+  assert.equal(competitors.brandInTitle('Trade Ideas: AI stock scanner', 'https://www.trade-ideas.com/'), 'Trade Ideas');
+  assert.equal(competitors.brandInTitle('Stock charts for everyone', 'https://finviz.com/'), '');
+});
+
 // Stands in for a finished scan: one page read, one that failed.
 function recordScan() {
   const file = join(data, 'competitors', 'shop.json');
