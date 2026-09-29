@@ -120,3 +120,9 @@ test('removing a competitor deletes its screenshots', () => {
   assert.ok(!left.some(item => item.id === 'rival-example'));
   assert.equal(existsSync(folder), false);
 });
+
+test('a checkout-only project can collect competitor research before its app exists', () => {
+  store.createProject({ id: 'not-built', name: 'Not built', checkout: data });
+  const result = competitors.addCompetitor('not-built', { url: 'https://competitor.example' });
+  assert.equal(result.length, 1);
+});

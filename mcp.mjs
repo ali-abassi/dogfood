@@ -3,7 +3,7 @@ import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { workflowTools } from './lib/workflow-tools.mjs';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
@@ -114,6 +114,8 @@ function pageOutcome(page, issue) {
     status: page.progress.status,
     complete: page.progress.complete,
     accepted: page.progress.accepted ?? false,
+    checkoutFingerprint: page.progress.checkoutFingerprint ?? null,
+    acceptanceMissing: (page.progress.acceptanceRequirements ?? []).filter(item => !item.met),
     changedSinceReview: page.progress.changedSinceReview,
     answers: page.progress.answers.map(({ id, name, status, summary }) => ({ id, name, status, summary })),
     missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTool(id) })),
@@ -257,6 +259,7 @@ const definitions = [
       description: { type: 'string', description: 'Short description of the product being checked.' },
       url: { type: 'string', description: 'HTTP or HTTPS URL of the product.' },
       environment: { type: 'string', description: 'Environment under review, such as local, preview, or production.' },
+      servesCheckout: { type: 'boolean', description: 'Explicit declaration that this environment runs the checkout. Loopback is inferred; does not independently prove deployment.' },
       checkout: { type: 'string', description: 'Optional local checkout path; needed only for focused tests.' },
       browserProfile: { type: 'string', description: 'Optional Chrome profile name (for example Default) so scans see signed-in pages.' },
       guidelines: { type: 'array', items: { type: 'string' }, description: 'Optional project-specific QA guidance.' },
@@ -424,6 +427,7 @@ const definitions = [
       actor: { type: 'string', description: 'Person or agent who captured the page. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
       tier: { type: 'string', enum: [...captureTiers], description: 'Evidence provenance tier. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
       fullPage: { type: 'boolean', description: 'Whether the screenshot covers the full page. For rendered evidence provide all rendered fields, or provide blockedReason instead.' },
+      checkoutFingerprint: { type: 'string', description: 'Fingerprint read before testing; recording rejects a changed checkout.' },
       blockedReason: { type: 'string', description: 'Reason capture is blocked; provide this instead of all rendered fields (file, sourceUrl, viewport, actor, tier, fullPage).' },
     }, [...projectPageRequired, 'device']),
     run: capture,
@@ -434,11 +438,12 @@ const definitions = [
     inputSchema: objectSchema({
       ...projectPageProperties,
       agent: { type: 'string', description: 'Agent name used to attribute each changed verdict.' },
+      checkoutFingerprint: { type: 'string', description: 'Fingerprint read before testing; recording rejects a changed checkout.' },
       checks: objectSchema(Object.fromEntries(checkKeys.map(key => [key, verdictSchema])), []),
       features: { type: 'array', items: objectSchema({ id: { type: 'string' }, ...verdictSchema.properties }, ['id', ...verdictSchema.required]) },
       audit: auditVerdictSchema,
     }, ['project', 'page', 'agent']),
-    run: ({ project, page, agent, checks, features, audit }) => savePage(page, () => recordVerdicts(project, page, { checks, features, audit }, byAgent(agent))),
+    run: ({ project, page, agent, checks, features, audit, checkoutFingerprint }) => savePage(page, () => recordVerdicts(project, page, { checks, features, audit, ...(checkoutFingerprint === undefined ? {} : { checkoutFingerprint }) }, byAgent(agent))),
   },
   {
     name: 'dogfood_set_connections',
@@ -627,7 +632,7 @@ export async function runNamedTool(name, args = {}) {
   return runTool(tool, args);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const oneShot = process.argv.slice(2);
   (oneShot.length ? callOnce(oneShot) : main()).catch(error => {
     process.stderr.write(`${errorMessage(error)}\n`);

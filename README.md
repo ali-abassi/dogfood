@@ -2,12 +2,47 @@
 
 <h1 align="center">dogfood</h1>
 
-<p align="center"><strong>A quality assurance app for any project.</strong> Your coding agent reviews every page systematically, and you see where quality stands, page by page, as the project moves: computer and phone screenshots and six plain answers per page, each backed by evidence you can open. QA becomes a streamlined process, so you finish projects faster.</p>
+<p align="center"><strong>A lightweight workspace for coding agents to plan, build and prove web projects.</strong> Keep a clear task plan, checks and page evidence in one place; and you see where quality stands, page by page, as the project moves: computer and phone screenshots and six plain answers per page, each backed by evidence you can open. QA becomes a streamlined process, so you finish projects faster.</p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
   <img src="docs/screenshot-light.png" alt="dogfood's overview of the Tidepool demo: one sentence saying how many pages are good, then every page with six marks for its six answers">
 </picture>
+
+## Plan → build → verify → resume
+
+Install the CLI once with `npm link` from the Dogfood checkout, or invoke `node /absolute/path/to/dogfood/bin/dogfood.mjs` directly. Start a project before a website exists:
+
+```sh
+cd /path/to/my-project
+dogfood init --checkout . --id my-app --name "My App"
+dogfood context --json
+```
+
+`init` is idempotent. `doctor` checks the local setup; browser and model usage are optional for planning. Add tasks with a concrete outcome, scope, dependencies and real check commands:
+
+```json
+{"id":"booking","title":"Save a booking","outcome":"The saved booking survives reload","scope":["src/booking"],"checks":[{"id":"booking","command":["npm","test"]}]}
+```
+
+Save that as `task.json`, then:
+
+```sh
+dogfood task add --input task.json --agent codex
+dogfood next --json
+dogfood task claim booking --agent codex
+# Build the task, finish edits/commits, and check the real user outcome.
+dogfood verify booking --agent codex
+dogfood task accept booking --agent codex
+```
+
+Checks run as explicit argument arrays in the registered Git checkout, without shell parsing. Receipts are bound to the plan and current source files; changes during or after verification require a new run. A linked `pageIds` list requires those pages to pass acceptance as well. Unnamed tasks receive stable `task-N` IDs. Dependencies and atomic claims keep agents on available work. Record a blocker or handoff with `task update --input changes.json`; `releaseOwner:true` releases your claim. An abandoned claim can be recovered explicitly with `releaseOwner:true` plus a `recoveryReason`; the recovery is recorded and clears its receipt. Checks can set `timeoutSeconds` (1–1800, default 300), and output is kept as bounded tails rather than stopping a noisy test.
+
+The **Plan** view shows current work, available work, blockers and receipts, with the milestone document folded below. A fresh agent starts with `context --json`; it does not need the earlier chat. Tasks live once in `data/workflows/`; Markdown holds product intent and design rather than a competing status ledger. `--input -` reads JSON from stdin, `schema TOOL` shows the exact contract, and `tool TOOL --input file.json` exposes every underlying MCP operation.
+
+Use `attach-url URL` once the app runs, then register its pages with the existing QA tools. `onboard` creates a new project; do not use it to replace a checkout-first plan.
+
+**Checked and accepted are different.** `dogfood gate` requires every feature/checklist item to have a verdict and a successful current scan. Recorded failures can finish an audit. `dogfood gate --accept` additionally requires six Good answers, no open findings and fresh checkout/environment provenance. Latest failed scans block earlier evidence; backend-only changes invalidate current checkout claims. Older evidence stays readable and must be refreshed before acceptance. A remote URL must explicitly declare `servesCheckout:true` (CLI `attach-url URL --serves-checkout`) to accept checkout-linked evidence; only make that declaration after verifying its build. Loopback is inferred. This declaration is not independent deployment proof. Acceptance proves the configured checks and recorded page evidence, not deployment or untested integrations.
 
 ## Six answers for every page
 
@@ -26,7 +61,7 @@ Each answer is **Good**, **Needs work**, **Partly checked**, **Not checked**, **
 
 Give your agent (Claude Code, Codex, Cursor, or any agent that can run a shell) this sentence:
 
-> Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md to check every page of my app.
+> Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md to plan, build and verify my project.
 
 The [skill](skills/dogfood/SKILL.md) walks it through setting dogfood up, adding your app, writing down what people can do on each page, trying each one in a real browser, answering the six questions, and reporting back in plain words. You then open the app to see the result.
 
@@ -126,9 +161,9 @@ Page-writing tools return that page's status, its six answers, and what it still
 - `dogfood_ai_review` — run the AI check after confirming provider usage.
 - `dogfood_complete` — check that a page's screenshots and page check are current, all six answers are answered, and no blocking bug is open.
 
-A page is not complete until `dogfood_complete` accepts it; agents must call it before reporting page QA as done.
+A page is not complete until `dogfood_complete` confirms the audit is complete; agents must call it before reporting the audit as done. Use `dogfood_accept_page` or `dogfood gate --accept` before reporting acceptance.
 
-Each project's Docs view shows `vision.md`, `design.html` (the brand guide) and `plan.md` from its checkout's `origin/main`. Generate a brand guide from a project's `design.json` and logo with `python3 scripts/brand-guide.py design.json logo.svg design.html "Name" "One-line promise"`.
+Each project's Docs view shows `vision.md`, `design.html` (the brand guide) and `plan.md` from its current working checkout. Generate a brand guide from a project's `design.json` and logo with `python3 scripts/brand-guide.py design.json logo.svg design.html "Name" "One-line promise"`.
 
 ## How it works
 
@@ -139,7 +174,7 @@ Each project's Docs view shows `vision.md`, `design.html` (the brand guide) and 
 
 ### When is a page done?
 
-A page is done only when its validated full-page computer and phone screenshots are current, a page check matches them, all six answers are answered (Good or Needs work, not Partly checked or Not checked), and no bug that breaks the app or blocks the page is open. A page is **Good** only when it is done and all six answers are Good. Problems the page check measures (crashes and failed requests under Works as expected, sideways scrolling and unnamed buttons under Easy to use, a load over 3 seconds under Fast & findable) make their answer Needs work.
+A page is done only when its validated full-page computer and phone screenshots are current, a page check matches them, all required feature/checklist rows and six answers are answered (Good or Needs work, not Partly checked, Recheck or Not checked), and no bug that breaks the app or blocks the page is open. A page is **Good** only when it is done and all six answers are Good. Problems the page check measures (crashes and failed requests under Works as expected, sideways scrolling and unnamed buttons under Easy to use, a load over 3 seconds under Fast & findable) make their answer Needs work.
 
 ## Development
 
