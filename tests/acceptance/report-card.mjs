@@ -234,7 +234,7 @@ try {
   settle();
   browser('click', '[data-action="open-pages"]');
   settle(300);
-  browser('click', '[data-overview]');
+  browser('click', '[data-project-view="overview"]');
   settle();
   await check('OV-3 at phone width each row shows its name and six marks with no sideways scrolling, and the columns are explained', () => {
     assert.ok(noSidewaysScroll());
@@ -314,7 +314,7 @@ try {
   browser('click', '[data-action="back-to-report"]');
   settle();
 
-  browser('click', '[data-overview]');
+  browser('click', '[data-project-view="overview"]');
   settle();
   browser('focus', '[data-overview-page="classes"] button');
   browser('press', 'Enter');

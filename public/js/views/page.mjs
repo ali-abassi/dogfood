@@ -3,7 +3,7 @@ import { groupedPages, isProjectView, menuPages, state, statusNames } from '../s
 
 function menuSelectMarkup(id, label, value, options) {
   const items = options.map(([key, text]) => `<option value="${key}" ${value === key ? 'selected' : ''}>${text}</option>`).join('');
-  return `<label class="menu-select">${label}<select id="${id}">${items}</select></label>`;
+  return `<label class="menu-select"><span class="sr-only">${label}</span><select id="${id}">${items}</select></label>`;
 }
 
 // Each status has its own shape as well as its colour, so the list reads without colour vision.
@@ -25,13 +25,26 @@ export function pageOptionsMarkup(pages) {
   return groupedPages(pages).map(({ group, pages: items }) => `<div class="page-group"><p>${escapeHtml(group)}</p>${items.map(pageOptionMarkup).join('')}</div>`).join('');
 }
 
-const projectViews = [['overview', 'Overview'], ['features', 'Features'], ['docs', 'Docs']];
+// Line icons at the text's weight, drawn on a 16-point grid.
+const navIcons = {
+  overview: '<rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1.2"/><rect x="9" y="9" width="4.5" height="4.5" rx="1.2"/>',
+  vision: '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2.2"/>',
+  guide: '<path d="M8 2.5a5.5 5.5 0 1 0 0 11c1 0 1.3-.8.9-1.5-.5-.8 0-1.8 1-1.8h1.2a2.4 2.4 0 0 0 2.4-2.4C13.5 4.7 11 2.5 8 2.5z"/><circle cx="5.3" cy="7" r=".6"/><circle cx="7.6" cy="5" r=".6"/><circle cx="10.4" cy="5.8" r=".6"/>',
+  plan: '<path d="M6.5 4h7M6.5 8h7M6.5 12h7"/><path d="M2.5 4l.9.9L5 3.3M2.5 8l.9.9L5 7.3M2.5 12l.9.9L5 11.3"/>',
+  features: '<path d="M8 2.5l5.5 3L8 8.5l-5.5-3z"/><path d="M2.5 8.2L8 11.2l5.5-3M2.5 10.9L8 13.9l5.5-3"/>',
+};
 
-// The project's own views sit above its pages: the overview, its core features, and its documents.
+const projectViews = [['overview', 'Overview'], ['vision', 'Vision'], ['guide', 'Design'], ['plan', 'Plan'], ['features', 'Features']];
+
+function navIconMarkup(view) {
+  return `<svg class="nav-icon" viewBox="0 0 16 16" aria-hidden="true">${navIcons[view]}</svg>`;
+}
+
+// The project's own views sit above its pages: the overview, its vision, design and plan, and its core features.
 function projectNavMarkup() {
   return projectViews.map(([view, label]) => {
     const selected = state.view === view;
-    return `<button type="button" class="page-option overview-option ${selected ? 'selected' : ''}" data-project-view="${view}" ${selected ? 'aria-current="page"' : ''}>${label}</button>`;
+    return `<button type="button" class="page-option project-view ${selected ? 'selected' : ''}" data-project-view="${view}" ${selected ? 'aria-current="page"' : ''}>${navIconMarkup(view)}<span>${label}</span></button>`;
   }).join('');
 }
 
@@ -42,15 +55,17 @@ function projectPickerMarkup() {
 
 export function sidebarMarkup() {
   const pages = menuPages();
-  return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project pages">
-      <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
-        ${projectPickerMarkup()}
-        <button type="button" class="add-project-button" data-action="add-project">+ Add an app</button>
-        <h2 class="sr-only">Pages</h2>
-        <label class="search-field"><span class="sr-only">Search pages or things to do</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages or things to do" value="${escapeHtml(state.query)}"></label>
+  return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project">
+      <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="add-project-button" data-action="add-project" aria-label="Add an app" title="Add an app">+</button><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
+      ${projectPickerMarkup()}
+      <nav class="page-list" aria-label="Project">
+        <div class="project-nav">${projectNavMarkup()}</div>
+        <div class="pages-head"><h2>Pages</h2></div>
+        <label class="search-field"><span class="sr-only">Search pages or things to do</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages" value="${escapeHtml(state.query)}"></label>
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
-        <nav class="page-list" aria-label="Pages">${projectNavMarkup()}<div class="page-groups">${pageOptionsMarkup(pages)}</div></nav>
-        ${externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link')}
+        <div class="page-groups">${pageOptionsMarkup(pages)}</div>
+      </nav>
+      ${externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link')}
   </aside>`;
 }
 
@@ -83,5 +98,5 @@ export function pageHeaderMarkup(page) {
 
 // Pages is the phone's way into the sidebar; on a computer the sidebar is always there.
 export function toolbarMarkup() {
-  return '<div class="toolbar"><button type="button" class="page-menu-toggle" data-action="open-pages">Pages</button></div>';
+  return '<div class="toolbar"><button type="button" class="page-menu-toggle" data-action="open-pages">Menu</button></div>';
 }
