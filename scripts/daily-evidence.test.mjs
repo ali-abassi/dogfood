@@ -240,3 +240,19 @@ test('existing projects can replace named fixture setup with attribution and rec
   assert.throws(() => store.setFixtureSetup(id, { shell: { argv: 'node scripts/seed.mjs' } }, 'fixture-editor'), /argv/);
   assert.deepEqual(store.readProject(id).fixtureSetup, {});
 });
+
+
+test('deployment and live scan URL checks preserve even bare query and hash delimiters', () => {
+  const id = 'exact-delimiters';
+  create(id, [{ id: 'notify', name: 'Notify', requiresLive: true }]);
+  store.setPageUrl(id, 'home', 'http://localhost:4322/exact?#');
+  store.recordVerdicts(id, 'home', { features: [{ id: 'notify', status: 'awaiting_live', note: 'Requires deployed notification delivery evidence.' }] }, 'tester');
+  store.recordDeployment(id, { id: 'exact-release', url: 'https://live.example.com/base' }, 'shipper');
+  assert.equal(page(id).features[0].liveDebt.expectedUrl, 'https://live.example.com/exact?#');
+  const file = image();
+  const input = { sourceUrl: 'https://live.example.com/exact?#', liveUrl: 'https://live.example.com/base', environment: 'live', actor: 'QA agent', tier: 'automated',
+    desktop: { file, viewport: '1280 x 900', facts: facts() }, mobile: { file, viewport: '390 x 844', facts: facts() } };
+  store.recordScan(id, 'home', input);
+  assert.equal(page(id).scan.sourceUrl, input.sourceUrl);
+  assert.equal(page(id).captures.desktop.sourceUrl, input.sourceUrl);
+});
