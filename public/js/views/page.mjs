@@ -92,9 +92,26 @@ function scanErrorMarkup(page) {
   return own && state.scan.error ? `<div class="form-error" role="alert">${plainMessageMarkup(state.scan.error)}</div>` : '';
 }
 
+export function acceptanceLabel(progress) {
+  if (progress.accepted === true) return 'Accepted';
+  return progress.complete === true ? 'Checked · Not accepted' : 'Not fully checked';
+}
+
+function missingRequirementsMarkup(page) {
+  const missing = (page.progress.requirements || []).filter(item => !item.met);
+  if (!missing.length) return '';
+  const rows = missing.map(item => `<li><strong>${escapeHtml(item.label)}</strong>${item.missing ? ` — ${escapeHtml(item.missing)}` : ''}</li>`).join('');
+  return `<details class="page-gate-requirements"><summary>Before acceptance</summary><ul>${rows}</ul></details>`;
+}
+
+function acceptanceMarkup(page) {
+  const label = acceptanceLabel(page.progress);
+  return `<div class="page-gate" aria-label="Acceptance status"><span class="page-gate-state" data-gate-status="${escapeHtml(label)}">${escapeHtml(label)}</span>${missingRequirementsMarkup(page)}</div>`;
+}
+
 export function pageHeaderMarkup(page) {
   const open = externalLinkMarkup(page.captures.desktop.sourceUrl, 'Open page ↗', 'link-button');
-  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${checkAgainMarkup(page)}${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${scanErrorMarkup(page)}${removePageMarkup(page)}`;
+  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${checkAgainMarkup(page)}${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${acceptanceMarkup(page)}${scanErrorMarkup(page)}${removePageMarkup(page)}`;
 }
 
 // Pages is the phone's way into the sidebar; on a computer the sidebar is always there.

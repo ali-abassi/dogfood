@@ -85,6 +85,19 @@ try {
   check('the app opens on the project overview', () => {
     assert.equal(page(`Boolean(document.querySelector('section[aria-label="Project overview"]'))`), true);
   });
+  check('a known page report has a direct entry URL', () => {
+    browser('open', `${url}?project=tidepool&page=book&view=report`);
+    settle();
+    assert.equal(page(`document.querySelector('#selected-page-heading')?.textContent`), book.name);
+    browser('open', `${url}?project=tidepool&page=unknown&view=report`);
+    settle();
+    assert.equal(page(`document.querySelector('section[aria-label="Project overview"]') !== null`), true);
+    browser('open', `${url}?project=unknown&view=plan`);
+    settle();
+    assert.equal(page(`document.querySelector('section[aria-label="Project overview"]') !== null`), true);
+    browser('open', url);
+    settle();
+  });
   check('the overview lists every page once, in site order', () => {
     const ids = page(`[...document.querySelectorAll('[data-overview-page]')].map(row => row.dataset.overviewPage)`);
     assert.deepEqual(ids, seeded.pages.map(item => item.id));
@@ -105,6 +118,12 @@ try {
     const rest = seeded.pages.length - count('pass') - count('needs_work') - blockedPages;
     const sentence = page(`document.querySelector('[data-answer-sentence]').textContent`);
     assert.match(sentence, new RegExp(`\\b${count('pass')} pages? (is|are) good, ${count('needs_work')} needs? work, ${blockedPages} pages? (is|are) blocked, and ${rest} `));
+  });
+  check('the overview separates accepted from checked and incomplete pages', () => {
+    const accepted = seeded.pages.filter(item => item.progress.accepted === true).length;
+    const checked = seeded.pages.filter(item => item.progress.accepted !== true && item.progress.complete === true).length;
+    const remaining = seeded.pages.length - accepted - checked;
+    assert.equal(page(`document.querySelector('[data-gate-counts]')?.textContent`), `${accepted} accepted · ${checked} checked, not accepted · ${remaining} not fully checked`);
   });
   check('Fix first lists open P0-P2 bugs across pages, worst and oldest first', () => {
     const rows = page(`[...document.querySelectorAll('[data-fix-first] .finding-row')].map(row => ({ severity: row.querySelector('.bug-severity').textContent, title: row.querySelector('.finding-row-title').textContent, meta: row.querySelector('.finding-row-meta').textContent }))`);
@@ -128,6 +147,12 @@ try {
   settle();
   check('choosing a page from the overview opens that page', () => {
     assert.equal(page(`document.querySelector('#selected-page-heading')?.textContent`), book.name);
+  });
+  check('the report shows the backend acceptance gate and only unmet requirements', () => {
+    const expected = book.progress.accepted === true ? 'Accepted' : book.progress.complete === true ? 'Checked · Not accepted' : 'Not fully checked';
+    assert.equal(page(`document.querySelector('[data-gate-status]')?.textContent`), expected);
+    const shown = page(`[...document.querySelectorAll('.page-gate-requirements li strong')].map(item => item.textContent)`);
+    assert.deepEqual(shown, book.progress.requirements.filter(item => !item.met).map(item => item.label));
   });
   check('the page shows the server\'s six answers with one-line reasons', () => {
     const rows = page(`[...document.querySelectorAll('[data-answer-row]')].map(row => ({ id: row.dataset.answerRow, mark: row.querySelector('[data-answer-mark]').getAttribute('aria-label'), summary: row.querySelector('.answer-summary').textContent }))`);
@@ -181,6 +206,9 @@ try {
   page(`document.querySelector('[data-project-view="overview"]')?.click() || true`);
   settle();
   check('the overview has no horizontal overflow at 390 × 844', () => assert.equal(noHorizontalOverflow(), true));
+  page(`document.querySelector('[data-overview-page="book"] button').click() || true`);
+  settle();
+  check('the report gate has no horizontal overflow at 390 × 844', () => assert.equal(noHorizontalOverflow(), true));
 
   const errors = browser('errors').trim();
   check('no page errors were thrown', () => assert.ok(!/error/i.test(errors) || /no errors/i.test(errors), errors));

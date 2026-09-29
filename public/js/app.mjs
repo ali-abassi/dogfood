@@ -97,11 +97,18 @@ export function showError(message) {
   app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
-export async function loadProject(id) {
+const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'features', 'competitors']);
+
+function initialView(project, destination) {
+  if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };
+  if (destination.view === 'report' && project.pages.some(page => page.id === destination.pageId)) return { view: 'report', pageId: destination.pageId };
+  return { view: 'overview', pageId: null };
+}
+
+export async function loadProject(id, destination = {}) {
   state.project = await readJson(`/api/projects/${encodeURIComponent(id)}`);
   rememberProject(id);
-  state.pageId = null;
-  state.view = 'overview';
+  Object.assign(state, initialView(state.project, destination));
   state.query = '';
   state.filter = 'all';
   state.sort = 'navigation';
@@ -116,6 +123,14 @@ export async function loadProject(id) {
   render();
 }
 
+function initialDestination() {
+  const query = new URLSearchParams(window.location.search);
+  const linkedProject = state.projects.find(project => project.id === query.get('project'));
+  const projectId = linkedProject?.id ?? rememberedProjectId() ?? state.projects[0].id;
+  const destination = linkedProject ? { view: query.get('view'), pageId: query.get('page') } : {};
+  return { projectId, destination };
+}
+
 export async function start() {
   try {
     state.projects = await readJson('/api/projects');
@@ -125,7 +140,8 @@ export async function start() {
       render();
       return;
     }
-    await loadProject(rememberedProjectId() ?? state.projects[0].id);
+    const { projectId, destination } = initialDestination();
+    await loadProject(projectId, destination);
   } catch (error) { showError(error.message); }
 }
 
