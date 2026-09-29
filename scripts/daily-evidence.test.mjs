@@ -224,3 +224,19 @@ test('recordScan carries dependency snapshots and records live provenance withou
   assert.equal(store.readProject(id).source.url, 'http://localhost:4322');
   assert.equal(auditRowFresh(page(id), page(id).audit.seo[0]), false);
 });
+
+
+test('existing projects can replace named fixture setup with attribution and recoverable history', () => {
+  const id = 'fixture-setup';
+  create(id);
+  store.setFixtureSetup(id, { sample: { argv: ['node', 'scripts/seed.mjs', '--sample'], cwd: 'fixtures', timeoutMs: 5000 } }, 'fixture-owner');
+  assert.deepEqual(store.readProject(id).fixtureSetup.sample.argv, ['node', 'scripts/seed.mjs', '--sample']);
+  assert.equal(store.readProject(id).fixtureSetupUpdated.by, 'fixture-owner');
+  store.setFixtureSetup(id, {}, 'fixture-editor');
+  const project = store.readProject(id);
+  assert.deepEqual(project.fixtureSetup, {});
+  assert.deepEqual(project.fixtureSetupHistory[1].fixtureSetup.sample.argv, ['node', 'scripts/seed.mjs', '--sample']);
+  assert.throws(() => store.setFixtureSetup(id, { escape: { argv: ['node'], cwd: '../outside' } }, 'fixture-editor'), /stay in the checkout/);
+  assert.throws(() => store.setFixtureSetup(id, { shell: { argv: 'node scripts/seed.mjs' } }, 'fixture-editor'), /argv/);
+  assert.deepEqual(store.readProject(id).fixtureSetup, {});
+});
