@@ -90,3 +90,9 @@ test('without plan.md, the plan is the newest dated file in docs/plans', () => {
   writeFileSync(join(repo, 'plan.md'), '# Plan\n');
   assert.equal(projectDocs(store.readProject('plans')).plan.file, 'plan.md');
 });
+
+test('a project\'s scans can move to another signed-in Chrome profile', () => {
+  assert.equal(store.setBrowserProfile('shop', 'Default').source.browserProfile, 'Default');
+  assert.equal(store.readProject('shop').source.browserProfile, 'Default');
+  assert.throws(() => store.setBrowserProfile('shop', ''), /Browser profile/);
+});

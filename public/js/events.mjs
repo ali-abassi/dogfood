@@ -1,6 +1,7 @@
 import { readJson } from './api.mjs';
 import { addCompetitor, removeOpenCompetitor, rescanOpenCompetitor, summarizeOpenCompetitor } from './views/competitors.mjs';
 import { fitDocFrame } from './views/docs.mjs';
+import { startQaAgent } from './views/qa-agent.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
 import { answerIds, state, menuPages, activePage } from './state.mjs';
 import { agentPrompt, idleOnboarding, submitOnboarding } from './views/add-project.mjs';
@@ -213,6 +214,7 @@ const buttonActions = new Map([
   ['copy-agent-prompt', copyAgentPrompt],
   ['run-qa', runQa],
   ['run-visual', runVisualReview],
+  ['start-qa-agent', startQaAgent],
   ['add-suggested-features', addSuggestedFeatures],
   ['review-suggestions', openProjectSuggestions],
   ['retry-suggestions', () => reloadProjectSuggestions()],
