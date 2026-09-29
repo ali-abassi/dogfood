@@ -50,6 +50,7 @@ test('a bot check or a not-found page is reported instead of read as the competi
 test('a site is named by the part of its title that matches its host', () => {
   assert.equal(competitors.brandInTitle('AI Ad Generator - Make AI ads | Predis.ai', 'https://predis.ai/'), 'Predis.ai');
   assert.equal(competitors.brandInTitle('Trade Ideas: AI stock scanner', 'https://www.trade-ideas.com/'), 'Trade Ideas');
+  assert.equal(competitors.brandInTitle('TrendSpider® Official - All-in-One Trading Software', 'https://trendspider.com/'), 'TrendSpider');
   assert.equal(competitors.brandInTitle('Stock charts for everyone', 'https://finviz.com/'), '');
 });
 
