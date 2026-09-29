@@ -4,12 +4,12 @@ import { state } from '../state.mjs';
 import { loadProject, render } from '../app.mjs';
 
 const addProjectCopy = {
-  welcome: { title: 'Is your app working?', lede: 'dogfood checks every page of your app on a computer and a phone, and answers six plain questions about each one: does it look right, is its purpose clear, is it easy to use, safe, fast and findable, and working as expected.' },
+  welcome: { title: 'Plan, build, and check your app.', lede: 'Plan and build with your coding agent, then see whether your app is working on a computer and a phone. Keep the evidence here to pick up where you left off.' },
   add: { title: 'Add an app', lede: 'Paste its address. dogfood finds its pages and takes screenshots of each one on a computer and a phone.' },
 };
 
 // The sentence a person gives their coding agent; the skill in the repository does the rest.
-export const agentPrompt = 'Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md to check every page of my app.';
+export const agentPrompt = 'Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md for my project. Read the current context, turn my goal into a plan with clear checks, build the next available task, and verify it with tests and page evidence. Record what is done, blocked, and next so another session can resume.';
 
 export const idleOnboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
 
@@ -20,7 +20,7 @@ function onboardingButtonText() {
 
 function onboardingNoticeMarkup() {
   const progress = state.onboarding.running ? `<p class="onboarding-progress" role="status">${onboardingProgressText()}</p>` : '';
-  const error = state.onboarding.error ? `<div class="form-error" id="onboarding-error" role="alert">${plainMessageMarkup(state.onboarding.error)}</div>` : '';
+  const error = state.onboarding.error ? `<div class="form-error" id="onboarding-error" role="alert" tabindex="-1">${plainMessageMarkup(state.onboarding.error)}</div>` : '';
   return `${progress}${error}`;
 }
 
@@ -31,13 +31,23 @@ function addProjectHeadingMarkup(welcome, copy) {
 }
 
 function agentPromptMarkup() {
-  return `<section class="agent-prompt" aria-labelledby="agent-prompt-heading"><h2 id="agent-prompt-heading">With your coding agent</h2><p>Give it this sentence. It sets dogfood up, adds every page with what people can do there, and checks them.</p><div class="agent-prompt-box"><p data-agent-prompt>${escapeHtml(agentPrompt)}</p><button type="button" class="text-button" data-action="copy-agent-prompt">${state.copied ? 'Copied' : 'Copy'}</button></div></section><h2 class="add-here-heading">Or add it here</h2>`;
+  return `<section class="agent-prompt" aria-labelledby="agent-prompt-heading"><h2 id="agent-prompt-heading">With your coding agent</h2><p>Give your agent these instructions to plan, build, check, and resume your project.</p><div class="agent-prompt-box"><p data-agent-prompt>${escapeHtml(agentPrompt)}</p><button type="button" class="text-button" data-action="copy-agent-prompt">${state.copied ? 'Copied' : 'Copy'}</button></div></section><h2 class="add-here-heading">Have an app already?</h2>`;
 }
 
 // The address field names its error, so a screen reader announces why it was refused.
 function addressFieldMarkup(draft) {
-  const invalid = state.onboarding.error ? 'aria-invalid="true" aria-describedby="onboarding-error"' : '';
+  const invalid = state.onboarding.invalidUrl ? 'aria-invalid="true" aria-describedby="onboarding-error"' : '';
   return `<label for="product-url">Your app’s address<input id="product-url" name="url" type="url" required inputmode="url" placeholder="https://example.com" value="${escapeHtml(draft.url)}" ${invalid}></label>`;
+}
+
+function optionalSettingsMarkup(draft) {
+  const expanded = draft.name || draft.browserProfile || draft.aiReview;
+  return `<details class="onboarding-options" ${expanded ? 'open' : ''}><summary>Optional settings</summary><div class="onboarding-option-fields">
+    <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
+    <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
+    <p class="field-hint" id="browser-profile-hint">For pages you sign in to, use their Chrome profile name, such as Default.</p>
+    <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also check each page with AI (under a tenth of a cent per page)</label>
+  </div></details>`;
 }
 
 // The first run has nowhere to go back to; adding another app does.
@@ -56,10 +66,7 @@ export function addProjectFormMarkup(welcome) {
     <form id="add-project-form" novalidate>
       <fieldset ${disabled}>
         ${addressFieldMarkup(draft)}
-        <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
-        <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
-        <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>
-        <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also check each page with AI (under a tenth of a cent per page)</label>
+        ${optionalSettingsMarkup(draft)}
       </fieldset>
       ${onboardingNoticeMarkup()}
       <div class="form-actions"><button class="save-button" type="submit" ${disabled}>${onboardingButtonText()}</button>${cancel}</div>
@@ -88,15 +95,16 @@ function onboardingInput(form) {
   return data.has('aiReview') ? { ...fields, aiReview: true } : fields;
 }
 
-function failOnboarding(message) {
-  state.onboarding = { ...state.onboarding, running: false, error: message };
+function failOnboarding(message, invalidUrl = false) {
+  state.onboarding = { ...state.onboarding, running: false, error: message, invalidUrl };
   render();
+  document.querySelector(invalidUrl ? '#product-url' : '#onboarding-error')?.focus();
 }
 
 export async function submitOnboarding(form) {
   const input = onboardingInput(form);
   state.projectDraft = { url: '', name: '', browserProfile: '', ...input };
-  if (!isHttpUrl(input.url)) return failOnboarding('Enter your app’s address, starting with http:// or https://.');
+  if (!isHttpUrl(input.url)) return failOnboarding('Enter your app’s address, starting with http:// or https://.', true);
   state.onboarding = { ...idleOnboarding, running: true };
   render();
   try {

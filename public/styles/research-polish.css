@@ -1,0 +1,48 @@
+/* Saved research and project entry share the app's restrained workbench. */
+.competitors-view .competitor-add { display: grid; gap: 8px; margin-bottom: 24px; }
+.competitor-add > label { color: var(--ink); font-size: 14px; font-weight: 500; }
+.competitor-add-fields { display: flex; gap: 8px; min-width: 0; }
+.competitor-add-fields input { min-width: 0; min-height: 40px; border-radius: 8px; }
+.competitor-add-fields .save-button { flex: none; }
+.competitor-add .field-hint { margin: 0; color: var(--secondary); font-size: 12.5px; }
+.competitor-limit, .competitor-loading { margin: 0 0 20px; color: var(--secondary); font-size: 14px; }
+.competitor-saved > h2 { display: flex; align-items: baseline; gap: 12px; margin: 0 0 12px; font-size: 17px; font-weight: 600; }
+.competitor-saved > h2 span { color: var(--secondary); font-size: 12.5px; font-weight: 400; }
+.competitors-view .competitor-list { display: block; overflow: hidden; border: .5px solid var(--separator); border-radius: 12px; background: var(--group); }
+.competitor-list > li + li { border-top: .5px solid var(--separator); }
+.competitors-view .competitor-card { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px; border-radius: 0; background: transparent; box-shadow: none; transition: none; }
+.competitors-view .competitor-card:hover { transform: none; box-shadow: none; background: var(--fill); }
+.competitor-card .competitor-thumb { width: 100%; aspect-ratio: 4 / 3; border: .5px solid var(--separator); border-radius: 6px; }
+.competitor-card .competitor-card-text { display: grid; gap: 4px; min-width: 0; padding: 0; overflow-wrap: anywhere; }
+.competitor-card .competitor-card-text p { display: block; overflow: visible; -webkit-line-clamp: unset; font-size: 14px; }
+.competitor-card .competitor-card-text small { color: var(--secondary); font-size: 12.5px; }
+.competitor-empty { padding: 24px; }
+.competitor-source { margin: -4px 0 20px; color: var(--secondary); font-size: 12.5px; overflow-wrap: anywhere; }
+.competitor-detail .overview-heading > div, .competitor-page .panel-heading > h2 { min-width: 0; overflow-wrap: anywhere; }
+.competitor-detail .overview-heading p, .competitor-detail .page-actions { overflow-wrap: anywhere; }
+.competitor-detail .page-actions { flex-wrap: wrap; }
+.competitor-summary { padding: 20px; overflow-wrap: anywhere; }
+.competitor-summary > .muted { line-height: 1.5; }
+.competitor-summary .facts dd { min-width: 0; }
+.competitor-page { overflow-wrap: anywhere; }
+.competitor-page .panel-heading { flex-wrap: wrap; }
+.competitor-page .panel-heading .link-button { white-space: normal; overflow-wrap: anywhere; }
+.onboarding-options { padding: 12px 0 4px; border-top: .5px solid var(--separator); }
+.onboarding-options > summary { width: fit-content; color: var(--secondary); font-size: 13.5px; cursor: pointer; }
+.onboarding-option-fields { display: grid; gap: 12px; padding-top: 16px; }
+#add-project-form .capture-choice { align-items: start; line-height: 1.5; }
+#add-project-form .capture-choice input { margin-top: 2px; }
+.add-project-panel .agent-prompt-box { gap: 8px; }
+.add-project-panel .agent-prompt-box .text-button { flex: none; }
+.add-project-panel .agent-prompt-box p { line-height: 1.5; }
+@media (max-width: 760px) {
+  .competitors-view .competitor-card { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 16px 12px; }
+  .competitor-add-fields { flex-wrap: wrap; }
+  .competitor-add-fields input { flex-basis: 100%; }
+  .competitor-add-fields .save-button { min-height: 40px; }
+  .competitor-summary { padding: 16px; }
+  .competitor-summary .versus { grid-template-columns: minmax(0, 1fr); }
+  .competitor-summary .facts > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .add-project-panel.content-panel { padding: 20px 16px; }
+  .add-project-panel .agent-prompt-box { flex-direction: column; align-items: start; }
+}
