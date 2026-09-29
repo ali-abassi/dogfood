@@ -15,7 +15,7 @@ function screenPictureMarkup(page, device, shot) {
 function screenMarkup(page, device) {
   const shot = shownShot(page, device);
   const caption = shot?.caption ?? 'No screenshot';
-  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(caption)}</figcaption></figure>`;
+  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(caption)}</figcaption></figure>`;
 }
 
 const emptyScreens = {

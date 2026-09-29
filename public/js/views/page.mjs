@@ -107,12 +107,12 @@ function missingRequirementsMarkup(page) {
 
 function acceptanceMarkup(page) {
   const label = acceptanceLabel(page.progress);
-  return `<div class="page-gate" aria-label="Acceptance status"><span class="page-gate-state" data-gate-status="${escapeHtml(label)}">${escapeHtml(label)}</span>${missingRequirementsMarkup(page)}</div>`;
+  return `<div class="page-gate" role="group" aria-label="Acceptance status"><span class="page-gate-state" data-gate-status="${escapeHtml(label)}">${escapeHtml(label)}</span>${missingRequirementsMarkup(page)}</div>`;
 }
 
 export function pageHeaderMarkup(page) {
   const open = externalLinkMarkup(page.captures.desktop.sourceUrl, 'Open page ↗', 'link-button');
-  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${checkAgainMarkup(page)}${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${acceptanceMarkup(page)}${scanErrorMarkup(page)}${removePageMarkup(page)}`;
+  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${acceptanceMarkup(page)}${checkAgainMarkup(page)}${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${scanErrorMarkup(page)}${removePageMarkup(page)}`;
 }
 
 // Pages is the phone's way into the sidebar; on a computer the sidebar is always there.

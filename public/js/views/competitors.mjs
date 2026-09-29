@@ -97,7 +97,7 @@ function shotMarkup(page, device) {
   const shot = page.captures[device];
   const src = safeServedImagePath(shot.path);
   const label = device === 'desktop' ? 'Computer' : 'Phone';
-  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" tabindex="0" aria-label="${label} screenshot, scrolls"><img src="${src}" alt="${escapeHtml(page.name)} on a ${label.toLowerCase()}" width="${escapeHtml(shot.pixelWidth)}" height="${escapeHtml(shot.pixelHeight)}" loading="lazy"></div><figcaption><strong>${label}</strong> <a href="${src}" target="_blank" rel="noopener">Full size ↗</a></figcaption></figure>`;
+  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${label} screenshot, scrolls"><img src="${src}" alt="${escapeHtml(page.name)} on a ${label.toLowerCase()}" width="${escapeHtml(shot.pixelWidth)}" height="${escapeHtml(shot.pixelHeight)}" loading="lazy"></div><figcaption><strong>${label}</strong> <a href="${src}" target="_blank" rel="noopener">Full size ↗</a></figcaption></figure>`;
 }
 
 function headingsMarkup(page) {
