@@ -235,6 +235,11 @@ test('audit and acceptance distinguish unfinished rows, findings, checkout chang
     features: [{ id: 'hero', status: 'pass', note }], audit,
   }, 'agent:test');
   assert.equal(progress().complete, true);
+  assert.equal(progress().accepted, false, 'a remote URL is not declared to serve a local checkout by default');
+  assert.match(progress().acceptanceRequirements.find(item => item.id === 'provenance').missing, /not declared to serve the checkout/);
+  const mapped = store.readProject('revision');
+  mapped.source.servesCheckout = true;
+  store.writeProject(mapped);
   assert.equal(progress().accepted, true);
   assert.equal(pagesGate(view().pages, 'acceptance').complete, true);
   assert.equal(page().scan.fingerprint, checkoutRevision(checkout).fingerprint);
@@ -274,10 +279,12 @@ test('audit and acceptance distinguish unfinished rows, findings, checkout chang
   assert.equal(pagesGate(view().pages, 'acceptance').complete, false);
 
   writeFileSync(join(checkout, 'backend.js'), 'export const value = 2;\n');
-  assert.equal(progress().complete, false, 'backend-only edits invalidate current scan evidence');
+  assert.equal(progress().complete, true, 'audit coverage survives a checkout-only edit');
   assert.equal(progress().accepted, false);
   assert.equal(progress().answers.find(answer => answer.id === 'design').status, 'recheck');
-  assert.ok(unmet(progress()).includes('scan'));
+  const oldFingerprint = page().scan.fingerprint;
+  assert.throws(() => store.recordVerdicts('revision', 'home', { checkoutFingerprint: oldFingerprint, checks: { design: { status: 'pass', note } } }, 'agent:test'), /checkout changed/);
+  assert.throws(() => store.recordCapture('revision', 'home', { ...capture, file: screenshot('stale-capture.png', 40), checkoutFingerprint: oldFingerprint }), /checkout changed/);
   store.recordScan('revision', 'home', scan());
   store.recordVerdicts('revision', 'home', { checks: { design: { status: 'pass', note } } }, 'agent:test');
   assert.equal(progress().answers.find(answer => answer.id === 'design').status, 'pass');
@@ -322,4 +329,14 @@ test('a checkout edit during browser collection fails the rescan without replaci
   assert.equal(current.scan.scannedAt, previous);
   assert.equal(current.scanAttempt.status, 'failed');
   assert.equal(store.pageProgress(store.readProject('revision'), current).requirements.find(item => item.id === 'scan').met, false);
+});
+
+test('checkout mapping defaults to loopback and needs an explicit declaration for remote URLs', () => {
+  assert.equal(store.servesCheckout({ url: 'http://localhost:5173' }), true);
+  assert.equal(store.servesCheckout({ url: 'http://127.0.0.1:5173' }), true);
+  assert.equal(store.servesCheckout({ url: 'http://[::1]:5173' }), true);
+  assert.equal(store.servesCheckout({ url: 'https://example.com' }), false);
+  assert.equal(store.servesCheckout({ url: 'https://example.com', servesCheckout: true }), true);
+  assert.equal(store.servesCheckout({ url: 'http://localhost:5173', servesCheckout: false }), false);
+  assert.equal(store.servesCheckout({ url: null }), false);
 });
