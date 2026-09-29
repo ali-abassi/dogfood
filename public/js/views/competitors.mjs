@@ -87,7 +87,7 @@ function summarizeButtonMarkup(label) {
 function summaryMarkup(competitor) {
   if (!competitor.scan) return '';
   const summary = competitor.summary;
-  if (!summary) return `<section class="content-panel competitor-summary"><div class="panel-heading"><h2>Summary</h2>${summarizeButtonMarkup('Summarize with AI')}</div><p class="muted">The AI reads the text of these pages and sums up what they do, who it’s for, pricing and how they sell, then compares them with this project’s vision. About a cent.</p></section>`;
+  if (!summary) return `<section class="content-panel competitor-summary"><div class="panel-heading"><h2>Summary</h2>${summarizeButtonMarkup('Summarize with AI')}</div><p class="muted">The AI reads the text of these pages and sums up what they do, who it’s for, pricing and how they sell, then compares them with this project’s vision. Well under a cent.</p></section>`;
   const stale = summary.scannedAt !== competitor.scan.scannedAt ? `<p class="recheck-note">From an earlier scan.</p>` : '';
   const features = summary.keyFeatures.length ? `<h3>Key features</h3>${listItemsMarkup(summary.keyFeatures)}` : '';
   return `<section class="content-panel competitor-summary"><div class="panel-heading"><h2>Summary</h2>${summarizeButtonMarkup('Summarize again')}</div>${stale}${summaryFactsMarkup(summary)}${features}${versusMarkup(summary)}<p class="muted competitor-summary-by">${escapeHtml(summaryAuthor(summary))} on ${escapeHtml(dateLabel(summary.summarizedAt))}, from the pages below.</p></section>`;

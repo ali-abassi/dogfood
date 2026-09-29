@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const repo = fileURLToPath(new URL('../..', import.meta.url));
 const data = mkdtempSync(join(tmpdir(), 'dogfood-onboard-ai-'));
 process.env.DOGFOOD_DATA = data;
-process.env.OPENROUTER_API_KEY = 'fixture-key';
+process.env.DEEPSEEK_API_KEY = 'fixture-key';
 const { onboardProject } = await import(join(repo, 'lib/onboard.mjs'));
 let passed = 0;
 function check(name, body) {
@@ -41,9 +41,9 @@ const analysis = {
 const modelRequests = [];
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {
-  if (!String(url).startsWith('https://openrouter.ai/')) return realFetch(url, options);
+  if (!String(url).startsWith('https://api.deepseek.com/')) return realFetch(url, options);
   modelRequests.push(JSON.parse(options.body));
-  return new Response(JSON.stringify({ id: 'fixture', model: 'google/gemini-3.8-flash', choices: [{ message: { content: JSON.stringify(analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 200, cost: 0.004 } }), { status: 200 });
+  return new Response(JSON.stringify({ id: 'fixture', model: 'deepseek-flash', choices: [{ message: { content: JSON.stringify(analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 200, cost: 0.004 } }), { status: 200 });
 };
 
 const session = `dogfood-onboard-ai-proof-${process.pid}`;
@@ -91,7 +91,7 @@ try {
   browser('wait', '400');
   check('Add project offers the AI review as an unchecked, priced opt-in', () => {
     assert.equal(evaluate(`document.querySelector('#add-project-form input[name="aiReview"]')?.checked`), false);
-    assert.match(evaluate(`document.querySelector('#add-project-form input[name="aiReview"]').closest('label').textContent`), /half a cent|cost|\\$/i);
+    assert.match(evaluate(`document.querySelector('#add-project-form input[name="aiReview"]').closest('label').textContent`), /cent|cost|\\$/i);
   });
   evaluate(`(() => {
     window.__calls = [];

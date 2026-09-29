@@ -203,7 +203,7 @@ const definitions = [
       name: { type: 'string', description: 'Optional project name; its slug becomes the project ID.' },
       id: { type: 'string', description: 'Optional project ID seed used when name is not provided.' },
       browserProfile: { type: 'string', description: 'Optional Chrome profile name such as Default for signed-in scans.' },
-      confirmAiReviewUsage: { type: 'boolean', description: 'Optional: true also runs the AI review on every scanned page so each arrives with suggested features. It sends screenshots to a model provider and costs about half a cent per page.' },
+      confirmAiReviewUsage: { type: 'boolean', description: 'Optional: true also runs the AI review on every scanned page so each arrives with suggested features. It sends screenshots to DeepSeek and costs under a tenth of a cent per page.' },
     }, ['url']),
     run: onboardWithOptionalReview,
   },
@@ -332,7 +332,7 @@ const definitions = [
   },
   {
     name: 'dogfood_summarize_competitor',
-    description: 'Have the AI summarize a scanned competitor from its page text and compare it with this project\'s vision.md. Spends model-provider usage (about a cent through OpenRouter).',
+    description: 'Have the AI summarize a scanned competitor from its page text and compare it with this project\'s vision.md. Spends DeepSeek usage (well under a cent).',
     inputSchema: objectSchema({ project: projectPageProperties.project, competitor: { type: 'string', description: 'Competitor ID from dogfood_competitors.' } }, ['project', 'competitor']),
     run: async ({ project, competitor }) => competitorView(competitorOf(await summarizeCompetitor(project, competitor), competitor)),
   },

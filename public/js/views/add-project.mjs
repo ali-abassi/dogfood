@@ -59,7 +59,7 @@ export function addProjectFormMarkup(welcome) {
         <label for="project-name"><span class="field-label">Name <span class="field-optional">optional</span></span><input id="project-name" name="name" type="text" value="${escapeHtml(draft.name)}"></label>
         <label for="browser-profile"><span class="field-label">Chrome profile <span class="field-optional">optional</span></span><input id="browser-profile" name="browserProfile" type="text" value="${escapeHtml(draft.browserProfile)}" aria-describedby="browser-profile-hint"></label>
         <p class="field-hint" id="browser-profile-hint">Chrome profile for signed-in pages, e.g. Default</p>
-        <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also check each page with AI (about half a cent per page)</label>
+        <label class="capture-choice"><input type="checkbox" name="aiReview" ${draft.aiReview ? 'checked' : ''}> Also check each page with AI (under a tenth of a cent per page)</label>
       </fieldset>
       ${onboardingNoticeMarkup()}
       <div class="form-actions"><button class="save-button" type="submit" ${disabled}>${onboardingButtonText()}</button>${cancel}</div>
