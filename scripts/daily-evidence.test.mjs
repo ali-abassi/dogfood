@@ -272,3 +272,13 @@ test('known absent indexing facts carry, while unmeasured structural evidence st
   unknown.scan.scannedAt = '2026-09-29T04:00:00.000Z';
   assert.equal(auditRowFresh(unknown, row), false);
 });
+
+
+test('measurement candidates exclude omitted facts instead of pretending they passed', () => {
+  const target = freshPage();
+  delete target.scan.viewports.desktop.accessibility.unlabeledFields;
+  delete target.scan.viewports.mobile.failedRequests;
+  const ids = measuredAnswers(target).map(row => row.id);
+  assert.ok(!ids.includes('measured-controls'));
+  assert.ok(!ids.includes('measured-requests'));
+});
