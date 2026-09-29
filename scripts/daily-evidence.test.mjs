@@ -256,3 +256,19 @@ test('deployment and live scan URL checks preserve even bare query and hash deli
   assert.equal(page(id).scan.sourceUrl, input.sourceUrl);
   assert.equal(page(id).captures.desktop.sourceUrl, input.sourceUrl);
 });
+
+
+test('known absent indexing facts carry, while unmeasured structural evidence stays unknown', () => {
+  const target = freshPage();
+  target.scan.viewports.desktop.seo.canonical = null;
+  target.scan.viewports.mobile.seo.canonical = null;
+  const indexing = review(target, 'seo', 'indexing');
+  target.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+  target.scan.fingerprint = 'changed-code';
+  assert.equal(auditRowFresh(target, indexing, 'changed-code'), true);
+  const unknown = freshPage();
+  delete unknown.scan.viewports.desktop.seo.canonical;
+  const row = review(unknown, 'seo', 'indexing');
+  unknown.scan.scannedAt = '2026-09-29T04:00:00.000Z';
+  assert.equal(auditRowFresh(unknown, row), false);
+});
