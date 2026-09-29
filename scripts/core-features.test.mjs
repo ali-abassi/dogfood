@@ -79,3 +79,14 @@ test('docs come from origin/main when the checkout has it, not from whatever is 
   store.createProject({ id: 'gitdocs', name: 'Git docs', url: 'https://example.com', checkout: repo });
   assert.equal(projectDocs(store.readProject('gitdocs')).vision.markdown, '# Shipped vision\n');
 });
+
+test('without plan.md, the plan is the newest dated file in docs/plans', () => {
+  const repo = join(data, 'plansrepo');
+  mkdirSync(join(repo, 'docs', 'plans'), { recursive: true });
+  writeFileSync(join(repo, 'docs', 'plans', '2026-09-01-first.md'), '# First\n');
+  writeFileSync(join(repo, 'docs', 'plans', '2026-09-28-production-ready.md'), '# Production ready\n');
+  store.createProject({ id: 'plans', name: 'Plans', url: 'https://example.com', checkout: repo });
+  assert.deepEqual(projectDocs(store.readProject('plans')).plan, { file: 'docs/plans/2026-09-28-production-ready.md', markdown: '# Production ready\n' });
+  writeFileSync(join(repo, 'plan.md'), '# Plan\n');
+  assert.equal(projectDocs(store.readProject('plans')).plan.file, 'plan.md');
+});
