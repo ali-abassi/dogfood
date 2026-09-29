@@ -22,6 +22,14 @@ function answerSentence(pages) {
   return `Is ${state.project.name} working? ${countWords(good, 'page is', 'pages are')} good, ${countWords(needs, 'needs', 'need')} work${waiting}, and ${countWords(rest, 'is', 'are')} not fully checked yet.`;
 }
 
+function acceptanceCountsMarkup(pages) {
+  if (!pages.length) return '';
+  const accepted = pages.filter(page => page.progress.accepted === true).length;
+  const checked = pages.filter(page => page.progress.accepted !== true && page.progress.complete === true).length;
+  const remaining = pages.length - accepted - checked;
+  return `<p class="overview-gate-counts" data-gate-counts>${accepted} accepted · ${checked} checked, not accepted · ${remaining} not fully checked</p>`;
+}
+
 function columnsMarkup() {
   const headings = answerIds.map(id => `<span data-answer-heading>${escapeHtml(answerShortNames[id])}</span>`).join('');
   return `<div class="overview-columns" aria-hidden="true"><span>Page</span><span class="overview-marks">${headings}</span></div>`;
@@ -69,7 +77,7 @@ export function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
   const pages = groups ? `${columnsMarkup()}${groups}` : '<div class="overview-empty"><p>No pages yet. Start with the work plan, then add pages when the app runs.</p><button type="button" class="text-button" data-project-view="plan">Open Plan</button></div>';
   return `<section class="overview-content" aria-label="Project overview">
-    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${state.project.pages.length && state.project.source?.url ? scanAllButtonMarkup() : ''}</div></header>
+    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p>${acceptanceCountsMarkup(state.project.pages)}</div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${state.project.pages.length && state.project.source?.url ? scanAllButtonMarkup() : ''}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${fixFirstMarkup(state.project.pages)}

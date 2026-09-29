@@ -39,7 +39,9 @@ try {
     assert.equal(evaluate(`document.querySelector('[data-project-view="plan"]') !== null`), true);
     assert.equal(evaluate(`document.querySelector('.source-link') === null`), true);
     assert.equal(evaluate(`document.querySelector('[data-action="scan-all"]') === null`), true);
-    click('[data-project-view="plan"]');
+    browser('open', `${server.url}?project=tidepool&view=plan`);
+    settle();
+    assert.equal(evaluate(`document.querySelector('section[aria-label="Project plan"]') !== null`), true);
     assert.match(evaluate(`document.querySelector('.plan-empty')?.textContent`), /No tasks yet/);
   });
 
