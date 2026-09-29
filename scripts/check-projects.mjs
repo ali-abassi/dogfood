@@ -7,6 +7,8 @@ import {
   httpMethods, idPattern, manifestVersion, severities, testFilePattern, verdicts,
 } from '../lib/schema.mjs';
 import { manifestIntegrity, projectView } from '../lib/store.mjs';
+import { validAuditDependencies, validAuditEvidence } from '../lib/audit-evidence.mjs';
+import { featureAwaitsLive } from '../lib/completion.mjs';
 
 function fail(message) { throw new Error(message); }
 
@@ -19,11 +21,12 @@ function isHttpUrl(value) {
   return URL.canParse(value) && ['http:', 'https:'].includes(new URL(value).protocol);
 }
 
-function checkEntry(entry, label) {
+function checkEntry(entry, label, feature = false) {
   assertRules(label, [
-    [() => !verdicts.has(entry?.status), 'invalid review status'],
+    [() => !verdicts.has(entry?.status) && !(feature && featureAwaitsLive(entry)), 'invalid review status'],
     [() => typeof entry.note !== 'string', 'evidence note missing'],
     [() => entry.status !== 'untested' && entry.note.trim().length < evidenceNote.minimum, 'verdict needs a specific evidence note'],
+    [() => !feature && entry.liveDebt !== undefined, 'live debt is only valid on features'],
   ]);
 }
 
@@ -65,7 +68,28 @@ function checkUniqueIds(rows, label) {
 function checkFeatures(page, label) {
   if (!Array.isArray(page.features)) fail(`${label}: feature inventory missing`);
   checkUniqueIds(page.features, `${label} features`);
-  for (const feature of page.features) checkEntry(feature, `${label}/${feature.name}`);
+  for (const feature of page.features) {
+    checkEntry(feature, `${label}/${feature.name}`, true);
+    checkLiveDebt(feature, `${label}/${feature.name}`);
+  }
+}
+
+function checkLiveDebt(feature, label) {
+  if (feature.requiresLive !== undefined && typeof feature.requiresLive !== 'boolean') fail(`${label}: requires-live declaration invalid`);
+  const debt = feature.liveDebt;
+  if (!debt) return;
+  assertRules(label, [
+    [() => !feature.requiresLive || !['awaiting_deploy', 'pending', 'verified'].includes(debt.state), 'invalid live debt state or feature declaration'],
+    [() => !validDebtAttribution(debt), 'live debt reason, author or time missing'],
+    [() => debt.state === 'awaiting_deploy' && feature.status !== 'awaiting_live', 'deferred live debt needs awaiting_live feature status'],
+    [() => debt.state !== 'awaiting_deploy' && (!debt.deploymentId || Number.isNaN(Date.parse(debt.activatedAt))), 'activated live debt needs deployment metadata'],
+    [() => debt.state === 'verified' && (feature.status !== 'pass' || Number.isNaN(Date.parse(debt.verifiedAt))), 'verified live debt needs passing verdict and verification time'],
+    [() => debt.state === 'pending' && feature.status === 'pass', 'pending live debt cannot have a passing verdict'],
+  ]);
+}
+
+function validDebtAttribution(debt) {
+  return String(debt.reason ?? '').trim().length >= evidenceNote.minimum && typeof debt.by === 'string' && Boolean(debt.by.trim()) && Number.isFinite(Date.parse(debt.at));
 }
 
 function checkFinding(finding, page, label) {
@@ -87,7 +111,38 @@ function checkAuditList(rows, label) {
   for (const row of rows) {
     assertRules(label, [[() => !row.id || !row.question, 'checklist item incomplete']]);
     checkEntry(row, `${label}/${row.id}`);
+    checkAuditEvidence(row, `${label}/${row.id}`);
   }
+}
+
+function checkAuditEvidence(row, label) {
+  assertRules(label, [
+    [() => row.dependsOn !== undefined && !validAuditDependencies(row.dependsOn), 'audit dependencies invalid'],
+    [() => row.evidence !== undefined && !validAuditEvidence(row.evidence), 'audit evidence snapshot invalid'],
+    [() => row.carriedFrom && !row.evidence, 'carried audit requires an evidence snapshot'],
+  ]);
+  if (row.evidence) {
+    checkEvidenceContext(row.evidence.context, label);
+    if (!row.evidence.dependsOn.every(key => Object.hasOwn(row.evidence.facts, key))) fail(`${label}: audit dependency fact snapshot missing`);
+  }
+  if (row.carriedFrom) checkCarried(row.carriedFrom, label);
+}
+
+function checkEvidenceContext(context, label) {
+  const strings = ['requiredRole', 'verifiedRole', 'fixture', 'browserProfile', 'declaredRole', 'declaredFixture'];
+  assertRules(label, [
+    [() => !isHttpUrl(context.sourceUrl), 'audit evidence source must be HTTP(S)'],
+    [() => !['local', 'live', 'mock'].includes(context.environment), 'audit evidence environment invalid'],
+    [() => context.signedIn !== null && typeof context.signedIn !== 'boolean', 'audit evidence signed-in state invalid'],
+    [() => strings.some(key => context[key] !== null && typeof context[key] !== 'string'), 'audit evidence role or fixture context invalid'],
+  ]);
+}
+
+function checkCarried(carried, label) {
+  assertRules(label, [
+    [() => Number.isNaN(Date.parse(carried.scannedAt)) || !isHttpUrl(carried.sourceUrl), 'carried audit scan provenance invalid'],
+    [() => carried.fingerprint !== null && carried.fingerprint !== undefined && typeof carried.fingerprint !== 'string', 'carried audit fingerprint invalid'],
+  ]);
 }
 
 function checkAudit(page, label) {
