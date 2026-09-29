@@ -340,3 +340,22 @@ test('checkout mapping defaults to loopback and needs an explicit declaration fo
   assert.equal(store.servesCheckout({ url: 'http://localhost:5173', servesCheckout: false }), false);
   assert.equal(store.servesCheckout({ url: null }), false);
 });
+
+test('a loopback checkout mapping cannot accept an explicitly remote page URL', () => {
+  const checkout = join(data, 'revision-checkout');
+  store.createProject({ id: 'cross-origin', name: 'Cross origin', url: 'http://localhost:5173', checkout });
+  store.registerPage('cross-origin', { id: 'remote', name: 'Remote', group: 'Public', route: '/remote', url: 'https://other.example.com/remote', features: [{ id: 'hero', name: 'Hero' }] });
+  store.recordScan('cross-origin', 'remote', { ...scan(), sourceUrl: 'https://other.example.com/remote' });
+  const page = store.readProject('cross-origin').pages[0];
+  const audit = Object.fromEntries(Object.entries(page.audit).map(([key, rows]) => [key, rows.map(row => ({ id: row.id, status: 'pass', note }))]));
+  store.recordVerdicts('cross-origin', 'remote', {
+    checks: Object.fromEntries(['design', 'purpose', 'ease'].map(key => [key, { status: 'pass', note }])),
+    features: [{ id: 'hero', status: 'pass', note }], audit,
+  }, 'agent:test');
+  const progress = store.pageProgress(store.readProject('cross-origin'), store.readProject('cross-origin').pages[0]);
+  assert.equal(progress.complete, true);
+  assert.equal(progress.acceptanceRequirements.find(item => item.id === 'environment').met, true);
+  assert.equal(progress.acceptanceRequirements.find(item => item.id === 'provenance').met, false);
+  assert.match(progress.acceptanceRequirements.find(item => item.id === 'provenance').missing, /outside the declared checkout environment/);
+  assert.equal(progress.accepted, false);
+});

@@ -47,5 +47,11 @@ test('fingerprint uses tracked diffs, nonignored untracked bytes, and submodule 
   writeFileSync(join(parent, 'ignored', 'bundle.js'), 'generated');
   assert.equal(checkoutRevision(parent).fingerprint, untracked.fingerprint);
   writeFileSync(join(parent, 'dep', 'part.txt'), 'module edit\n');
-  assert.notEqual(checkoutRevision(parent).fingerprint, untracked.fingerprint);
+  const firstModuleEdit = checkoutRevision(parent);
+  assert.notEqual(firstModuleEdit.fingerprint, untracked.fingerprint);
+  writeFileSync(join(parent, 'dep', 'part.txt'), 'another module edit\n');
+  const secondModuleEdit = checkoutRevision(parent);
+  assert.notEqual(secondModuleEdit.fingerprint, firstModuleEdit.fingerprint, 'two dirty contents cannot share the parent fingerprint');
+  writeFileSync(join(parent, 'dep', 'new-part.txt'), 'new in submodule\n');
+  assert.notEqual(checkoutRevision(parent).fingerprint, secondModuleEdit.fingerprint, 'untracked submodule content changes the parent fingerprint');
 });
