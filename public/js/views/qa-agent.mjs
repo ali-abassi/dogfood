@@ -30,17 +30,28 @@ function errorMarkup() {
   return state.qaAgent.error ? `<p class="form-error" role="alert">${escapeHtml(state.qaAgent.error)}</p>` : '';
 }
 
-function askMarkup(page) {
+function minutesUntilAnotherRun(run) {
+  return Math.ceil((watchMs - (Date.now() - Date.parse(run.startedAt))) / 60_000);
+}
+
+function askMarkup(page, run) {
   const starting = state.qaAgent.starting === page.id;
-  return `<div class="qa-agent"><button type="button" class="text-button" data-action="start-qa-agent" title="A QA agent checks what this page still needs and records it here" ${starting ? 'disabled' : ''}>${starting ? 'Starting…' : 'Ask the QA agent'}</button>${errorMarkup()}</div>`;
+  const waiting = recent(run);
+  const label = waiting ? 'Recent start recorded' : starting ? 'Starting…' : 'Ask the QA agent';
+  return `<div class="qa-agent"><button type="button" class="text-button" data-action="start-qa-agent" title="A QA agent checks what this page still needs and records it here" ${starting || waiting ? 'disabled' : ''}>${label}</button>${errorMarkup()}</div>`;
 }
 
 // Offered on a page that is not complete, when this dogfood has a QA agent set up (DOGFOOD_QA_AGENT).
 export function qaAgentMarkup(page) {
   if (!state.qaAgent.configured || page.progress.complete) return '';
   const run = runFor(page);
-  const history = run?.startedAt ? `<p class="qa-agent-status" role="status">QA agent started ${escapeHtml(startedWords(run))} · current status unknown</p>` : '';
-  return `${history}${askMarkup(page)}`;
+  return `${qaRunHistoryMarkup(run)}${askMarkup(page, run)}`;
+}
+
+function qaRunHistoryMarkup(run) {
+  if (!run?.startedAt) return '';
+  const cooldown = recent(run) ? ` · another run available in ${minutesUntilAnotherRun(run)} min` : '';
+  return `<p class="qa-agent-status" role="status">QA agent started ${escapeHtml(startedWords(run))} · current status unknown${cooldown}</p>`;
 }
 
 async function refreshProject() {
@@ -50,7 +61,7 @@ async function refreshProject() {
   render();
 }
 
-function watchWhileWorking() {
+function watchRecentRun() {
   const page = activePage();
   if (refreshTimer || !page || !recent(runFor(page))) return;
   refreshTimer = setTimeout(() => void refreshProject().catch(() => {}), refreshMs);
@@ -74,17 +85,18 @@ export function syncQaAgentState() {
     void loadQaAgent(state.project.id);
     return;
   }
-  watchWhileWorking();
+  watchRecentRun();
 }
 
 export async function startQaAgent() {
   const page = activePage();
+  if (recent(runFor(page))) return;
   Object.assign(state.qaAgent, { starting: page.id, error: '' });
   render();
   try {
     const status = await readJson(endpoint(`/pages/${encodeURIComponent(page.id)}`), { method: 'POST' });
     Object.assign(state.qaAgent, status);
-    state.message = 'The QA agent is on it';
+    state.message = 'QA agent start recorded';
   } catch (error) { state.qaAgent.error = error.message; }
   state.qaAgent.starting = '';
   render();
