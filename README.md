@@ -68,6 +68,10 @@ Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/pr
 
 List a page's test files under `qa.tests` in the manifest, and point `source.checkout` at your repository. **Works as expected → Run tests** then runs only those files with your project's installed Vitest (`node_modules/.bin/vitest`, `src/**/*.test.ts(x)`), stores each report under `data/runs/`, and counts the result in the answer.
 
+### Each page
+
+A page's report shows its full-page computer and phone screenshots in frames you scroll top to bottom. **History** steps back through every day the page was captured (dogfood keeps each replaced screenshot under `data/captures/<project>/history/`; `GET /api/projects/<id>/pages/<page>/history` lists them). **About this page** gives what the page is for (from the AI check), its title and search description, the features on it with their status, every link on it split into this site and elsewhere, and the API calls it makes, from the code map and from the traffic each page check records.
+
 ### The AI check
 
 **Check with AI** on a page sends its computer and phone screenshots, with your project's design rules, to Gemini 3.8 Flash through OpenRouter. It scores Looks right, Clear purpose, and Easy to use from 1 to 10 with a reason each; 7 or above reads as Good, because below 7 the prompt means a visitor must guess or the page looks broken. It also suggests what people can do on the page, which you can add with one click. Set `OPENROUTER_API_KEY` in the server's environment. Each check costs about half a cent and is tied to both screenshots' hashes, so it stops counting when either screenshot changes.
@@ -89,7 +93,6 @@ Page-writing tools return that page's status, its six answers, and what it still
 - `dogfood_add_features` — add features to a page, for example ones the AI review suggested; names already listed are skipped.
 - `dogfood_set_core_features` — set the project's core features (its main capabilities, each mapped to the pages that deliver it); the app's Features tab shows each one with a status rolled up from its pages.
 
-Each project's Docs view shows `vision.md`, `design.html` (the brand guide) and `plan.md` from its checkout's `origin/main`. Generate a brand guide from a project's `design.json` and logo with `python3 scripts/brand-guide.py design.json logo.svg design.html "Name" "One-line promise"`.
 - `dogfood_page` — read a page and its derived QA progress.
 - `dogfood_next` — list incomplete pages in site order with missing evidence.
 - `dogfood_record_capture` — attach a validated full-page PNG or record a capture blocker; prefer `dogfood_scan_page` for both devices and measured facts.
@@ -103,6 +106,8 @@ Each project's Docs view shows `vision.md`, `design.html` (the brand guide) and 
 - `dogfood_complete` — check that a page's screenshots and page check are current, all six answers are answered, and no blocking bug is open.
 
 A page is not complete until `dogfood_complete` accepts it; agents must call it before reporting page QA as done.
+
+Each project's Docs view shows `vision.md`, `design.html` (the brand guide) and `plan.md` from its checkout's `origin/main`. Generate a brand guide from a project's `design.json` and logo with `python3 scripts/brand-guide.py design.json logo.svg design.html "Name" "One-line promise"`.
 
 ## How it works
 

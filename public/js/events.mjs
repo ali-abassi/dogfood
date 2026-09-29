@@ -24,6 +24,7 @@ async function scanActivePage() {
     await reloadProjectSuggestions();
     state.scan = { key, running: false, error: '' };
     state.visual.key = '';
+    state.history.key = '';
     state.message = 'Checked the page';
   } catch (error) { state.scan = { key, running: false, error: error.message }; }
   render();
@@ -199,6 +200,7 @@ const buttonActions = new Map([
   ['back-to-report', backToReport],
   ['view-screens', openScreens],
   ['screens-device', button => { state.screensDevice = button.dataset.screensDevice; render(); restoreFocus(`[data-screens-device="${state.screensDevice}"]`); }],
+  ['history-day', button => { state.history.day = button.dataset.day; render(); restoreFocus(`[data-day="${button.dataset.day}"]`); }],
   ['edit-answer', () => openEditor('answerEditing', '#answer-form input[name="status"]')],
   ['cancel-answer', () => closeEditor('answerEditing', '[data-action="edit-answer"]')],
   ['answer-questions', () => openEditor('questionsEditing', '#questions-form select')],

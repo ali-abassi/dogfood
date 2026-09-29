@@ -57,19 +57,10 @@ function scanErrorsMarkup(page) {
   return `<section class="content-panel" aria-label="Measured by the page check"><h2>Measured by the page check</h2><ul class="plain-list">${problems.map(problem => `<li>${escapeHtml(problem)}</li>`).join('')}</ul></section>`;
 }
 
-function connectionMarkup(row) {
-  return `<li><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.method)} ${escapeHtml(row.endpoint)}</span><small>Sends ${escapeHtml(row.sends)} · Gets ${escapeHtml(row.receives)}</small></li>`;
-}
-
-function connectionsMarkup(page) {
-  if (!page.connections.length) return '';
-  return `<details class="content-panel fact-disclosure" data-connections><summary>Data this page loads and sends · ${page.connections.length}</summary><ul class="connection-list">${page.connections.map(connectionMarkup).join('')}</ul></details>`;
-}
-
 export function worksMarkup(page) {
   const answer = answerFor(page, 'works');
   const tests = page.qa.tests.length ? qaMarkup(page) : '';
-  return `<section class="answer-detail" data-answer-detail="works">${backMarkup(page)}<h1 id="answer-heading" tabindex="-1">${escapeHtml(answer.name)}</h1><p class="answer-question">${escapeHtml(answer.question)}</p>${answerPanelMarkup(page, answer)}${thingsMarkup(page)}${findingsMarkup(page)}${scanErrorsMarkup(page)}${tests}${connectionsMarkup(page)}</section>`;
+  return `<section class="answer-detail" data-answer-detail="works">${backMarkup(page)}<h1 id="answer-heading" tabindex="-1">${escapeHtml(answer.name)}</h1><p class="answer-question">${escapeHtml(answer.question)}</p>${answerPanelMarkup(page, answer)}${thingsMarkup(page)}${findingsMarkup(page)}${scanErrorsMarkup(page)}${tests}</section>`;
 }
 
 export async function addThing(form) {

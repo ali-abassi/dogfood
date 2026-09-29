@@ -11,6 +11,7 @@ import { projectReport } from './lib/report.mjs';
 import { pendingSuggestions } from './lib/suggestions.mjs';
 import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, setCoreFeatures, updateFinding, validationError } from './lib/store.mjs';
 import { designGuide, projectDocs } from './lib/project-docs.mjs';
+import { captureHistory } from './lib/history.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 
 const publicDir = join(root, 'public');
@@ -111,6 +112,7 @@ const routes = [
   ['PUT', '/api/projects/([a-z0-9-]+)/core-features', async ([id], request) => projectView(setCoreFeatures(id, (await requestJson(request)).features, person))],
   ['POST', '/api/projects/([a-z0-9-]+)/features', async ([id], request) => projectView(addFeaturesToPages(id, (await requestJson(request)).pages, person))],
   ['POST', `${pagePath}/remove`, withBody((projectId, pageId, input, by) => removePage(projectId, pageId, input.reason, by))],
+  ['GET', `${pagePath}/history`, params => captureHistory(...params)],
   ['GET', `${pagePath}/visual-review`, params => currentReview(...params)],
   ['POST', `${pagePath}/visual-review`, params => startReview(...params)],
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],

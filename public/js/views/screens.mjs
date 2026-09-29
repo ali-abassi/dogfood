@@ -1,6 +1,7 @@
-import { escapeHtml, externalLinkMarkup, relativeCaptureAge, safeCapturePath, safeServedImagePath } from '../format.mjs';
+import { escapeHtml, externalLinkMarkup, safeServedImagePath } from '../format.mjs';
 import { deviceNames, state } from '../state.mjs';
 import { backMarkup } from './answer.mjs';
+import { shownShot, timelineMarkup } from './history.mjs';
 
 function deviceSwitchMarkup() {
   const buttons = Object.entries(deviceNames).map(([device, label]) => `<button type="button" data-action="screens-device" data-screens-device="${device}" aria-pressed="${state.screensDevice === device}">${label}</button>`).join('');
@@ -8,10 +9,10 @@ function deviceSwitchMarkup() {
 }
 
 function fullScreenshotMarkup(page, device) {
-  const capture = page.captures[device];
-  const image = capture.state === 'rendered' ? safeCapturePath(capture.path) : '';
-  if (!image) return `<p class="screen-missing">${escapeHtml(capture.reason || 'No screenshot yet.')}</p>`;
-  return `<figure class="full-screen full-screen-${device}"><img data-screenshot data-screens-image src="${image}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}" width="${escapeHtml(capture.pixelWidth)}" height="${escapeHtml(capture.pixelHeight)}"><figcaption>${escapeHtml(relativeCaptureAge(capture))} · <a href="${image}" target="_blank" rel="noopener">Open full size ↗</a></figcaption></figure>`;
+  const shot = shownShot(page, device);
+  if (!shot) return `<p class="screen-missing">${escapeHtml(page.captures[device].reason || 'No screenshot that day.')}</p>`;
+  const size = shot.width ? ` width="${escapeHtml(shot.width)}" height="${escapeHtml(shot.height)}"` : '';
+  return `<figure class="full-screen full-screen-${device}"><img data-screenshot data-screens-image src="${shot.src}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}><figcaption>${escapeHtml(shot.caption)} · <a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption></figure>`;
 }
 
 function changeFigureMarkup(page, device, kind, path, caption) {
@@ -46,5 +47,5 @@ function changesMarkup(page) {
 
 export function screensMarkup(page) {
   const source = externalLinkMarkup(page.captures.desktop.sourceUrl, 'Open page ↗', 'link-button');
-  return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${changesMarkup(page)}</section>`;
+  return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${changesMarkup(page)}</section>`;
 }

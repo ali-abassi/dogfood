@@ -12,6 +12,7 @@ import { pageReportMarkup } from './views/report.mjs';
 import { screensMarkup } from './views/screens.mjs';
 import { suggestionsReviewMarkup, syncSuggestionsState } from './views/suggestions.mjs';
 import { syncQaState } from './views/tests.mjs';
+import { syncHistoryState } from './views/history.mjs';
 import { syncVisualState } from './views/visual.mjs';
 import { worksMarkup } from './views/works.mjs';
 
@@ -73,6 +74,7 @@ export function render() {
   ensureSelection();
   syncQaState();
   syncVisualState();
+  syncHistoryState();
   syncSuggestionsState();
   syncDocsState();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);

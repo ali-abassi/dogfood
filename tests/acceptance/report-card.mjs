@@ -345,11 +345,13 @@ try {
     assert.deepEqual(marks('[data-answers]').map(label => label.split(': ')[1]), Array(6).fill('Not checked'));
   });
   openPage('revenue');
+  await check('WK-4a the report folds the page\'s API connections under About this page', () => {
+    assert.equal(evaluate(`document.querySelector('[data-about] [data-connections]')?.open`), false);
+  });
   openAnswer('works');
-  await check('WK-4 the longest content stays readable and data connections are folded', () => {
+  await check('WK-4 the longest content stays readable', () => {
     assert.equal(count('[data-thing]'), 9);
     assert.equal(count('[data-bug]'), 3);
-    assert.equal(evaluate(`document.querySelector('[data-connections]')?.open`), false);
     assert.ok(noSidewaysScroll());
   });
 
