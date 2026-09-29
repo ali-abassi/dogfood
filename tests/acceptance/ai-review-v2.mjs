@@ -50,13 +50,13 @@ writeFileSync(manifestFile, JSON.stringify(manifest, null, 2));
 
 try {
   const { latestVisualReview, runVisualReview, validateAnalysis } = await import(join(repo, 'lib/visual-review.mjs'));
-  const oldKey = process.env.OPENROUTER_API_KEY;
+  const oldKey = process.env.DEEPSEEK_API_KEY;
   const oldFetch = globalThis.fetch;
-  process.env.OPENROUTER_API_KEY = 'fixture-key';
+  process.env.DEEPSEEK_API_KEY = 'fixture-key';
   const outbound = [];
   globalThis.fetch = async (_url, options) => {
     outbound.push(JSON.parse(options.body));
-    return new Response(JSON.stringify({ id: 'fixture', model: 'google/gemini-3.8-flash', choices: [{ message: { content: JSON.stringify(analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 300, cost: 0.002 } }), { status: 200 });
+    return new Response(JSON.stringify({ id: 'fixture', model: 'deepseek-flash', choices: [{ message: { content: JSON.stringify(analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 300, cost: 0.002 } }), { status: 200 });
   };
   let bothResult;
   let desktopOnly;
@@ -65,8 +65,8 @@ try {
     desktopOnly = await runVisualReview(data, manifest, home);
   } finally {
     globalThis.fetch = oldFetch;
-    if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;
-    else process.env.OPENROUTER_API_KEY = oldKey;
+    if (oldKey === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = oldKey;
   }
   const images = body => body.messages[0].content.filter(part => part.type === 'image_url');
   check('the review sends the desktop and the mobile screenshot', () => {
@@ -75,13 +75,15 @@ try {
   });
   check('a page without a mobile screenshot is reviewed from desktop alone', () => assert.equal(images(outbound[1]).length, 1));
   check('the review asks for suggested features in its response schema', () => {
-    const schema = outbound[0].response_format.json_schema.schema;
+    const prompt = outbound[0].messages[0].content[0].text;
+    const schema = JSON.parse(prompt.slice(prompt.indexOf('JSON Schema: ') + 'JSON Schema: '.length).split('\n')[0]);
+    assert.deepEqual(outbound[0].response_format, { type: 'json_object' });
     assert.ok(schema.properties.suggestedFeatures, 'suggestedFeatures in schema');
     assert.ok(schema.required.includes('suggestedFeatures'));
   });
   check('the saved review records both screenshots and the current prompt', () => {
     const { review } = bothResult;
-    assert.equal(review.promptVersion, 'page-answers-v4');
+    assert.equal(review.promptVersion, 'page-answers-v5');
     assert.equal(review.captures.desktop.sha256, book.captures.desktop.sha256);
     assert.equal(review.captures.mobile.sha256, book.captures.mobile.sha256);
     assert.equal(desktopOnly.review.captures.mobile, null);

@@ -8,3 +8,4 @@ design-evidence/
 recordings/
 acceptance.log
 graphify-out/
+.env

@@ -49,7 +49,7 @@ function aiCheckMarkup(page) {
   if (!aiCheckWanted(page)) return '';
   const running = state.visual.running;
   const error = state.visual.error ? `<p class="form-error" role="alert">${escapeHtml(state.visual.error)}</p>` : '';
-  return `<div class="ai-check"><button type="button" class="save-button" data-action="run-visual" ${running ? 'disabled' : ''}>${running ? 'Checking with AI…' : 'Check with AI'}</button><small>About half a cent</small>${error}</div>`;
+  return `<div class="ai-check"><button type="button" class="save-button" data-action="run-visual" ${running ? 'disabled' : ''}>${running ? 'Checking with AI…' : 'Check with AI'}</button><small>Under a tenth of a cent</small>${error}</div>`;
 }
 
 function answerRowMarkup(page, answer) {

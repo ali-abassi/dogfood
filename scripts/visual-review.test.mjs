@@ -37,21 +37,21 @@ function fixtureCaptures(root) {
 }
 
 function stubProvider(content) {
-  const oldKey = process.env.OPENROUTER_API_KEY;
+  const oldKey = process.env.DEEPSEEK_API_KEY;
   const oldFetch = globalThis.fetch;
-  process.env.OPENROUTER_API_KEY = 'fixture-key';
+  process.env.DEEPSEEK_API_KEY = 'fixture-key';
   let outbound;
   globalThis.fetch = async (_url, options) => {
     outbound = JSON.parse(options.body);
-    return new Response(JSON.stringify({ id: 'fixture-response', model: 'google/gemini-3.8-flash', choices: [{ message: { content: JSON.stringify(content) } }], usage: { prompt_tokens: 200, completion_tokens: 100, cost: 0.001 } }), { status: 200 });
+    return new Response(JSON.stringify({ id: 'fixture-response', model: 'deepseek-flash', choices: [{ message: { content: JSON.stringify(content) } }], usage: { prompt_tokens: 200, completion_tokens: 100, cost: 0.001 } }), { status: 200 });
   };
   return { oldKey, oldFetch, outbound: () => outbound };
 }
 
 function restoreProvider({ oldKey, oldFetch }) {
   globalThis.fetch = oldFetch;
-  if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;
-  else process.env.OPENROUTER_API_KEY = oldKey;
+  if (oldKey === undefined) delete process.env.DEEPSEEK_API_KEY;
+  else process.env.DEEPSEEK_API_KEY = oldKey;
 }
 
 test('visual review judges both screenshots, suggests features, and becomes stale when either changes', async () => {
@@ -68,10 +68,13 @@ test('visual review judges both screenshots, suggests features, and becomes stal
     assert.equal(content[2].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
     assert.equal(content[3].text, 'Mobile screenshot (390 × 844):');
     assert.equal(content[4].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
-    assert.equal(result.review.promptVersion, 'page-answers-v4');
+    assert.equal(result.review.promptVersion, 'page-answers-v5');
     assert.equal(result.review.analysis.clarityRating, undefined, 'no overall score');
     assert.deepEqual(result.review.analysis.suggestedFeatures, analysis.suggestedFeatures);
-    assert.equal(result.review.usage.reportedCostUsd, 0.001);
+    assert.ok(result.review.usage.costUsd > 0, 'cost is worked out from the tokens');
+    const body = provider.outbound();
+    assert.deepEqual([body.model, body.response_format, body.thinking], ['deepseek-flash', { type: 'json_object' }, { type: 'disabled' }]);
+    assert.match(content[0].text, /Return one JSON object that matches this JSON Schema/);
     assert.ok(result.review.captures.desktop.sha256);
     assert.ok(result.review.captures.mobile.sha256);
     assert.equal(result.review.capture, undefined);
@@ -130,11 +133,11 @@ test('visual review rejects unsupported numeric precision, missing evidence, and
 
 test('provider failure keeps an attempt receipt without creating a review', async () => {
   const root = mkdtempSync(join(tmpdir(), 'qa-visual-failed-'));
-  const oldKey = process.env.OPENROUTER_API_KEY;
+  const oldKey = process.env.DEEPSEEK_API_KEY;
   const oldFetch = globalThis.fetch;
   mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
   writeFileSync(join(root, 'captures', 'fixture', 'gallery.png'), png);
-  process.env.OPENROUTER_API_KEY = 'fixture-key';
+  process.env.DEEPSEEK_API_KEY = 'fixture-key';
   globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'Provider unavailable' } }), { status: 503 });
   try {
     const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/gallery.png', sourceUrl: 'https://example.com/#/gallery' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
@@ -146,27 +149,35 @@ test('provider failure keeps an attempt receipt without creating a review', asyn
     assert.doesNotMatch(JSON.stringify(receipt), /fixture-key/);
   } finally {
     globalThis.fetch = oldFetch;
-    if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;
-    else process.env.OPENROUTER_API_KEY = oldKey;
+    if (oldKey === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = oldKey;
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test('an answer the provider cut short says so instead of failing to parse', async () => {
   const root = mkdtempSync(join(tmpdir(), 'qa-visual-cut-'));
-  const oldKey = process.env.OPENROUTER_API_KEY;
+  const oldKey = process.env.DEEPSEEK_API_KEY;
   const oldFetch = globalThis.fetch;
   mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
   writeFileSync(join(root, 'captures', 'fixture', 'gallery.png'), png);
-  process.env.OPENROUTER_API_KEY = 'fixture-key';
-  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'error', message: { content: '{\n  "pagePurpose": "This page allows' } }] }), { status: 200 });
+  process.env.DEEPSEEK_API_KEY = 'fixture-key';
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'insufficient_system_resource', message: { content: '{\n  "pagePurpose": "This page allows' } }] }), { status: 200 });
   try {
     const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/gallery.png', sourceUrl: 'https://example.com/' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
-    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures }), /failed partway through its answer/);
+    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures }), /ran out of capacity partway through/);
   } finally {
     globalThis.fetch = oldFetch;
-    if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;
-    else process.env.OPENROUTER_API_KEY = oldKey;
+    if (oldKey === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = oldKey;
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('DeepSeek cost comes from its tokens at the peak or off-peak price of the moment', async () => {
+  const { usageReceipt } = await import('../lib/deepseek.mjs');
+  const usage = { prompt_tokens: 1_000_000, prompt_cache_hit_tokens: 0, completion_tokens: 1_000_000 };
+  assert.equal(usageReceipt(usage, new Date('2026-09-29T07:00:00Z')).costUsd, 1.5, 'Tuesday 07:00 UTC is peak');
+  assert.equal(usageReceipt(usage, new Date('2026-09-27T07:00:00Z')).costUsd, 0.75, 'Sunday is off-peak');
+  assert.equal(usageReceipt({ prompt_tokens: 1_000_000, prompt_cache_hit_tokens: 1_000_000, completion_tokens: 0 }, new Date('2026-09-27T07:00:00Z')).costUsd, 0.003);
 });

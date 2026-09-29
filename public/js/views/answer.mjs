@@ -33,7 +33,7 @@ function aiCanAnswer(page, answer) {
 
 function aiCheckMarkup(page, answer) {
   if (!aiCanAnswer(page, answer)) return '';
-  const label = state.visual.running ? 'Checking with AI…' : 'Check with AI (about half a cent)';
+  const label = state.visual.running ? 'Checking with AI…' : 'Check with AI (under a tenth of a cent)';
   return `<button type="button" class="text-button" data-action="run-visual" ${state.visual.running ? 'disabled' : ''}>${label}</button>`;
 }
 

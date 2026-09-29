@@ -7,7 +7,7 @@ import { after, test } from 'node:test';
 const data = mkdtempSync(join(tmpdir(), 'dogfood-competitors-'));
 const checkout = join(data, 'repo');
 process.env.DOGFOOD_DATA = data;
-process.env.OPENROUTER_API_KEY = 'test-key';
+process.env.DEEPSEEK_API_KEY = 'test-key';
 const store = await import('../lib/store.mjs');
 const competitors = await import('../lib/competitors.mjs');
 after(() => rmSync(data, { recursive: true, force: true }));
@@ -97,7 +97,7 @@ test('a summary is sent the page text and our vision, never failed pages, and is
   assert.equal(typeof prompt, 'string', 'text only, no screenshots');
   assert.deepEqual(rival.summary.weDoBetter, ['One tap']);
   assert.equal(rival.summary.scannedAt, '2026-09-29T08:00:00.000Z');
-  assert.equal(rival.summary.usage.reportedCostUsd, 0.0004);
+  assert.ok(rival.summary.usage.costUsd > 0);
 });
 
 test('a summary missing a required answer is refused, and the last good one stays', async () => {
