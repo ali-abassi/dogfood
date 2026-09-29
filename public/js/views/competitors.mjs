@@ -1,5 +1,5 @@
 import { readJson } from '../api.mjs';
-import { dateLabel, escapeHtml, externalLinkMarkup, plural, relativeCaptureAge, safeServedImagePath, scanPosition } from '../format.mjs';
+import { isHttpUrl, dateLabel, escapeHtml, externalLinkMarkup, plural, relativeCaptureAge, safeServedImagePath, scanPosition } from '../format.mjs';
 import { state } from '../state.mjs';
 import { render } from '../app.mjs';
 
@@ -158,15 +158,10 @@ function researchEmptyMarkup(competitor) {
   return `<section class="content-panel doc-empty"><h2>${scanning ? 'Reading this site' : 'No pages saved yet'}</h2><p>${scanning ? 'Screenshots will appear here when the scan finishes.' : 'Use the scan action above to collect screenshots and page text.'}</p></section>`;
 }
 
-function scanSourceMarkup(competitor) {
-  if (!competitor.scan) return '';
-  return `<p class="competitor-source">Pages from ${escapeHtml(hostOf(competitor.url))} · Scanned ${escapeHtml(dateLabel(competitor.scan.scannedAt) || 'at an unknown time')}. Saved research may differ from the live site.</p>`;
-}
-
 function detailMarkup(competitor) {
   const pages = competitor.scan?.pages ?? [];
-  const status = `${externalLinkMarkup(competitor.url, `${hostOf(competitor.url)} ↗`)} · ${escapeHtml(scanWords(competitor))}`;
-  return `<section class="overview-content competitor-detail" aria-label="${escapeHtml(competitor.name)}"><button type="button" class="back-button" data-action="close-competitor">‹ Competitors</button><header class="overview-heading"><div><h1 id="competitor-heading" tabindex="-1">${escapeHtml(competitor.name)}</h1><p>${status}</p></div>${detailActionsMarkup(competitor)}</header>${noticeMarkup()}${scanSourceMarkup(competitor)}${summaryMarkup(competitor)}${researchEmptyMarkup(competitor)}${pages.map(pageMarkup).join('')}</section>`;
+  const status = `${externalLinkMarkup(competitor.url, `${hostOf(competitor.url)} ↗`)} · ${escapeHtml(scanWords(competitor))}${competitor.scan ? ` · Scanned ${escapeHtml(dateLabel(competitor.scan.scannedAt))}. Saved research may differ from the live site.` : ''}`;
+  return `<section class="overview-content competitor-detail" aria-label="${escapeHtml(competitor.name)}"><button type="button" class="back-button" data-action="close-competitor">‹ Competitors</button><header class="overview-heading"><div><h1 id="competitor-heading" tabindex="-1">${escapeHtml(competitor.name)}</h1><p>${status}</p></div>${detailActionsMarkup(competitor)}</header>${noticeMarkup()}${summaryMarkup(competitor)}${researchEmptyMarkup(competitor)}${pages.map(pageMarkup).join('')}</section>`;
 }
 
 export function competitorsMarkup() {
@@ -227,14 +222,10 @@ function failCompetitorInput(message) {
   document.querySelector('#competitor-url')?.focus();
 }
 
-function isWebsite(value) {
-  return URL.canParse(value) && ['http:', 'https:'].includes(new URL(value).protocol);
-}
-
 export async function addCompetitor(form) {
   const url = String(new FormData(form).get('url')).trim();
   state.competitors.draft = url;
-  if (!isWebsite(url)) return failCompetitorInput('Enter a website address starting with http:// or https://.');
+  if (!isHttpUrl(url)) return failCompetitorInput('Enter a website address starting with http:// or https://.');
   Object.assign(state.competitors, { adding: true, addError: '' });
   render();
   try {

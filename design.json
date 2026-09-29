@@ -56,6 +56,11 @@
         "role": "Actions and links"
       },
       {
+        "name": "Action fill",
+        "hex": "#0066cc",
+        "role": "Filled actions with white text"
+      },
+      {
         "name": "Green",
         "hex": "#1d7a33",
         "role": "Accepted and passing evidence"
@@ -106,6 +111,11 @@
         "name": "Blue",
         "hex": "#4da3ff",
         "role": "Links and actions; filled buttons use darker blue"
+      },
+      {
+        "name": "Action fill",
+        "hex": "#0a6ad8",
+        "role": "Filled actions with white text"
       },
       {
         "name": "Green",

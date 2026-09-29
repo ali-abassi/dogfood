@@ -319,7 +319,7 @@ function rememberProjectDraft(target) {
   const form = target.closest('#add-project-form');
   if (!form) return;
   const fields = new FormData(form);
-  state.projectDraft = { ...Object.fromEntries(['url', 'name', 'browserProfile'].map(key => [key, String(fields.get(key) ?? '')])), aiReview: fields.has('aiReview') };
+  state.projectDraft = { ...state.projectDraft, ...Object.fromEntries(['url', 'name', 'browserProfile'].map(key => [key, String(fields.get(key) ?? '')])), aiReview: fields.has('aiReview') };
 }
 
 function handleBugButton(button) {
@@ -328,6 +328,9 @@ function handleBugButton(button) {
 }
 
 export function registerEvents() {
+  app.addEventListener('toggle', event => {
+    if (event.target.id === 'onboarding-options') state.projectDraft.optionsOpen = event.target.open;
+  }, true);
   // Frame loads do not bubble, so the design guide's frame is sized from the capture phase.
   app.addEventListener('load', event => { if (event.target.matches?.('iframe.doc-frame')) fitDocFrame(event.target); }, true);
   window.addEventListener('resize', () => document.querySelectorAll('iframe.doc-frame').forEach(fitDocFrame));

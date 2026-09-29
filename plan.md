@@ -12,3 +12,8 @@
 5. Ship only after independent review, a fresh-agent skill trial, unit/browser checks and local runtime verification.
 
 Scope: plain Node modules, JSON workflow data, existing browser and MCP tools. No new runtime dependencies or orchestrator.
+
+6. Extend the approved Plan across the whole app and correct project selection.
+   Check: `npm run check`, `npm run lint`, `npm test`, `npm run test:acceptance`.
+   Visible: at1280 and390 wide, one inset project arrow, readable documents and research, complete long evidence, preserved drafts and choices, and actionable loading/error/empty states.
+   Scope: native controls, shared tokens, project/QA views and their supporting brand guide; acceptance and ownership semantics remain server-backed.

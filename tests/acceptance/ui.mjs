@@ -123,7 +123,7 @@ try {
     const accepted = seeded.pages.filter(item => item.progress.accepted === true).length;
     const checked = seeded.pages.filter(item => item.progress.accepted !== true && item.progress.complete === true).length;
     const remaining = seeded.pages.length - accepted - checked;
-    assert.equal(page(`document.querySelector('[data-gate-counts]')?.textContent`), `${accepted} accepted · ${checked} checked, not accepted · ${remaining} not fully checked`);
+    assert.equal(page(`document.querySelector('[data-gate-counts]')?.textContent`), `${accepted} accepted ${checked} checked, not accepted ${remaining} not fully checked`);
   });
   check('Fix first lists open P0-P2 bugs across pages, worst and oldest first', () => {
     const rows = page(`[...document.querySelectorAll('[data-fix-first] .finding-row')].map(row => ({ severity: row.querySelector('.bug-severity').textContent, title: row.querySelector('.finding-row-title').textContent, meta: row.querySelector('.finding-row-meta').textContent }))`);

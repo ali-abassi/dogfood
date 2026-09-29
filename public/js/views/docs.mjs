@@ -17,7 +17,7 @@ function emptyMarkup(view) {
   const why = state.docs.data?.checkout
     ? 'Refresh here after the file is saved.'
     : 'There is no available local checkout. Ask your coding agent to connect the project folder so its documents can be read here.';
-  return `<div class="doc-empty doc-state content-panel"><h2>No ${escapeHtml(view.title.toLowerCase())} yet</h2><p>${escapeHtml(view.empty)}</p><p>${escapeHtml(why)}</p><button type="button" id="retry-docs" class="text-button">Refresh documents</button></div>`;
+  return `<div class="doc-state content-panel"><h2>No ${escapeHtml(view.title.toLowerCase())} yet</h2><p>${escapeHtml(view.empty)}</p><p>${escapeHtml(why)}</p><button type="button" id="retry-docs" class="text-button">Refresh documents</button></div>`;
 }
 
 // A document's own top heading repeats the view's title, so the view drops it.
@@ -28,7 +28,7 @@ function withoutLeadHeading(markdown) {
 // The brand guide is a page of its own. It runs in a sandboxed frame with no scripts, sized to its content.
 function designFrameMarkup() {
   const src = `/api/projects/${encodeURIComponent(state.project.id)}/design`;
-  return `<div class="doc-guide" aria-busy="true"><p class="doc-guide-loading muted" role="status">Opening brand guide…</p><iframe class="doc-frame" title="${escapeHtml(state.project.name)} brand guide" sandbox="allow-same-origin" src="${src}"></iframe></div>`;
+  return `<div class="doc-guide"><p class="doc-guide-loading muted" role="status">Opening brand guide…</p><iframe class="doc-frame" title="${escapeHtml(state.project.name)} brand guide" sandbox="allow-same-origin" src="${src}"></iframe></div>`;
 }
 
 function readingMarkup(markdown) {
@@ -54,7 +54,7 @@ function docMarkup(doc, view) {
 
 function docBodyMarkup(view) {
   if (state.docs.error) return `<div class="doc-state content-panel" role="alert"><h2>Couldn’t read the documents</h2><p>${escapeHtml(state.docs.error)}</p><button type="button" id="retry-docs" class="save-button">Try again</button></div>`;
-  if (state.docs.loading || !state.docs.data) return '<div class="doc-state content-panel" aria-busy="true"><p role="status">Reading project documents…</p><button type="button" id="retry-docs" class="text-button" disabled>Loading…</button></div>';
+  if (state.docs.loading || !state.docs.data) return '<div class="doc-state content-panel"><p role="status">Reading project documents…</p></div>';
   const doc = state.docs.data[view.doc];
   return doc ? docMarkup(doc, view) : emptyMarkup(view);
 }
@@ -92,8 +92,10 @@ function finishGuideLoading(frame) {
 export function fitDocFrame(frame) {
   const page = frame.contentDocument?.documentElement;
   if (!page) return;
+  const scrollY = window.scrollY;
   frame.style.height = '1px';
   frame.style.height = `${Math.max(page.scrollHeight, frame.contentDocument.body.scrollHeight)}px`;
+  window.scrollTo(0, scrollY);
   finishGuideLoading(frame);
 }
 
