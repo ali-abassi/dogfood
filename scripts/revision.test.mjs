@@ -54,6 +54,17 @@ test('fingerprint uses tracked diffs, nonignored untracked bytes, and submodule 
   assert.notEqual(secondModuleEdit.fingerprint, firstModuleEdit.fingerprint, 'two dirty contents cannot share the parent fingerprint');
   writeFileSync(join(parent, 'dep', 'new-part.txt'), 'new in submodule\n');
   assert.notEqual(checkoutRevision(parent).fingerprint, secondModuleEdit.fingerprint, 'untracked submodule content changes the parent fingerprint');
+
+  const clone = join(root, 'uninitialized-clone');
+  git(parent, 'clone', '-q', '--no-recurse-submodules', parent, clone);
+  const started = performance.now();
+  const unavailable = checkoutRevision(clone);
+  assert.ok(unavailable.fingerprint, 'an uninitialized gitlink has a stable parent fingerprint');
+  assert.ok(performance.now() - started < 5000, 'an uninitialized child cannot recurse into its parent');
+  git(clone, '-c', 'protocol.file.allow=always', 'submodule', 'update', '--init', '-q');
+  const initialized = checkoutRevision(clone);
+  assert.ok(initialized.fingerprint);
+  assert.notEqual(initialized.fingerprint, unavailable.fingerprint, 'initializing the recorded gitlink changes the fingerprint');
 });
 
 test('a registered project subdirectory fingerprints the whole Git checkout', () => {
