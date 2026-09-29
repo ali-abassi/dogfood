@@ -7,7 +7,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const scanSessions = value => new Set(value.match(/dogfood-scan-[a-f0-9]+/g) ?? []);
-const sessionsBefore = scanSessions(execFileSync('agent-browser', ['session', 'list'], { encoding: 'utf8' }));
 const directory = mkdtempSync(join(tmpdir(), 'dogfood-daily-native-'));
 process.env.DOGFOOD_DATA = join(directory, 'data');
 delete process.env.DOGFOOD_BROWSER_STATE;
@@ -26,7 +25,7 @@ function fixture(origin) {
     requests[origin].push(request.url);
     const role = origin === 'local' ? 'Administrator' : liveRole;
     response.writeHead(404, { 'Content-Type': 'text/html', 'X-Frame-Options': 'DENY' });
-    response.end(`<!doctype html><html lang="en"><head><title>${origin} missing route</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><h1>${origin} missing route</h1><p data-role>${role}</p><p>${origin === 'live' ? 'Deployed synthetic page' : 'Local checkout page'}</p></body></html>`);
+    response.end(`<!doctype html><html lang="en"><head><title>${origin} missing route</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;min-height:100vh;background:#e9edf2;font:16px system-ui;border-bottom:8px solid #364b68;box-sizing:border-box"><main style="padding:24px"><h1>${origin} missing route</h1><p data-role>${role}</p><p>${origin === 'live' ? 'Deployed synthetic page' : 'Local checkout page'}</p><p>${'Owned synthetic page content. '.repeat(200)}</p></main></body></html>`);
   });
 }
 const local = fixture('local');
@@ -37,6 +36,7 @@ const liveUrl = `http://127.0.0.1:${live.address().port}/`;
 const browserProfile = join(directory, 'browser');
 const route = '/missing?case=role%20proof#keep/hash';
 let checks = 0;
+let ownedSession;
 function check(name, action) {
   action();
   console.log(`ok ${++checks} - ${name}`);
@@ -52,7 +52,9 @@ try {
     fixtureSetup: { seed: { argv: [process.execPath, '-e', "require('node:fs').writeFileSync('seeded','ok')"], timeoutMs: 2000 } } });
   store.registerPage('native-daily', { id: 'missing', name: 'Missing route', group: 'Fixture', route, expectedStatus: 404 });
   await scanner.withScanner(browserProfile, async browser => {
-    assert.equal((await scan(browser)).scanned, 1);
+    ownedSession = browser.session;
+    const localScan = await scan(browser);
+    assert.equal(localScan.scanned, 1, JSON.stringify(localScan));
     check('local capture carries checkout evidence and retains exact hash route', () => {
       const page = currentPage();
       assert.equal(page.scan.sourceUrl, `${localUrl.slice(0, -1)}${route}`);
@@ -60,7 +62,8 @@ try {
       assert.ok(page.scan.fingerprint);
       assert.equal(page.scan.viewports.desktop.failedRequests.length, 0);
     });
-    assert.equal((await scan(browser, { liveUrl })).scanned, 1);
+    const liveScan = await scan(browser, { liveUrl });
+    assert.equal(liveScan.scanned, 1, JSON.stringify(liveScan));
     check('explicit live scan reaches the other origin and leaves local configuration intact', () => {
       const project = store.readProject('native-daily');
       const page = currentPage();
@@ -94,7 +97,8 @@ try {
       assert.equal(currentPage().scan.scannedAt, previousScan);
     });
     liveRole = 'Administrator';
-    assert.equal((await scan(browser, { liveUrl })).scanned, 1);
+    const verifiedScan = await scan(browser, { liveUrl });
+    assert.equal(verifiedScan.scanned, 1, JSON.stringify(verifiedScan));
     check('visible role proof succeeds on both viewports with explicit profile provenance', () => {
       const page = currentPage();
       assert.equal(page.scan.requiredRole, 'admin');
@@ -114,7 +118,8 @@ try {
       assert.match(forbidden.failed[0].error, /only on local/);
       assert.equal(existsSync(join(checkout, 'seeded')), false);
     });
-    assert.equal((await scan(browser, { fixtures: ['seed'] })).scanned, 1);
+    const fixtureScan = await scan(browser, { fixtures: ['seed'] });
+    assert.equal(fixtureScan.scanned, 1, JSON.stringify(fixtureScan));
     check('explicit local fixture runs argv in its checkout and records context', () => {
       assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'ok');
       assert.equal(currentPage().scan.environment, 'local');
@@ -125,11 +130,12 @@ try {
   let sessions;
   for (let attempt = 0; attempt < 20; attempt += 1) {
     sessions = scanSessions(execFileSync('agent-browser', ['session', 'list'], { encoding: 'utf8' }));
-    if ([...sessions].every(name => sessionsBefore.has(name))) break;
+    if (!sessions.has(ownedSession)) break;
     await new Promise(done => setTimeout(done, 100));
   }
   check('the proof closes only its owned temporary browser session', () => {
-    assert.deepEqual([...sessions].filter(name => !sessionsBefore.has(name)), []);
+    assert.ok(ownedSession);
+    assert.equal(sessions.has(ownedSession), false);
   });
   console.log(`${checks} native scanner checks passed`);
 } finally {

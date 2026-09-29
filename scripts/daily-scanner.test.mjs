@@ -12,6 +12,7 @@ const page = { id: 'settings', route: '/settings?view=full#tab/security' };
 test('explicit live rebasing retains registered path query hash and local configuration', () => {
   assert.equal(livePageUrl(project, page, 'https://app.example/deployed?ignore=yes'), 'https://app.example/settings?view=full#tab/security');
   assert.equal(livePageUrl(project, { ...page, url: 'http://localhost:5173/exact?a=1%202#keep/%20' }, 'https://app.example/'), 'https://app.example/exact?a=1%202#keep/%20');
+  assert.equal(livePageUrl(project, { ...page, url: 'http://localhost:5173/exact?#' }, 'https://app.example/'), 'https://app.example/exact?#');
   assert.equal(project.source.url, 'http://localhost:5173/');
   assert.equal(scanTarget(project, page).environment, 'local');
   assert.equal(scanTarget(project, page, { liveUrl: 'http://127.0.0.1:9876/' }).environment, 'live');
