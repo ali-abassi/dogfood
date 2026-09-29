@@ -54,6 +54,9 @@ test('checkout-only init is idempotent and discovers the current project', () =>
   const nested = spawnSync(process.execPath, [cli, 'context', '--json'], { cwd: join(checkout, 'src'), env, encoding: 'utf8' });
   assert.equal(nested.status, 0, nested.stderr);
   assert.equal(JSON.parse(nested.stdout).project.id, 'fresh');
+  const resumed = spawnSync(process.execPath, [cli, 'init', '--checkout', '.', '--json'], { cwd: join(checkout, 'src'), env, encoding: 'utf8' });
+  assert.equal(resumed.status, 0, resumed.stderr);
+  assert.equal(JSON.parse(resumed.stdout).project, 'fresh');
 });
 
 test('stdin schema-backed task loop resumes in separate CLI processes', () => {
