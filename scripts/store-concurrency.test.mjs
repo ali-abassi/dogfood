@@ -38,3 +38,12 @@ test('a write from a stale read is refused instead of overwriting the newer proj
   const fresh = JSON.parse(readFileSync(join(data, 'projects/tidepool.json'), 'utf8'));
   assert.ok(fresh.pages[0].findings.some(finding => finding.title === 'Newer finding that must survive'));
 });
+
+
+test('a concurrent creation cannot erase an already registered project', () => {
+  const existing = readProject('tidepool');
+  const empty = { ...existing, pages: [] };
+  assert.throws(() => writeProject(empty, { createOnly: true }), error => error.code === 'PROJECT_EXISTS');
+  assert.ok(readProject('tidepool').pages.length > 0);
+  assert.ok(readProject('tidepool').pages[0].findings.some(finding => finding.title === 'Newer finding that must survive'));
+});
