@@ -186,6 +186,18 @@ test('checks keep a bounded output tail and report timeout failures', async () =
   assert.equal(receipt.passed, false);
 });
 
+test('a zero-exit parent with a child holding stdout open still fails on timeout', async () => {
+  const parent = `const child = require('node:child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: ['ignore', 'inherit', 'inherit'] }); child.unref();`;
+  tasks.addTask('shop', input('background-pipe', { checks: [{ id: 'background', command: [process.execPath, '-e', parent], timeoutSeconds: 1 }] }), 'alice');
+  tasks.claimTask('shop', 'background-pipe', 'alice');
+  const receipt = await tasks.verifyTask('shop', 'background-pipe', 'alice');
+  assert.equal(receipt.checks[0].exitCode, 0);
+  assert.equal(receipt.checks[0].timedOut, true);
+  assert.match(receipt.checks[0].errorReason, /Timed out/);
+  assert.equal(receipt.passed, false);
+  assert.throws(() => tasks.acceptTask('shop', 'background-pipe', 'alice'), /passing check receipt/);
+});
+
 test('a check that changes checkout source cannot verify itself', async () => {
   const rewrite = `require('node:fs').writeFileSync('backend.js', 'export const value = 3;\\n')`;
   tasks.addTask('shop', input('mutating-check', { checks: [{ id: 'rewrite', command: [process.execPath, '-e', rewrite] }] }), 'alice');
