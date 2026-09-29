@@ -3,7 +3,7 @@ import { escapeHtml } from '../format.mjs';
 import { activePage, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
-// While a QA agent works (up to half an hour after it starts), the page reloads its evidence as the agent records it.
+// A recent start is worth watching for new evidence, but its timestamp does not prove the agent is still running.
 const watchMs = 30 * 60_000;
 const refreshMs = 20_000;
 let refreshTimer = null;
@@ -16,8 +16,9 @@ function runFor(page) {
   return state.qaAgent.runs[page.id] ?? null;
 }
 
-function working(run) {
-  return Boolean(run) && Date.now() - Date.parse(run.startedAt) < watchMs;
+function recent(run) {
+  const started = Date.parse(run?.startedAt);
+  return Number.isFinite(started) && Date.now() - started < watchMs;
 }
 
 function startedWords(run) {
@@ -38,20 +39,20 @@ function askMarkup(page) {
 export function qaAgentMarkup(page) {
   if (!state.qaAgent.configured || page.progress.complete) return '';
   const run = runFor(page);
-  if (!working(run)) return askMarkup(page);
-  return `<p class="qa-agent-status" role="status" title="What it records shows up here as it works"><span class="qa-agent-dot" aria-hidden="true"></span>QA agent working · started ${escapeHtml(startedWords(run))}</p>${errorMarkup()}`;
+  const history = run?.startedAt ? `<p class="qa-agent-status" role="status">QA agent started ${escapeHtml(startedWords(run))} · current status unknown</p>` : '';
+  return `${history}${askMarkup(page)}`;
 }
 
 async function refreshProject() {
   refreshTimer = null;
-  if (!state.project || !working(runFor(activePage() ?? {}))) return;
+  if (!state.project || !recent(runFor(activePage() ?? {}))) return;
   state.project = await readJson(`/api/projects/${encodeURIComponent(state.project.id)}`);
   render();
 }
 
 function watchWhileWorking() {
   const page = activePage();
-  if (refreshTimer || !page || !working(runFor(page))) return;
+  if (refreshTimer || !page || !recent(runFor(page))) return;
   refreshTimer = setTimeout(() => void refreshProject().catch(() => {}), refreshMs);
 }
 

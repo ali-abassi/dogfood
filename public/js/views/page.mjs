@@ -66,7 +66,7 @@ export function sidebarMarkup() {
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
         <div class="page-groups">${pageOptionsMarkup(pages)}</div>
       </nav>
-      ${externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link')}
+      ${state.project.source?.url ? externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link') : ''}
   </aside>`;
 }
 

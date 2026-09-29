@@ -15,6 +15,7 @@ import { suggestionsReviewMarkup, syncSuggestionsState } from './views/suggestio
 import { syncQaState } from './views/tests.mjs';
 import { syncHistoryState } from './views/history.mjs';
 import { syncQaAgentState } from './views/qa-agent.mjs';
+import { planMarkup, syncWorkflowState } from './views/plan.mjs';
 import { syncVisualState } from './views/visual.mjs';
 import { worksMarkup } from './views/works.mjs';
 
@@ -39,6 +40,7 @@ const projectViews = {
   competitors: competitorsMarkup,
   'add-project': () => addProjectFormMarkup(false),
   ...Object.fromEntries(docViewIds.map(id => [id, docsMarkup])),
+  plan: planMarkup,
 };
 
 function projectViewMarkup() {
@@ -85,6 +87,7 @@ export function render() {
   syncQaAgentState();
   syncSuggestionsState();
   syncDocsState();
+  syncWorkflowState();
   syncCompetitorsState();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();

@@ -9,6 +9,7 @@ import { saveAnswer, saveQuestions, saveThings } from './views/answer.mjs';
 import { handleFindingButton, resolveFinding, saveFinding } from './views/issues.mjs';
 import { scanAllPages } from './views/overview.mjs';
 import { pageOptionsMarkup } from './views/page.mjs';
+import { cancelTaskForm, openTaskForm, retryWorkflow, saveTask, selectTask, taskAction } from './views/plan.mjs';
 import { addProjectSuggestions, openProjectSuggestions, reloadProjectSuggestions, updateProjectSuggestionsButton } from './views/suggestions.mjs';
 import { runQa } from './views/tests.mjs';
 import { addSuggestedFeatures, runVisualReview, updateSuggestedButton } from './views/visual.mjs';
@@ -95,7 +96,7 @@ function closePages() {
   document.querySelector('.page-menu-toggle')?.focus();
 }
 
-const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form';
+const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form, #task-form';
 let keyboardInput = false;
 
 // Programmatic focus is for keyboard users; after a mouse click it would leave a stray ring.
@@ -105,6 +106,7 @@ function restoreFocus(selector) {
 
 function closeEditors() {
   Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null });
+  Object.assign(state.workflow, { formOpen: false, editing: '' });
 }
 
 // An unchanged editor closes quietly; one with changes asks to save or discard at the form itself.
@@ -234,6 +236,14 @@ const buttonActions = new Map([
   ['remove-competitor', () => { state.competitors.removing = state.competitors.open; render(); restoreFocus('[data-action="cancel-remove-competitor"]'); }],
   ['cancel-remove-competitor', () => { state.competitors.removing = ''; render(); restoreFocus('[data-action="remove-competitor"]'); }],
   ['confirm-remove-competitor', removeOpenCompetitor],
+  ['add-task', () => openTaskForm()],
+  ['edit-task', button => openTaskForm(button.dataset.taskId)],
+  ['cancel-task-form', () => { if (!promptIfChanged()) cancelTaskForm(); }],
+  ['select-task', button => selectTask(button.dataset.taskId)],
+  ['task-claim', button => taskAction('claim', button.dataset.taskId)],
+  ['task-verify', button => taskAction('verify', button.dataset.taskId)],
+  ['task-accept', button => taskAction('accept', button.dataset.taskId)],
+  ['retry-workflow', retryWorkflow],
 ]);
 
 function navigationRequested(button) {
@@ -293,6 +303,7 @@ const formHandlers = new Map([
   ['add-project-form', submitOnboarding],
   ['remove-page-form', submitRemovePage],
   ['competitor-form', addCompetitor],
+  ['task-form', saveTask],
 ]);
 
 function handleSuggestionToggle(target) {

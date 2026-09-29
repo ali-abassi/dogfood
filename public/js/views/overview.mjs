@@ -12,6 +12,7 @@ function countWords(count, singular, pluralForm) {
 // One sentence answers the question the owner came with. Blocked pages get their own count,
 // so red means actionable and waiting never hides inside another bucket.
 function answerSentence(pages) {
+  if (!pages.length) return 'Plan the work here. Add app pages when the app is ready to check.';
   const count = status => pages.filter(page => page.progress.status === status).length;
   const good = count('pass');
   const needs = count('needs_work');
@@ -66,9 +67,9 @@ function scanAllNoticeMarkup() {
 
 export function overviewMarkup() {
   const groups = groupedPages(state.project.pages).map(overviewGroupMarkup).join('');
-  const pages = groups ? `${columnsMarkup()}${groups}` : '<div class="overview-empty"><p>No pages yet. Ask your coding agent to add this app’s pages, or add the app again from its address and dogfood will find them.</p><button type="button" class="text-button" data-action="add-project">Add an app</button></div>';
+  const pages = groups ? `${columnsMarkup()}${groups}` : '<div class="overview-empty"><p>No pages yet. Start with the work plan, then add pages when the app runs.</p><button type="button" class="text-button" data-project-view="plan">Open Plan</button></div>';
   return `<section class="overview-content" aria-label="Project overview">
-    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${scanAllButtonMarkup()}</div></header>
+    <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p></div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${state.project.pages.length && state.project.source?.url ? scanAllButtonMarkup() : ''}</div></header>
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${fixFirstMarkup(state.project.pages)}

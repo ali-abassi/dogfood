@@ -15,7 +15,7 @@ export const docViewIds = Object.keys(docViews);
 
 function emptyMarkup(view) {
   const why = state.docs.data?.checkout
-    ? `Add ${view.file} to the project’s main branch and it will show here.`
+    ? `Add ${view.file} to the project checkout and it will show here.`
     : 'This project has no local checkout, so dogfood cannot read its documents.';
   return `<div class="doc-empty content-panel"><h2>No ${escapeHtml(view.title.toLowerCase())} yet</h2><p>${escapeHtml(view.empty)}</p><p class="muted">${escapeHtml(why)}</p></div>`;
 }
@@ -47,12 +47,17 @@ function fileMarkup(view) {
   const doc = state.docs.data?.[view.doc];
   if (!doc) return '';
   const open = doc.html ? ` · <a href="/api/projects/${encodeURIComponent(state.project.id)}/design" target="_blank" rel="noopener noreferrer">Open full page ↗</a>` : '';
-  return `<p class="doc-file">${escapeHtml(doc.file)} on main${open}</p>`;
+  return `<p class="doc-file">${escapeHtml(doc.file)} in ${escapeHtml(state.docs.data?.ref || 'main')}${open}</p>`;
 }
 
 export function docsMarkup() {
   const view = docViews[state.view];
   return `<section class="overview-content doc-view" aria-label="${escapeHtml(view.title)}"><header class="overview-heading"><div><h1>${escapeHtml(view.title)}</h1><p>${escapeHtml(view.lede)}</p>${fileMarkup(view)}</div></header>${docBodyMarkup(view)}</section>`;
+}
+
+export function planDocumentMarkup() {
+  const view = docViews.plan;
+  return `<details class="plan-document"><summary>Read ${view.file}</summary>${fileMarkup(view)}${docBodyMarkup(view)}</details>`;
 }
 
 // Sets a design frame's height to its page, so the guide scrolls with the app instead of inside a box.
