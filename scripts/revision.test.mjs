@@ -55,3 +55,23 @@ test('fingerprint uses tracked diffs, nonignored untracked bytes, and submodule 
   writeFileSync(join(parent, 'dep', 'new-part.txt'), 'new in submodule\n');
   assert.notEqual(checkoutRevision(parent).fingerprint, secondModuleEdit.fingerprint, 'untracked submodule content changes the parent fingerprint');
 });
+
+test('a registered project subdirectory fingerprints the whole Git checkout', () => {
+  const repository = join(root, 'monorepo');
+  const app = join(repository, 'apps', 'web');
+  const sibling = join(repository, 'packages', 'shared');
+  mkdirSync(app, { recursive: true });
+  mkdirSync(sibling, { recursive: true });
+  git(repository, 'init', '-q');
+  writeFileSync(join(app, 'index.js'), 'app\n');
+  writeFileSync(join(sibling, 'shared.js'), 'first\n');
+  commit(repository, 'monorepo');
+  const baseline = checkoutRevision(repository);
+  assert.deepEqual(checkoutRevision(app), baseline);
+  writeFileSync(join(sibling, 'shared.js'), 'second\n');
+  const changed = checkoutRevision(app);
+  assert.notEqual(changed.fingerprint, baseline.fingerprint, 'a tracked sibling edit invalidates the app evidence');
+  assert.deepEqual(changed, checkoutRevision(repository));
+  writeFileSync(join(sibling, 'new.js'), 'untracked\n');
+  assert.notEqual(checkoutRevision(app).fingerprint, changed.fingerprint, 'an untracked sibling edit also invalidates it');
+});
