@@ -150,3 +150,100 @@ export function plainMessageMarkup(text) {
   if (!match) return escapeHtml(text);
   return `${escapeHtml(match[1])} <details class="agent-detail"><summary>Details for your coding agent</summary><code>${escapeHtml(match[2])}</code></details>`;
 }
+
+// A small, safe Markdown renderer for a project's documents. Everything is escaped first; only headings, lists,
+// quotes, tables, code, bold, italics and web links become markup. Headings shift down one level so the view's own
+// title stays the page's only h1.
+function inlineMarkup(text) {
+  return escapeHtml(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\[([^\]]+)\]\([^)\s]+\)/g, '$1');
+}
+
+const listItemPattern = /^(\s*)([-*+]|\d+\.)\s+(.*)$/;
+const blockStarts = [line => line.startsWith('```'), line => /^#{1,6}\s/.test(line), line => listItemPattern.test(line),
+  line => line.startsWith('>'), line => line.trim().startsWith('|')];
+
+function startsBlock(line) {
+  return blockStarts.some(test => test(line));
+}
+
+function readFence(lines, start) {
+  let index = start + 1;
+  const body = [];
+  while (index < lines.length && !lines[index].startsWith('```')) body.push(lines[index++]);
+  return [`<pre><code>${escapeHtml(body.join('\n'))}</code></pre>`, index + 1];
+}
+
+function readHeading(lines, start) {
+  const [, hashes, text] = lines[start].match(/^(#{1,6})\s+(.*)$/);
+  const level = Math.min(hashes.length + 1, 6);
+  return [`<h${level}>${inlineMarkup(text)}</h${level}>`, start + 1];
+}
+
+// Adds one line to the list: a new item, or a wrapped continuation of the last one. Returns false at the next block.
+function addListLine(items, line) {
+  const match = line.match(listItemPattern);
+  if (match) {
+    items.push({ depth: Math.min(Math.floor(match[1].length / 2), 3), text: match[3] });
+    return true;
+  }
+  if (startsBlock(line)) return false;
+  items[items.length - 1].text += ` ${line.trim()}`;
+  return true;
+}
+
+function readList(lines, start) {
+  const items = [];
+  let index = start;
+  while (index < lines.length && lines[index].trim() && addListLine(items, lines[index])) index += 1;
+  const tag = /^\s*\d+\./.test(lines[start]) ? 'ol' : 'ul';
+  return [`<${tag}>${items.map(item => `<li class="depth-${item.depth}">${inlineMarkup(item.text)}</li>`).join('')}</${tag}>`, index];
+}
+
+function readRun(lines, start, test) {
+  let index = start;
+  while (index < lines.length && lines[index].trim() && test(lines[index])) index += 1;
+  return [lines.slice(start, index), index];
+}
+
+function readQuote(lines, start) {
+  const [quoted, next] = readRun(lines, start, line => line.startsWith('>'));
+  return [`<blockquote>${inlineMarkup(quoted.map(line => line.replace(/^>\s?/, '')).join(' '))}</blockquote>`, next];
+}
+
+function tableCells(line) {
+  return line.trim().replace(/^\||\|$/g, '').split('|').map(cell => cell.trim());
+}
+
+function readTable(lines, start) {
+  const [rows, next] = readRun(lines, start, line => line.trim().startsWith('|'));
+  const [head, ...body] = rows.filter(row => !/^\|?[\s:|-]+\|?$/.test(row.trim())).map(tableCells);
+  if (!head) return ['', next];
+  const cells = (row, tag) => `<tr>${row.map(cell => `<${tag}>${inlineMarkup(cell)}</${tag}>`).join('')}</tr>`;
+  return [`<div class="doc-table"><table><thead>${cells(head, 'th')}</thead><tbody>${body.map(row => cells(row, 'td')).join('')}</tbody></table></div>`, next];
+}
+
+function readParagraph(lines, start) {
+  const [text, next] = readRun(lines, start, line => !startsBlock(line));
+  return [`<p>${inlineMarkup(text.join(' '))}</p>`, Math.max(next, start + 1)];
+}
+
+const blockReaders = [readFence, readHeading, readList, readQuote, readTable];
+
+export function markdownMarkup(markdown) {
+  const lines = String(markdown).replace(/\r/g, '').split('\n');
+  const blocks = [];
+  let index = 0;
+  while (index < lines.length) {
+    if (!lines[index].trim()) { index += 1; continue; }
+    const reader = blockReaders[blockStarts.findIndex(test => test(lines[index]))] ?? readParagraph;
+    const [html, next] = reader(lines, index);
+    blocks.push(html);
+    index = next;
+  }
+  return blocks.join('');
+}

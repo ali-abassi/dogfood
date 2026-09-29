@@ -383,12 +383,48 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .welcome-state { display: grid; place-items: center; min-height: 100vh; padding: 24px 16px; }
 .welcome-state .add-project-panel { width: min(580px, 100%); }
 
+/* Features: the app's core capabilities, each with the pages that deliver it. */
+.core-features { margin: 0; padding: 4px 20px; list-style: none; }
+.core-feature { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: .5px solid var(--separator); }
+.core-feature:first-child { border-top: 0; }
+.core-feature-text { min-width: 0; }
+.core-feature h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.core-feature p { max-width: 70ch; margin: 3px 0 0; color: var(--secondary); font-size: 13.5px; }
+.feature-pages { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.feature-page { min-height: 24px; padding: 0 10px; border: 0; border-radius: 980px; background: var(--fill); color: var(--ink); font-size: 12px; }
+.feature-page:hover { background: var(--fill-strong); }
+.features-empty p { margin: 0; color: var(--secondary); font-size: 14px; }
+
+/* Docs: a project's vision, design and plan, rendered for reading. */
+.doc-file { margin: 0 0 8px; color: var(--tertiary); font-size: 12px; }
+.doc-body { max-width: 760px; padding: 24px 32px 32px; font-size: 15px; line-height: 1.6; }
+.doc-body > :first-child { margin-top: 0; }
+.doc-body h2 { margin: 28px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.018em; }
+.doc-body h3 { margin: 24px 0 6px; font-size: 17px; font-weight: 600; }
+.doc-body h4, .doc-body h5, .doc-body h6 { margin: 18px 0 4px; font-size: 15px; font-weight: 600; }
+.doc-body p { margin: 0 0 12px; }
+.doc-body ul, .doc-body ol { margin: 0 0 12px; padding-left: 22px; }
+.doc-body li { margin: 3px 0; }
+.doc-body li.depth-1 { margin-left: 20px; }
+.doc-body li.depth-2, .doc-body li.depth-3 { margin-left: 40px; }
+.doc-body blockquote { margin: 0 0 12px; padding: 2px 0 2px 14px; border-left: 3px solid var(--separator); color: var(--secondary); }
+.doc-body code { padding: 1px 5px; border-radius: 5px; background: var(--fill); font-size: .9em; }
+.doc-body pre { margin: 0 0 12px; padding: 12px 14px; border-radius: 8px; background: var(--fill); overflow-x: auto; }
+.doc-body pre code { padding: 0; background: none; }
+.doc-body a { color: var(--blue); }
+.doc-table { margin: 0 0 12px; overflow-x: auto; }
+.doc-table table { border-collapse: collapse; font-size: 13.5px; }
+.doc-table th, .doc-table td { padding: 6px 12px 6px 0; border-bottom: .5px solid var(--separator); text-align: left; vertical-align: top; }
+
 @media (max-width: 1000px) {
   .answer-row { grid-template-columns: 22px 120px minmax(0, 1fr) 24px 10px; }
   .overview-marks { grid-template-columns: repeat(6, 44px); }
 }
 
 @media (max-width: 760px) {
+  .core-feature { flex-direction: column; gap: 8px; }
+  .doc-body { padding: 18px 16px 24px; }
+  .overview-heading { flex-wrap: wrap; }
   .app-window { display: block; }
   .page-sidebar { position: fixed; inset: 0; z-index: 20; display: none; height: 100dvh; padding: 14px 16px; border: 0; }
   .page-sidebar.open { display: flex; }

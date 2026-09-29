@@ -1,6 +1,6 @@
 import { readJson } from './api.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
-import { answerIds, state, visiblePages, activePage } from './state.mjs';
+import { answerIds, state, menuPages, activePage } from './state.mjs';
 import { agentPrompt, idleOnboarding, submitOnboarding } from './views/add-project.mjs';
 import { saveAnswer, saveQuestions, saveThings } from './views/answer.mjs';
 import { handleFindingButton, resolveFinding, saveFinding } from './views/issues.mjs';
@@ -62,12 +62,14 @@ async function submitRemovePage(form) {
   }
 }
 
-function selectOverview() {
-  state.view = 'overview';
-  state.browseOpen = false;
-  state.message = '';
+function selectProjectView(view) {
+  Object.assign(state, { view, browseOpen: false, message: '' });
   render();
-  restoreFocus('[data-overview]');
+  restoreFocus(`[data-project-view="${view}"]`);
+}
+
+function selectOverview() {
+  selectProjectView('overview');
 }
 
 function selectFilter(filter) {
@@ -195,6 +197,7 @@ const buttonActions = new Map([
   ['close-pages', closePages],
   ['back-to-report', backToReport],
   ['view-screens', openScreens],
+  ['doc-tab', button => { state.docs.tab = button.dataset.docTab; render(); restoreFocus(`[data-doc-tab="${state.docs.tab}"]`); }],
   ['screens-device', button => { state.screensDevice = button.dataset.screensDevice; render(); restoreFocus(`[data-screens-device="${state.screensDevice}"]`); }],
   ['edit-answer', () => openEditor('answerEditing', '#answer-form input[name="status"]')],
   ['cancel-answer', () => closeEditor('answerEditing', '[data-action="edit-answer"]')],
@@ -222,7 +225,7 @@ const buttonActions = new Map([
 ]);
 
 function navigationRequested(button) {
-  return button.dataset.page || button.dataset.view || button.dataset.overview !== undefined;
+  return button.dataset.page || button.dataset.view || button.dataset.projectView;
 }
 
 function selectView(name) {
@@ -234,7 +237,7 @@ function selectView(name) {
 }
 
 function handleNavigationButton(button) {
-  if (button.dataset.overview !== undefined) { selectOverview(); return true; }
+  if (button.dataset.projectView) { selectProjectView(button.dataset.projectView); return true; }
   if (button.dataset.page) { selectPage(button.dataset.page, button.dataset.view); return true; }
   if (!button.dataset.view) return false;
   selectView(button.dataset.view);
@@ -249,7 +252,7 @@ function handleButton(button) {
 
 function renderSidebarPageList() {
   const list = document.querySelector('.page-groups');
-  if (list) list.innerHTML = pageOptionsMarkup(visiblePages());
+  if (list) list.innerHTML = pageOptionsMarkup(menuPages());
 }
 
 function handleProjectSelection(select) {
