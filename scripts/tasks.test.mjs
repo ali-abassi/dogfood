@@ -44,7 +44,11 @@ test('dependencies and ownership govern claims; blocked handoff appears in fresh
   tasks.updateTask('shop', 'later', { status: 'blocked', blocker: 'Waiting for fixture', handoff: 'Resume from the backend fixture', releaseOwner: true }, 'alice');
   const packet = tasks.context('shop');
   assert.equal(packet.blocked[0].blocker, 'Waiting for fixture');
+  assert.deepEqual(packet.blocked[0].scope, ['backend']);
   assert.equal(packet.latestHandoff, 'Resume from the backend fixture');
+  assert.deepEqual(packet.project.source, { url: 'https://example.com', environment: 'Live site', checkout });
+  assert.equal(packet.steps.verify, 'dogfood verify TASK --project shop --agent NAME');
+  assert.equal(packet.steps.accept, 'dogfood task accept TASK --project shop --agent NAME');
   assert.equal(packet.next.id, 'first');
   tasks.updateTask('shop', 'later', { status: 'todo', blocker: '' }, 'alice');
 });
