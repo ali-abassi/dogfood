@@ -27,7 +27,7 @@ test('competitors are added by website, at most five, never twice and never the 
 });
 
 test('a scan reads the landing page, then pricing and features before other pages, shallow first, skipping sign-in and legal', () => {
-  const pages = ['/blog/post', '/login', '/privacy', '/docs/api/pricing', '/pricing', '/about', '/features', '/careers', '/team', '/product']
+  const pages = ['/blog/about-us', '/login', '/privacy', '/docs/api/pricing', '/pricing', '/about', '/features', '/careers', '/team', '/product']
     .map(route => ({ id: route.slice(1).replace(/\//g, '-'), name: route, route }));
   const chosen = competitors.keyPages('https://rival.example/', pages);
   assert.deepEqual(chosen.map(page => page.route), ['/', '/pricing', '/about', '/features', '/product', '/docs/api/pricing']);
