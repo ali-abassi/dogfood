@@ -206,7 +206,17 @@ try {
     assert.equal(saved.audit.seo.at(-1).id, 'canonical');
     assert.equal(saved.connections[0].id, 'page');
   });
-  await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: { seo: [{ id: 'canonical', status: 'pass', note: 'The canonical link points at the page URL.' }] } });
+  const customWithoutDependencies = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: { seo: [{ id: 'canonical', status: 'pass', note: 'The canonical link points at the page URL.' }] } });
+  check('a custom review explains why it cannot be carried without declared dependencies', () => {
+    assert.equal(customWithoutDependencies.isError, false, customWithoutDependencies.text);
+    assert.equal(customWithoutDependencies.json().auditReuseWarnings[0].id, 'canonical');
+    assert.match(customWithoutDependencies.json().auditReuseWarnings[0].reason, /dependsOn/);
+  });
+  const customWithDependencies = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: { seo: [{ id: 'canonical', status: 'pass', note: 'The canonical link points at the page URL.', dependsOn: ['seo.canonical'] }] } });
+  check('explicitly selected custom evidence clears the reuse warning', () => {
+    assert.equal(customWithDependencies.isError, false, customWithDependencies.text);
+    assert.deepEqual(customWithDependencies.json().auditReuseWarnings, []);
+  });
 
   const issue = await call('dogfood_add_issue', { project: 'shop', page: 'home', agent: 'proof', severity: 'P1', title: 'Hero overlaps button', detail: 'At 390 px wide the hero text overlaps the Book button.' });
   check('add_issue records a finding; attaching the screenshot is optional', () => {
@@ -256,6 +266,26 @@ try {
   await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', features: [{ id: 'hero', status: 'pass', note }] });
   const baselined = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: auditPass(scannedPage) });
   check('fresh scan permits an attributed review of previously unbound audit answers', () => assert.equal(baselined.isError, false, baselined.text));
+  const rewrittenAudit = { ...scannedPage.audit, seo: scannedPage.audit.seo.map(row => row.id === 'canonical' ? { id: row.id, question: 'Does checkout reject invalid cards on the server?', status: 'untested', note: '' } : row) };
+  await call('dogfood_set_checklist', { project: 'shop', page: 'home', agent: 'proof', audit: rewrittenAudit });
+  const rewritten = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: { seo: [{ id: 'canonical', status: 'pass', note: 'Synthetic checkout rejection was freshly inspected.' }] } });
+  check('rewriting a question clears unrelated old dependencies and warns on a fresh answer', () => {
+    assert.equal(rewritten.isError, false, rewritten.text);
+    assert.equal(rewritten.json().auditReuseWarnings[0].id, 'canonical');
+  });
+  await new Promise(resolve => setTimeout(resolve, 10));
+  store.recordScan('shop', 'home', { sourceUrl: 'https://shop.example/', actor: 'Visitor', tier: 'automated', desktop: { file: good, viewport: '1440 × 900', facts }, mobile: { file: good, viewport: '390 × 844', facts } });
+  const rewrittenPage = (await call('dogfood_page', { project: 'shop', page: 'home' })).json();
+  check('rewritten custom answers without selected evidence stay stale after an unchanged rescan', () => {
+    const row = rewrittenPage.audit.seo.find(item => item.id === 'canonical');
+    assert.equal(row.dependsOn, undefined);
+    assert.equal(row.evidence, null);
+    assert.equal(row.carriedFrom, undefined);
+    assert.equal(rewrittenPage.progress.requirements.find(item => item.id === 'audit:seo:canonical').stale, true);
+  });
+  await call('dogfood_set_checklist', { project: 'shop', page: 'home', agent: 'proof', audit: scannedPage.audit });
+  const finalPage = (await call('dogfood_page', { project: 'shop', page: 'home' })).json();
+  await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: auditPass(finalPage) });
   const reviewedCaptures = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8')).pages[0].captures;
   const reviews = join(data, 'visual-reviews/shop/home');
   (await import('node:fs')).mkdirSync(reviews, { recursive: true });

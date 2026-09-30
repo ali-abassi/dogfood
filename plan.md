@@ -22,3 +22,8 @@ Scope: plain Node modules, JSON workflow data, existing browser and MCP tools. N
    Check: `node --test scripts/daily-evidence.test.mjs scripts/daily-gates.test.mjs scripts/daily-scanner.test.mjs scripts/daily-workflow.test.mjs scripts/mcp-reload.test.mjs` and `node tests/acceptance/daily-scanner.mjs`.
    Visible: at 1280 and 390, current measured answers can be accepted in one action, original carried attribution remains visible, and postdeploy debt is clearly distinct from Good.
    Scope: bounded scan facts/context, feature/deployment lifecycle, live role/fixture scans, CLI/MCP/UI and skill; no runtime dependencies, provider calls or production-data changes.
+
+8. Make custom audit reuse explicit and safe.
+   Check: `node --test scripts/daily-evidence.test.mjs scripts/daily-gates.test.mjs`, `node tests/acceptance/mcp.mjs`, `npm run check`, `npm run lint`.
+   Visible: at 1280 and 390, custom answers without selected evidence explain that they require review after each check; selected known evidence carries unchanged answers and original attribution.
+   Scope: dependency completeness, API/MCP feedback, question feedback and supporting skill; no automatic guesses or old-verdict backfill.
