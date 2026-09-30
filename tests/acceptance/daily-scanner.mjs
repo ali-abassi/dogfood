@@ -24,8 +24,9 @@ function fixture(origin) {
   return createServer((request, response) => {
     requests[origin].push(request.url);
     const role = origin === 'local' ? 'Administrator' : liveRole;
+    const label = new URL(request.url, 'http://fixture').pathname === '/missing' ? 'missing route' : 'another route';
     response.writeHead(404, { 'Content-Type': 'text/html', 'X-Frame-Options': 'DENY' });
-    response.end(`<!doctype html><html lang="en"><head><title>${origin} missing route</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;min-height:100vh;background:#e9edf2;font:16px system-ui;border-bottom:8px solid #364b68;box-sizing:border-box"><main style="padding:24px"><h1>${origin} missing route</h1><p data-role>${role}</p><p>${origin === 'live' ? 'Deployed synthetic page' : 'Local checkout page'}</p><p>${'Owned synthetic page content. '.repeat(200)}</p></main></body></html>`);
+    response.end(`<!doctype html><html lang="en"><head><title>${origin} ${label}</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;min-height:100vh;background:#e9edf2;font:16px system-ui;border-bottom:8px solid #364b68;box-sizing:border-box"><main style="padding:24px"><h1>${origin} ${label}</h1><p data-role>${role}</p><p>${origin === 'live' ? 'Deployed synthetic page' : 'Local checkout page'}</p><p>${'Owned synthetic page content. '.repeat(200)}</p></main></body></html>`);
   });
 }
 const local = fixture('local');
@@ -49,7 +50,7 @@ async function scan(browser, options = {}) {
 
 try {
   store.createProject({ id: 'native-daily', name: 'Owned synthetic fixture', url: localUrl, checkout,
-    fixtureSetup: { seed: { argv: [process.execPath, '-e', "require('node:fs').writeFileSync('seeded','ok')"], timeoutMs: 2000 } } });
+    fixtureSetup: { seed: { argv: [process.execPath, '-e', "require('node:fs').appendFileSync('seeded','ok\\n')"], timeoutMs: 2000 } } });
   store.registerPage('native-daily', { id: 'missing', name: 'Missing route', group: 'Fixture', route, expectedStatus: 404 });
   await scanner.withScanner(browserProfile, async browser => {
     ownedSession = browser.session;
@@ -121,10 +122,18 @@ try {
     const fixtureScan = await scan(browser, { fixtures: ['seed'] });
     assert.equal(fixtureScan.scanned, 1, JSON.stringify(fixtureScan));
     check('explicit local fixture runs argv in its checkout and records context', () => {
-      assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'ok');
+      assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'ok\n');
       assert.equal(currentPage().scan.environment, 'local');
       assert.deepEqual(currentPage().scan.fixture, ['seed']);
       assert.equal(currentPage().scan.verifiedRole, 'admin');
+    });
+    store.registerPage('native-daily', { id: 'second', name: 'Second page', group: 'Fixture', route: '/second?case=role%20proof#keep/hash', expectedStatus: 404 });
+    const multiple = store.readProject('native-daily');
+    const multiScan = await scanner.scanPages(browser, multiple, multiple.pages, undefined, { browserProfile, fixtures: ['seed'] });
+    check('one native multi-page invocation executes requested setup once', () => {
+      assert.equal(multiScan.scanned, 2, JSON.stringify(multiScan));
+      assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'ok\nok\n');
+      assert.ok(store.readProject('native-daily').pages.every(page => page.scan.environment === 'local'));
     });
   }, { explicitProfile: true });
   let sessions;

@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import { livePageUrl, runLocalFixtures, scanTarget, verifyRole } from '../lib/scan-target.mjs';
-import { viewportFacts } from '../lib/scanner.mjs';
+const data = mkdtempSync(join(tmpdir(), 'dogfood-daily-scanner-'));
+process.env.DOGFOOD_DATA = data;
+const store = await import('../lib/store.mjs');
+const { scanPages, viewportFacts } = await import('../lib/scanner.mjs');
+after(() => rmSync(data, { recursive: true, force: true }));
 
 const project = { source: { url: 'http://localhost:5173/' } };
 const page = { id: 'settings', route: '/settings?view=full#tab/security' };
@@ -83,5 +88,76 @@ test('setup timeout also bounds owned subprocess groups', async () => {
   try {
     await assert.rejects(runLocalFixtures(fixtureProject, { environment: 'local', fixture: ['hung'] }, checkout), { code: 'SETUP_MISSING' });
     assert.ok(Date.now() - before < 3000);
+  } finally { rmSync(checkout, { recursive: true, force: true }); }
+});
+
+
+function fixtureBrowser() {
+  let url;
+  return {
+    command: async args => {
+      if (args[0] === 'open') url = args[1];
+      if (args[0] === 'screenshot') copyFileSync(new URL(`../demo/captures/tidepool/${url.includes('/second') ? 'classes' : 'home'}.png`, import.meta.url), args[2]);
+      return { requests: [], messages: [], errors: [] };
+    },
+    evaluate: async () => ({ url, loadMs: 100, horizontalOverflow: false, links: [],
+      seo: { title: 'Configured fixture', h1: 'Fixture', description: 'Fixture', canonical: null, robots: null, lang: 'en', h1Count: 1 },
+      accessibility: { imagesWithoutAlt: 0, unlabeledFields: 0, unnamedButtons: 0 } }),
+  };
+}
+
+function acceptanceRequirement(project, page, id) {
+  return store.pageProgress(project, page).acceptanceRequirements.find(row => row.id === id).met;
+}
+
+test('configured remote URL-only scans retain base acceptance without a deployment receipt', async () => {
+  store.createProject({ id: 'configured-remote', name: 'Configured remote', url: 'https://app.example.com/' });
+  store.registerPage('configured-remote', { id: 'home', name: 'Home', group: 'Public', route: '/' });
+  const project = store.readProject('configured-remote');
+  const result = await scanPages(fixtureBrowser(), project, project.pages);
+  assert.equal(result.scanned, 1, JSON.stringify(result));
+  const fresh = store.readProject(project.id);
+  assert.equal(fresh.pages[0].scan.environment, 'local');
+  assert.equal(acceptanceRequirement(fresh, fresh.pages[0], 'provenance'), true);
+  assert.equal(acceptanceRequirement(fresh, fresh.pages[0], 'environment'), true);
+  assert.equal(fresh.deployments, undefined);
+});
+
+test('configured LAN checkout fixtures run once per invocation across multiple pages', async () => {
+  const checkout = mkdtempSync(join(tmpdir(), 'dogfood-lan-fixture-'));
+  execFileSync('git', ['init', '-q', checkout]);
+  writeFileSync(join(checkout, 'app.txt'), 'Owned LAN fixture checkout');
+  execFileSync('git', ['-C', checkout, 'add', 'app.txt']);
+  execFileSync('git', ['-C', checkout, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'Owned fixture']);
+  try {
+    store.createProject({ id: 'lan-fixture', name: 'LAN fixture', url: 'http://192.168.1.20:3000/', servesCheckout: true, checkout,
+      fixtureSetup: { seed: { argv: [process.execPath, '-e', "require('node:fs').appendFileSync('seeded','seed\\n')"] } } });
+    store.registerPage('lan-fixture', { id: 'first', name: 'First', group: 'App', route: '/first', fixture: ['seed'] });
+    store.registerPage('lan-fixture', { id: 'second', name: 'Second', group: 'App', route: '/second' });
+    const project = store.readProject('lan-fixture');
+    assert.equal(scanTarget(project, project.pages[0], { fixtures: ['seed'] }).environment, 'local');
+    const result = await scanPages(fixtureBrowser(), project, project.pages, undefined, { fixtures: ['seed'] });
+    assert.equal(result.scanned, 2, JSON.stringify(result));
+    assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'seed\n');
+    const fresh = store.readProject(project.id);
+    for (const page of fresh.pages) {
+      assert.equal(page.scan.environment, 'local');
+      assert.ok(page.scan.fingerprint);
+      assert.equal(acceptanceRequirement(fresh, page, 'provenance'), true);
+      assert.equal(acceptanceRequirement(fresh, page, 'environment'), true);
+    }
+    assert.equal((await scanPages(fixtureBrowser(), fresh, fresh.pages, undefined, { fixtures: ['seed'] })).scanned, 2);
+    assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'seed\nseed\n', 'a new invocation runs setup once again');
+    store.registerPage(project.id, { id: 'third', name: 'Missing prerequisite', group: 'App', route: '/third', fixture: ['other'] });
+    const withMissing = store.readProject(project.id);
+    const incomplete = await scanPages(fixtureBrowser(), withMissing, [withMissing.pages[0], withMissing.pages[2]], undefined, { fixtures: ['seed'] });
+    assert.equal(incomplete.scanned, 1);
+    assert.equal(incomplete.failed[0].code, 'SETUP_MISSING');
+    assert.match(incomplete.failed[0].error, /other/);
+    assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'seed\nseed\nseed\n');
+    const liveResult = await scanPages(fixtureBrowser(), store.readProject(project.id), fresh.pages, undefined, { liveUrl: 'https://deployed.example', fixtures: ['seed'] });
+    assert.equal(liveResult.failed.length, 2);
+    assert.ok(liveResult.failed.every(row => row.code === 'SETUP_MISSING'));
+    assert.equal(readFileSync(join(checkout, 'seeded'), 'utf8'), 'seed\nseed\nseed\n');
   } finally { rmSync(checkout, { recursive: true, force: true }); }
 });
