@@ -154,7 +154,9 @@ try {
     settle(900);
     assert.match(evaluate(`document.querySelector('[data-question]').innerText`), /Good/);
     assert.equal(manifest().pages.find(page => page.id === 'book').audit.security[0].by, 'person');
+    browser('wait', '--fn', '!document.querySelector("#questions-form") && document.querySelector("[data-answer-detail=safety]") !== null');
   });
+  browser('scrollintoview', '[data-action="back-to-report"]');
   browser('click', '[data-action="back-to-report"]');
   settle();
 
