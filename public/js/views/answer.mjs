@@ -65,16 +65,17 @@ function answerFormMarkup(answer) {
   return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}${choice('blocked', 'Blocked')}</div></fieldset><label for="answer-note">What did you see, or what do you need?</label><p id="answer-note-help" class="form-help">Describe what you checked, what happened, or what is blocking you. At least 12 characters.</p><textarea id="answer-note" name="note" rows="4" maxlength="1200" aria-describedby="answer-note-help answer-error" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
 }
 
-function questionMarkup(row, topic) {
+function questionMarkup(row, topic, warning) {
   const note = row.note ? `<p class="question-note">${escapeHtml(row.note)}</p>` : '';
   const status = row.status === 'untested' ? 'untested' : row.status;
-  return `<li class="question" data-question>${answerMarkMarkup(row.question, status)}<div><strong>${escapeHtml(row.question)}</strong><span class="question-topic">${escapeHtml(questionTopics[topic])} · ${escapeHtml(answerWords[status])}</span>${note}${verdictByMarkup(row.by, row.at)}${auditSourceMarkup(row)}</div></li>`;
+  return `<li class="question" data-question>${answerMarkMarkup(row.question, status)}<div><strong>${escapeHtml(row.question)}</strong><span class="question-topic">${escapeHtml(questionTopics[topic])} · ${escapeHtml(answerWords[status])}</span>${note}${verdictByMarkup(row.by, row.at)}${auditSourceMarkup(row, warning)}</div></li>`;
 }
 
-function auditSourceMarkup(row) {
+function auditSourceMarkup(row, warning) {
   const scan = row.verifiedBy === 'scan' ? '<small class="verdict-by">Verified by page check</small>' : '';
   const carried = row.carriedFrom ? `<small class="verdict-by">Carried from ${escapeHtml(new Date(row.carriedFrom.scannedAt).toLocaleString())}; checked facts unchanged.</small>` : '';
-  return `${scan}${carried}`;
+  const reuse = warning ? '<small class="verdict-by" data-audit-reuse>Review again after each check; this answer has no selected evidence for reuse.</small>' : '';
+  return `${scan}${carried}${reuse}`;
 }
 
 function questionOptions(status) {
@@ -93,7 +94,8 @@ function questionsFormMarkup(page, topics) {
 
 function questionsMarkup(page, topics) {
   if (state.questionsEditing) return `<section class="content-panel" aria-label="Questions"><h2>Questions</h2>${questionsFormMarkup(page, topics)}</section>`;
-  const rows = topics.flatMap(topic => page.audit[topic].map(row => questionMarkup(row, topic))).join('');
+  const warnings = page.auditReuseWarnings ?? [];
+  const rows = topics.flatMap(topic => page.audit[topic].map(row => questionMarkup(row, topic, warnings.find(item => item.key === topic && item.id === row.id)))).join('');
   const primary = judged.has(state.view) ? 'text-button' : primaryClass();
   return `<section class="content-panel" aria-label="Questions"><div class="panel-heading"><h2>Questions</h2><button type="button" class="${primary}" data-action="answer-questions">Answer questions</button></div><ul class="questions">${rows}</ul></section>`;
 }

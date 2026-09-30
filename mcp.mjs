@@ -56,7 +56,7 @@ const scanProperties = {
   requiredRole: { type: 'string', description: 'Required role; a visible registered roleProof must verify it on both viewports.' },
   fixtures: { type: 'array', items: { type: 'string' }, description: 'Explicit opt-in to named project fixtureSetup commands. Local only; refused for live scans.' },
 };
-const dependencySchema = { type: 'array', items: { type: 'string', enum: [...auditDependencyKeys] }, minItems: 1, maxItems: 20, description: 'Bounded facts this exact audit question depends on. Unchanged facts and scan context can carry its answer. Human judgments require fingerprint and reviewed captures.' };
+const dependencySchema = { type: 'array', items: { type: 'string', enum: [...auditDependencyKeys] }, minItems: 1, maxItems: 20, description: 'Bounded facts this exact audit question depends on. Unchanged facts and scan context can carry its answer. Human judgments require fingerprint and reviewed captures. Custom questions need explicitly selected dependsOn; without it, auditReuseWarnings explains review-each-scan behavior. loadMs and links must be measured to carry.' };
 const projectPageProperties = {
   project: { type: 'string', description: 'Project ID already registered in dogfood.' },
   page: { type: 'string', description: 'Page ID within the selected project.' },
@@ -120,6 +120,7 @@ function requirementTool(id) {
 
 function pageEvidenceSummary(page) {
   return {
+    auditReuseWarnings: page.auditReuseWarnings ?? [],
     liveDebt: pageLiveDebts(page).map(feature => ({ feature: feature.id, name: feature.name, ...feature.liveDebt })),
     measuredAnswers: (page.measuredAnswers ?? []).map(({ key, id, question, status, note }) => ({ key, id, question, status, note })),
   };
@@ -170,8 +171,12 @@ function addPageFeatures({ project, page, agent, features }) {
 function keepExistingQuestions(audit, currentAudit) {
   return Object.fromEntries(Object.entries(audit).map(([key, rows]) => {
     const existing = currentAudit[key] ?? [];
-    return [key, rows.map(row => ({ ...existing.find(item => item.id === row.id), ...row }))];
+    return [key, rows.map(row => questionInput(row, existing.find(item => item.id === row.id)))];
   }));
+}
+
+function questionInput(row, previous = {}) {
+  return row.question === undefined || previous.question === row.question ? { ...previous, ...row } : row;
 }
 
 function checklist({ project, page, agent, audit }) {

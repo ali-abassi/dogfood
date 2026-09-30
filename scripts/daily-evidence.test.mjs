@@ -6,7 +6,7 @@ import { after, test } from 'node:test';
 import { decodePng } from '../lib/capture.mjs';
 import { crc32, deflateSync } from 'node:zlib';
 import { encodePng, imageDifference } from '../lib/diff.mjs';
-import { auditEvidence, auditRowFresh, carryAuditEvidence, measuredAnswers } from '../lib/audit-evidence.mjs';
+import { auditDependencies, auditEvidence, auditRowFresh, carryAuditEvidence, measuredAnswers, validAuditDependencies } from '../lib/audit-evidence.mjs';
 
 const data = mkdtempSync(join(tmpdir(), 'dogfood-daily-evidence-'));
 process.env.DOGFOOD_DATA = data;
@@ -17,7 +17,7 @@ function facts() {
   return {
     loadMs: 420, consoleErrors: [], pageErrors: [], failedRequests: [], requests: [], horizontalOverflow: false,
     seo: { title: 'Your workspace', description: 'Manage your workspace here.', robots: 'noindex', canonical: 'https://example.com/', lang: 'en', h1: 'Workspace', h1Count: 1 },
-    accessibility: { imagesWithoutAlt: 0, unlabeledFields: 0, unnamedButtons: 0 }, headers: {},
+    accessibility: { imagesWithoutAlt: 0, unlabeledFields: 0, unnamedButtons: 0 }, headers: {}, links: [],
   };
 }
 
@@ -83,6 +83,154 @@ test('scan context, custom question, and legacy evidence fail closed', () => {
   assert.equal(auditRowFresh(page, title), false);
   title.question = 'Is the page delightful?';
   assert.equal(auditEvidence(page, 'seo', title), null);
+});
+
+function customReview(page, dependsOn = ['fingerprint', 'captures.desktop', 'captures.mobile', 'headers', 'requests', 'seo.robots']) {
+  page.audit.security.push({ id: 'custom', question: 'Does this private workspace expose only the intended records?', dependsOn });
+  return review(page, 'security', 'custom');
+}
+
+test('explicit custom dependencies carry original answers and attribution across unchanged rescans', () => {
+  for (const status of ['pass', 'needs_work']) {
+    const page = freshPage();
+    const row = customReview(page);
+    row.status = status;
+    const original = structuredClone(row);
+    const previous = structuredClone(page.scan);
+    page.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+    carryAuditEvidence(page, previous, 'revision');
+    assert.equal(auditRowFresh(page, row, 'revision'), true);
+    assert.deepEqual(row, { ...original, carriedFrom: { scannedAt: previous.scannedAt, sourceUrl: previous.sourceUrl, fingerprint: previous.fingerprint } });
+  }
+});
+
+test('explicit custom dependencies fail closed on selected hidden facts, code, captures, questions or context', () => {
+  const changes = [
+    page => { page.scan.viewports.mobile.headers['x-frame-options'] = 'DENY'; },
+    page => { page.scan.viewports.desktop.requests.push({ method: 'GET', url: 'https://example.com/private', status: 403 }); },
+    page => { page.scan.viewports.mobile.seo.robots = 'index'; },
+    page => { page.scan.fingerprint = 'different-code'; },
+    page => { page.captures.desktop.sha256 = 'different-image'; },
+    page => { page.captures.mobile.sha256 = 'different-image'; },
+    page => { page.scan.sourceUrl = 'https://different.example.com/'; },
+    page => { page.scan.environment = 'live'; },
+    page => { page.requiredRole = 'admin'; },
+    page => { page.scan.verifiedRole = 'admin'; },
+    page => { page.scan.roleProof = 'Verified the admin session'; },
+    page => { page.roleProof = 'Admin session required'; },
+    page => { page.scan.fixture = ['sample']; },
+    page => { page.fixture = ['sample']; },
+    page => { page.signedIn = true; },
+    page => { page.scan.browserProfile = 'Another profile'; },
+    page => { page.audit.security.at(-1).question = 'A different review question'; },
+  ];
+  for (const change of changes) {
+    const page = freshPage();
+    const row = customReview(page);
+    assert.equal(auditRowFresh(page, row), true);
+    const previous = structuredClone(page.scan);
+    page.scan = structuredClone(previous);
+    change(page);
+    page.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+    carryAuditEvidence(page, previous);
+    assert.equal(auditRowFresh(page, row), false, change.toString());
+    assert.equal(row.carriedFrom, undefined, change.toString());
+  }
+});
+
+test('missing or null links and load time need another review instead of automatic carry', () => {
+  for (const key of ['links', 'loadMs']) {
+    for (const value of [undefined, null]) {
+      const page = freshPage();
+      page.scan.viewports.mobile[key] = value;
+      const row = customReview(page, [key]);
+      assert.deepEqual(row.evidence.facts[key].mobile, { unmeasured: true });
+      assert.equal(auditRowFresh(page, row), true, 'A fresh explicit review is still recorded.');
+      const previous = structuredClone(page.scan);
+      page.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+      carryAuditEvidence(page, previous, 'revision');
+      assert.equal(auditRowFresh(page, row), false, `${key}: ${value}`);
+      assert.equal(row.carriedFrom, undefined);
+    }
+  }
+});
+
+test('losing measured links or load time stales an explicit custom answer', () => {
+  for (const key of ['links', 'loadMs']) {
+    for (const value of [undefined, null]) {
+      const page = freshPage();
+      const row = customReview(page, [key]);
+      page.scan.viewports.desktop[key] = value;
+      assert.equal(auditRowFresh(page, row), false, `${key}: ${value}`);
+    }
+  }
+});
+
+test('raw load-time changes stale performance answers without staling unrelated answers', () => {
+  const page = freshPage();
+  const row = customReview(page, ['loadMs']);
+  row.question = 'Does this workspace load within the reviewed performance budget?';
+  row.evidence = auditEvidence(page, 'security', row);
+  const title = review(page, 'seo', 'title');
+  const previous = structuredClone(page.scan);
+  page.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+  page.scan.viewports.mobile.loadMs = 421;
+  carryAuditEvidence(page, previous);
+  assert.equal(auditRowFresh(page, row), false);
+  assert.equal(row.carriedFrom, undefined);
+  assert.equal(auditRowFresh(page, title), true);
+  assert.ok(title.carriedFrom);
+});
+
+test('custom and unknown questions require explicit bounded dependencies without legacy backfill', () => {
+  const page = freshPage();
+  page.audit.seo[0].question = 'Does this private workspace expose only the intended records?';
+  const row = review(page, 'seo', 'title');
+  assert.equal(row.evidence, null);
+  assert.equal(auditDependencies('unknown-category', { id: 'unknown', question: 'Unknown review' }), null);
+  assert.equal(validAuditDependencies(['loadMs']), true);
+  assert.equal(validAuditDependencies([]), false);
+  assert.equal(validAuditDependencies(['not-a-measurement']), false);
+  assert.equal(validAuditDependencies(Array(21).fill('loadMs')), false);
+  assert.equal(auditRowFresh(page, row), true);
+  const previous = structuredClone(page.scan);
+  page.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+  carryAuditEvidence(page, previous, 'revision');
+  assert.equal(auditRowFresh(page, row), false);
+  assert.equal(row.evidence, null);
+  assert.equal(row.carriedFrom, undefined);
+});
+
+test('canonical defaults remain narrow and explicit overrides select their declared facts', () => {
+  const page = freshPage();
+  const title = review(page, 'seo', 'title');
+  assert.deepEqual(auditDependencies('seo', title), ['seo.title', 'seo.description']);
+  const overridden = page.audit.seo.find(row => row.id === 'indexing');
+  overridden.dependsOn = ['links'];
+  review(page, 'seo', 'indexing');
+  assert.deepEqual(overridden.evidence.dependsOn, ['links']);
+  page.scan.viewports.desktop.seo.robots = 'index';
+  page.scan.viewports.mobile.loadMs = 90000;
+  page.scan.viewports.mobile.headers = null;
+  assert.equal(auditRowFresh(page, title), true);
+  assert.equal(auditRowFresh(page, overridden), true);
+  page.scan.viewports.mobile.links = [{ href: '/private' }];
+  assert.equal(auditRowFresh(page, overridden), false);
+});
+
+test('null headers remain measured absence and missing fingerprints preserve their existing boundary', () => {
+  const page = freshPage();
+  delete page.scan.fingerprint;
+  page.scan.viewports.desktop.headers = null;
+  page.scan.viewports.mobile.headers = null;
+  const row = customReview(page, ['fingerprint', 'headers']);
+  const previous = structuredClone(page.scan);
+  page.scan.scannedAt = '2026-09-29T03:00:00.000Z';
+  carryAuditEvidence(page, previous);
+  assert.equal(auditRowFresh(page, row), true);
+  assert.deepEqual(row.carriedFrom, { scannedAt: previous.scannedAt, sourceUrl: previous.sourceUrl, fingerprint: null });
+  page.scan.viewports.mobile.headers = {};
+  assert.equal(auditRowFresh(page, row), false);
 });
 
 test('measured candidates expose bad facts without inventing human judgments', () => {
@@ -312,6 +460,77 @@ function scanInput(file, overrides = {}) {
   return { sourceUrl: 'http://localhost:4322/app?tab=one#exact', actor: 'QA agent', tier: 'automated', environment: 'local',
     desktop: { file, viewport: '1280 x 900', facts: facts() }, mobile: { file, viewport: '390 x 844', facts: facts() }, ...overrides };
 }
+
+function saveCustomQuestion(id, question, dependsOn) {
+  const audit = page(id).audit;
+  audit.seo = [...audit.seo.filter(row => row.id !== 'custom-rewrite'),
+    { id: 'custom-rewrite', question, status: 'untested', note: '', ...(dependsOn === undefined ? {} : { dependsOn }) }];
+  store.saveAudit(id, 'home', { audit }, 'question-editor');
+}
+
+function customAuditRow(id) {
+  return page(id).audit.seo.find(row => row.id === 'custom-rewrite');
+}
+
+function reviewedCustomQuestion(id) {
+  create(id);
+  const input = scanInput(image());
+  store.recordScan(id, 'home', input);
+  saveCustomQuestion(id, 'Does the page declare the intended canonical URL?', ['seo.canonical']);
+  store.recordVerdicts(id, 'home', { audit: { seo: [{ id: 'custom-rewrite', status: 'pass', note: 'Reviewed the intended canonical URL in the current scan.' }] } }, 'original-reviewer');
+  store.recordScan(id, 'home', input);
+  assert.deepEqual(customAuditRow(id).dependsOn, ['seo.canonical']);
+  assert.ok(customAuditRow(id).carriedFrom);
+  return input;
+}
+
+test('rewriting a custom question without dependencies clears prior evidence and requires fresh review after scans', () => {
+  const id = 'custom-rewrite-without-deps';
+  const input = reviewedCustomQuestion(id);
+  const question = 'Does this workspace load within the reviewed performance budget?';
+  saveCustomQuestion(id, question);
+  const rewritten = customAuditRow(id);
+  assert.equal(rewritten.dependsOn, undefined);
+  assert.equal(rewritten.evidence, null);
+  assert.equal(rewritten.carriedFrom, undefined);
+  assert.equal(rewritten.status, 'untested');
+  store.recordVerdicts(id, 'home', { audit: { seo: [{ id: rewritten.id, status: 'pass', note: 'Reviewed the workspace load time against the performance budget.' }] } }, 'fresh-reviewer');
+  const reviewed = customAuditRow(id);
+  assert.equal(reviewed.evidence, null);
+  assert.equal(auditRowFresh(page(id), reviewed), true);
+  const warnings = store.projectView(store.readProject(id)).pages[0].auditReuseWarnings;
+  assert.deepEqual(warnings.map(({ key, id: rowId, question: text }) => ({ key, id: rowId, question: text })), [{ key: 'seo', id: reviewed.id, question }]);
+  store.recordScan(id, 'home', input);
+  const rescanned = customAuditRow(id);
+  assert.equal(auditRowFresh(page(id), rescanned), false);
+  assert.equal(rescanned.dependsOn, undefined);
+  assert.equal(rescanned.evidence, null);
+  assert.equal(rescanned.carriedFrom, undefined);
+  assert.equal(rescanned.at, reviewed.at);
+  assert.equal(rescanned.by, 'fresh-reviewer');
+});
+
+test('rewriting a custom question with explicit new dependencies carries only the new evidence', () => {
+  const id = 'custom-rewrite-new-deps';
+  const input = reviewedCustomQuestion(id);
+  saveCustomQuestion(id, 'Does this workspace load within the reviewed performance budget?', ['loadMs']);
+  const rewritten = customAuditRow(id);
+  assert.deepEqual(rewritten.dependsOn, ['loadMs']);
+  assert.deepEqual(rewritten.evidence.dependsOn, ['loadMs']);
+  assert.deepEqual(Object.keys(rewritten.evidence.facts), ['loadMs']);
+  assert.equal(rewritten.carriedFrom, undefined);
+  store.recordVerdicts(id, 'home', { audit: { seo: [{ id: rewritten.id, status: 'pass', note: 'Reviewed the measured load time against the performance budget.' }] } }, 'performance-reviewer');
+  const reviewed = customAuditRow(id);
+  store.recordScan(id, 'home', input);
+  const rescanned = customAuditRow(id);
+  assert.equal(auditRowFresh(page(id), rescanned), true);
+  assert.deepEqual(rescanned.evidence, reviewed.evidence);
+  assert.deepEqual(rescanned.dependsOn, ['loadMs']);
+  assert.ok(rescanned.carriedFrom);
+  assert.equal(rescanned.at, reviewed.at);
+  assert.equal(rescanned.by, 'performance-reviewer');
+  assert.deepEqual(store.projectView(store.readProject(id)).pages[0].auditReuseWarnings, []);
+});
 
 function allAuditVerdicts(id) {
   const audit = Object.fromEntries(Object.entries(page(id).audit).map(([key, rows]) => [key, rows.map(row => ({ id: row.id, status: 'pass', note: 'Reviewed the visible page and supporting code evidence.' }))]));
