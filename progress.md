@@ -22,3 +22,7 @@ The release target remains http://127.0.0.1:4322. Final source, native receipts,
 The running-app MCP rescan preserved all sixteen audit answers on each of six unchanged pages. Five pages changed visually after QA/task-state updates and correctly need a new human review. The follow-up makes explicit custom dependencies discoverable, treats unknown null links/timing as unmeasured, and supports measured `loadMs` dependencies. It preserves canonical defaults, measured answers and source/role/visual freshness boundaries. Candidate validation passes 155 unit tests, 37 native MCP checks, syntax checks and ESLint. Final tests, native MCP/UI feedback, repeated real custom-question rescans and the accepted task receipt are recorded locally in `data/reviews/daily-rescan-2026-09-29/release.json`.
 
 The first follow-up CI run exposed fixed-delay and offscreen-click assumptions in the report-card acceptance test. A detailed native repro showed the save completed, but the Back button's center was above the viewport; the browser command missed it. The test now waits for the saved question view and scrolls Back into view before clicking. Its persistence and navigation assertions stay intact. Final CI results are recorded in the same release receipt.
+
+## 2026-09-29 — review toolbar alignment
+
+Corrected the Open page link’s vertical alignment with adjacent review actions using the shared link-button style. Desktop, phone and wrapped-toolbar evidence and final release status are recorded in `data/reviews/toolbar-alignment-2026-09-29/release.json`.

@@ -343,6 +343,7 @@ code { font-family: var(--mono); }
 .status { display: inline-flex; align-items: center; gap: 6px; width: max-content; padding: 2px 9px; border-radius: 980px; background: var(--fill); color: var(--secondary); font-size: 12px; font-weight: 500; white-space: nowrap; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .status-pass, .status-resolved { background: var(--green-tint); color: var(--green); }
+.status.status-pass { color: color-mix(in srgb, var(--green) 94%, var(--ink)); }
 .status-in_review { color: var(--ink); }
 .status-needs_work, .status-open { background: var(--red-tint); color: var(--red); }
 .status-blocked { background: var(--orange-tint); color: var(--orange); }
@@ -357,7 +358,7 @@ code { font-family: var(--mono); }
 .text-button { background: var(--fill); }
 .text-button:hover { background: var(--fill-strong); }
 .danger-button { background: var(--red-fill); color: #fff; }
-.link-button { min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--blue); font-size: 13px; font-weight: 500; }
+.link-button { display: inline-flex; align-items: center; min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--blue); font-size: 13px; font-weight: 500; }
 .link-button:hover { text-decoration: underline; }
 .link-button:disabled { color: var(--tertiary); }
 .remove-page-button { min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--tertiary); font-size: 12.5px; }

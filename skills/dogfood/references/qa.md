@@ -83,3 +83,5 @@ Do not fix the app while checking it unless the person asks. Report what you fou
 ## Native-control visual check
 
 Inspect project selectors and other native dropdowns at desktop and phone widths, including a long selected label, keyboard operation and both themes. If using a custom indicator, remove the native indicator, reserve label space and keep the arrow visibly inset from the field edge. Never accept a selector from a DOM or screenshot thumbnail alone.
+
+When a toolbar mixes links and buttons, inspect the text inside each control at 1280 and 390 wide, including wrapped rows. Matching outer rectangles does not prove matching text alignment: links with a minimum height need explicit vertical centering.
