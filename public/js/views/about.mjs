@@ -1,4 +1,4 @@
-import { answerMarkMarkup, escapeHtml } from '../format.mjs';
+import { answerMarkMarkup, dateLabel, environmentLabel, escapeHtml } from '../format.mjs';
 import { state } from '../state.mjs';
 
 const provenanceWords = { source: 'from the code', observed: 'seen in its traffic', manual: 'added by hand' };
@@ -19,8 +19,15 @@ function seoFactsMarkup(page) {
   return seo ? `${factMarkup('Title', seo.title)}${factMarkup('Search description', seo.description)}` : '';
 }
 
+function scanContextMarkup(page) {
+  const scan = page.scan;
+  if (!scan) return factMarkup('Evidence', 'No page check yet');
+  const environment = environmentLabel(scan.environment, scan.sourceUrl);
+  return `${factMarkup('Evidence', `${environment} · ${scan.sourceUrl} · ${dateLabel(scan.scannedAt)}`)}${factMarkup('Required role', page.requiredRole)}${factMarkup('Verified role', scan.verifiedRole)}${factMarkup('Required local fixtures', page.fixture?.join(', '))}`;
+}
+
 function descriptionMarkup(page) {
-  return `<dl class="facts about-facts">${aiFactsMarkup()}${seoFactsMarkup(page)}</dl>`;
+  return `<dl class="facts about-facts">${scanContextMarkup(page)}${aiFactsMarkup()}${seoFactsMarkup(page)}</dl>`;
 }
 
 function featureMarkup(feature) {

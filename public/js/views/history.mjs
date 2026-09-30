@@ -1,5 +1,5 @@
 import { readJson } from '../api.mjs';
-import { dateLabel, escapeHtml, relativeCaptureAge, safeServedImagePath } from '../format.mjs';
+import { dateLabel, environmentLabel, escapeHtml, relativeCaptureAge, safeServedImagePath } from '../format.mjs';
 import { isProjectView, state } from '../state.mjs';
 import { render } from '../app.mjs';
 
@@ -26,13 +26,20 @@ function shotOnDay(device, day) {
 
 function pastShot(device, day) {
   const shot = shotOnDay(device, day);
-  return shot ? { src: safeServedImagePath(shot.path), caption: `Taken ${dateLabel(shot.takenAt)}` } : null;
+  const age = shot ? `Taken ${dateLabel(shot.takenAt)}` : '';
+  return shot ? { src: safeServedImagePath(shot.path), sourceUrl: shot.sourceUrl, environment: shot.environment, age, caption: evidenceLabel(shot) + age } : null;
+}
+
+function evidenceLabel(capture) {
+  return `${environmentLabel(capture.environment, capture.sourceUrl)} · `;
 }
 
 function currentShot(page, device) {
   const capture = page.captures[device];
   const src = capture.state === 'rendered' ? safeServedImagePath(capture.path) : '';
-  return src ? { src, caption: relativeCaptureAge(capture), width: capture.pixelWidth, height: capture.pixelHeight } : null;
+  const label = evidenceLabel(capture);
+  const age = relativeCaptureAge(capture);
+  return src ? { src, sourceUrl: capture.sourceUrl, environment: capture.environment, age, caption: label + age, width: capture.pixelWidth, height: capture.pixelHeight } : null;
 }
 
 // The screenshot a view shows for a device: the chosen day's, or the current capture.
@@ -49,12 +56,30 @@ function dayLabel(day, index) {
 }
 
 // One button per day the page was captured, so the screenshots above step back through its changes.
+function historyFeedbackMarkup() {
+  if (state.history.loading) return '<p class="muted" role="status">Loading screenshot history…</p>';
+  if (!state.history.error) return '';
+  return `<div class="history-error"><p class="form-error" role="alert">Screenshot history could not be read: ${escapeHtml(state.history.error)}</p><button class="text-button" data-action="retry-history">Try again</button></div>`;
+}
+
 export function timelineMarkup() {
+  return `${historyFeedbackMarkup()}${historyDaysMarkup()}`;
+}
+
+function historyDaysMarkup() {
   const days = historyDays();
   if (days.length < 2) return '';
   const current = selectedDay(days);
   const buttons = days.map((day, index) => `<button type="button" data-action="history-day" data-day="${escapeHtml(day)}" aria-pressed="${day === current}">${escapeHtml(dayLabel(day, index))}</button>`).join('');
   return `<div class="timeline"><span class="timeline-label">History</span><div class="timeline-days" role="group" aria-label="Screenshots by day">${buttons}</div></div>`;
+}
+
+export async function retryHistory() {
+  if (state.history.loading) return;
+  Object.assign(state.history, { loading: true, error: '' });
+  render();
+  await loadHistory(state.history.key);
+  document.querySelector('[data-action="retry-history"], [data-action="history-day"][aria-pressed="true"], #answer-heading')?.focus({ preventScroll: true });
 }
 
 async function loadHistory(key) {

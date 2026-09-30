@@ -50,7 +50,7 @@ for (const pageId of ['home', 'classes']) {
   mkdirSync(directory, { recursive: true });
   writeFileSync(join(directory, '2099-01-01T00-00-00.000Z-polish-fixture.json'), JSON.stringify({
     promptVersion: 'page-answers-v4', analyzedAt: '2099-01-01T00:00:00.000Z', captures: Object.fromEntries(['desktop', 'mobile'].map(device => [device, { sha256: page.captures[device].sha256 }])),
-    analysis: { dimensions: { design: { score: 8, reason: 'Fixture review only.' }, purpose: { score: 8, reason: 'Fixture review only.' }, ease: { score: 8, reason: 'Fixture review only.' } }, suggestedFeatures: Array.from({ length: 6 }, (_, n) => ({ name: `Preserve the chosen lesson age and weekday when comparing locations ${n + 1}`, expected: paragraph })) },
+    analysis: { pagePurpose: 'Synthetic fixture page for visual review.', primaryAction: 'Inspect the fixture content.', improvements: [], dimensions: { design: { score: 8, reason: 'Fixture review only.' }, purpose: { score: 8, reason: 'Fixture review only.' }, ease: { score: 8, reason: 'Fixture review only.' } }, suggestedFeatures: Array.from({ length: 6 }, (_, n) => ({ name: `Preserve the chosen lesson age and weekday when comparing locations ${n + 1}`, expected: paragraph })) },
   }));
 }
 console.log(`Isolated fixture ready at ${data}`);

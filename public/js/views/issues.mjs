@@ -64,6 +64,7 @@ function showFindingError(error, field) {
   const box = document.querySelector('#finding-error');
   box.hidden = false;
   box.textContent = error.message;
+  if (!field) box.closest('form').querySelector('.form-actions')?.insertAdjacentElement('beforebegin', box);
   if (field) {
     field.setAttribute('aria-invalid', 'true');
     field.insertAdjacentElement('afterend', box);
@@ -93,15 +94,19 @@ async function submitFinding(form, endpoint, method, body, message) {
   }
 }
 
+function clearFindingErrors(form) {
+  form.querySelectorAll('[aria-invalid]').forEach(field => field.removeAttribute('aria-invalid'));
+}
+
 function shortField(form, name, minimum, message) {
   const field = form.elements.namedItem(name);
-  field.removeAttribute('aria-invalid');
   if (field.value.trim().length >= minimum) return false;
   showFindingError({ message }, field);
   return true;
 }
 
 export async function saveFinding(form) {
+  clearFindingErrors(form);
   if (shortField(form, 'title', 8, 'Describe the bug in at least 8 characters.')) return;
   if (shortField(form, 'detail', 20, 'Write at least 20 characters about the steps and what happened.')) return;
   const page = activePage();
@@ -111,6 +116,7 @@ export async function saveFinding(form) {
 }
 
 export async function resolveFinding(form) {
+  clearFindingErrors(form);
   if (shortField(form, 'note', 20, 'Write at least 20 characters about your fresh check and its result.')) return;
   const page = activePage();
   const body = { status: 'resolved', note: new FormData(form).get('note') };

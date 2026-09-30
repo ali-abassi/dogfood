@@ -83,7 +83,7 @@ test('a page moves from registered to complete only when all six answers are ans
   assert.throws(() => store.recordCapture('shop', 'home', { ...capture, device: 'tablet', file: screenshot('good.png', 40) }), /desktop, mobile/);
   store.recordCapture('shop', 'home', { ...capture, file: screenshot('sparse.png', 20, true) });
   store.recordCapture('shop', 'home', { ...capture, file: screenshot('good.png', 40) });
-  assert.equal(readdirSync(join(data, 'captures/shop/history')).length, 1);
+  assert.equal(readdirSync(join(data, 'captures/shop/history')).filter(file => file.endsWith('.png')).length, 1);
   assert.match(progress().requirements.find(item => item.id === 'capture').missing, /mobile/);
 
   assert.throws(() => store.recordScan('shop', 'home', scan({ ...facts(), horizontalOverflow: 'no' })), /horizontal overflow/);
@@ -135,7 +135,7 @@ test('a page moves from registered to complete only when all six answers are ans
   assert.equal(progress().status, 'pass');
 
   store.recordCapture('shop', 'home', { ...capture, device: 'mobile', viewport: '390 × 844', file: screenshot('newer.png', 40, true) });
-  assert.deepEqual(unmet(progress()), ['scan', 'design', 'ease'], 'a replaced screenshot makes the page check and the AI review stale');
+  assert.deepEqual(unmet(progress()), ['scan', 'design', 'ease', 'safety', 'audit:security:inputs', 'audit:security:private-data', 'audit:scraping:bulk', 'audit:scraping:public-copy', 'audit:accessibility:keyboard', 'audit:accessibility:contrast', 'audit:accessibility:reflow'], 'replaced screenshots stale human judgments; unchanged measured title/names facts stay current');
   assert.ok(existsSync(join(data, 'captures/shop/home.png')));
 });
 

@@ -113,4 +113,4 @@ Roles: large title 28px/600; group title 17px/600; section 15px/600; row 13.5–
 
 Project selection uses its native keyboard behavior with one inset CSS indicator. Documents name their source and provide section navigation, refresh and a route to Plan. Saved competitor research stays readable while loading or retrying; summaries name the scan they describe. Suggestions retain choices during refresh and failed saves. Forms keep drafts, name refused fields and return focus on Cancel. Phone controls have a 40px minimum height, and Back links stay below the sticky menu when scrolled into view. Acceptance counts are labeled separately from answer status.
 
-Verification contract: app-polish-contract.md freezes normal, long, empty, loading, failed and interaction checks at 1280 and390 wide; root evidence also checks640 at DPR2 and reduced motion. No runtime dependencies were added.
+Verification contract: app-polish-contract.md freezes normal, long, empty, loading, failed and interaction checks at 1280 and 390 wide; root evidence also checks 640 at DPR2 and reduced motion. No runtime dependencies were added.

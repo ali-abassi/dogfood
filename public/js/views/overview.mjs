@@ -27,7 +27,14 @@ function acceptanceCountsMarkup(pages) {
   const accepted = pages.filter(page => page.progress.accepted === true).length;
   const checked = pages.filter(page => page.progress.accepted !== true && page.progress.complete === true).length;
   const remaining = pages.length - accepted - checked;
-  return `<div class="overview-acceptance"><span class="overview-acceptance-label">Acceptance</span><p class="overview-gate-counts" data-gate-counts><span><strong>${accepted}</strong> accepted</span> <span><strong>${checked}</strong> checked, not accepted</span> <span><strong>${remaining}</strong> not fully checked</span></p></div>`;
+  return `<div class="overview-acceptance"><span class="overview-acceptance-label" id="acceptance-label">Acceptance</span><ul class="overview-gate-counts" data-gate-counts aria-labelledby="acceptance-label"><li><strong>${accepted}</strong> accepted</li> <li><strong>${checked}</strong> checked, not accepted</li> <li><strong>${remaining}</strong> not fully checked</li></ul></div>`;
+}
+
+function liveDebtMarkup(pages) {
+  const debts = pages.flatMap(page => page.features.filter(feature => feature.liveDebt && feature.liveDebt.state !== 'verified').map(feature => ({ page, feature })));
+  if (!debts.length) return '';
+  const rows = debts.map(({page, feature}) => `<li><button class="link-button" data-page="${escapeHtml(page.id)}" data-view="works">${escapeHtml(page.name)} · ${escapeHtml(feature.name)}</button><span>${feature.liveDebt.state === 'pending' ? 'To do after deploy' : 'Awaiting deployment'} · ${escapeHtml(feature.liveDebt.reason)}</span></li>`).join('');
+  return `<section class="content-panel live-debt" aria-label="Live verification debt"><h2>Live verification debt · ${debts.length}</h2><p class="muted">Awaiting deployment can pass the local release gate. A recorded deployment makes these checks due.</p><ul>${rows}</ul></section>`;
 }
 
 function columnsMarkup() {
@@ -81,6 +88,7 @@ export function overviewMarkup() {
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${fixFirstMarkup(state.project.pages)}
+    ${liveDebtMarkup(state.project.pages)}
     ${legendMarkup()}
     <section class="overview-pages content-panel" aria-label="Pages">${pages}</section>
     ${suggestionsWaitingMarkup()}

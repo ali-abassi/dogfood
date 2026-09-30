@@ -159,7 +159,7 @@ code { font-family: var(--mono); }
 .screen-frame:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .report-screen-mobile .screen-frame { border-radius: 14px; }
 .screen-frame img { display: block; width: 100%; height: auto; }
-.report-screen figcaption { overflow: hidden; margin-top: 6px; color: var(--tertiary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.report-screen figcaption { display: grid; margin-top: 6px; color: var(--tertiary); font-size: 12px; overflow-wrap: anywhere; }
 .report-screen figcaption strong { color: var(--secondary); font-weight: 500; }
 /* Timeline: one button per day the page was captured */
 .timeline { display: flex; align-items: center; gap: 12px; min-width: 0; margin-top: 14px; }
@@ -191,7 +191,7 @@ code { font-family: var(--mono); }
 .competitor-add input { flex: 1; min-width: 220px; min-height: 36px; padding: 0 12px; border: .5px solid var(--hairline); border-radius: 10px; background: var(--group); color: var(--ink); font-size: 14px; box-shadow: 0 .5px 1px rgb(0 0 0 / .05); }
 .competitor-add .save-button { min-height: 36px; }
 .competitor-add .form-error { flex-basis: 100%; }
-.competitor-thumb { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-bottom: .5px solid var(--separator); background: var(--canvas); }
+.competitor-thumb { display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border: .5px solid var(--separator); border-radius: 6px; background: var(--canvas); }
 .competitor-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .competitor-card-text strong { font-size: 15px; font-weight: 600; }
 .competitor-detail .overview-heading p a { color: var(--blue); }
@@ -318,7 +318,7 @@ code { font-family: var(--mono); }
 .overview-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .overview-heading h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.022em; }
 .overview-heading p { max-width: 76ch; margin: 6px 0 0; color: var(--secondary); font-size: 15px; }
-.overview-heading .overview-gate-counts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 13px; }
+.overview-heading .overview-gate-counts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
 .overview-gate-counts strong { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 .overview-actions { display: flex; flex: none; align-items: center; gap: 8px; margin-top: 4px; }
 .overview-actions a.text-button { color: var(--ink); text-decoration: none; }
@@ -619,7 +619,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 }
 
 
-.overview-acceptance { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; }
+.overview-acceptance { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; margin-top: 12px; }
 .overview-acceptance-label { font-size: 13px; color: var(--secondary); }
 
 /* Readable project intent and capability evidence, using the shared Plan tokens. */
@@ -682,9 +682,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .competitor-saved > h2 span { color: var(--secondary); font-size: 12.5px; font-weight: 400; }
 .competitors-view .competitor-list { display: block; overflow: hidden; border: .5px solid var(--separator); border-radius: 12px; background: var(--group); }
 .competitor-list > li + li { border-top: .5px solid var(--separator); }
-.competitors-view .competitor-card { width: 100%; border: 0; color: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px; border-radius: 0; background: transparent; box-shadow: none; transition: none; }
-.competitors-view .competitor-card:hover { transform: none; box-shadow: none; background: var(--fill); }
-.competitor-card .competitor-thumb { width: 100%; aspect-ratio: 4 / 3; border: .5px solid var(--separator); border-radius: 6px; }
+.competitors-view .competitor-card { width: 100%; border: 0; color: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px; background: transparent; }
+.competitors-view .competitor-card:hover { background: var(--fill); }
 .competitor-card .competitor-card-text { display: grid; gap: 4px; min-width: 0; padding: 0; overflow-wrap: anywhere; }
 .competitor-card .competitor-card-text p { margin: 0; color: var(--secondary); font-size: 14px; }
 .competitor-card .competitor-card-text small { color: var(--secondary); font-size: 12.5px; }
@@ -737,6 +736,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .full-screen-caption a { flex: none; }
 .screens-view .screens-toolbar { position: sticky; top: 0; z-index: 3; padding: 10px 0; background: var(--canvas); }
 .screens-view .screens-heading { flex-wrap: wrap; }
+.screens-toolbar > p, .screens-toolbar > .history-error { flex-basis: 100%; margin: 0; }
 .screens-view .screen-missing { min-height: 160px; gap: 12px; align-content: center; }
 .screens-view .screen-missing p { margin: 0; max-width: 60ch; }
 .screens-view .screen-missing .text-button { justify-self: center; }
@@ -749,8 +749,22 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .suggestions-review .form-error { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .screens-view .screens-toolbar { top: 52px; }
+  .screens-view .screens-toolbar .timeline { flex-basis: 100%; }
+  .screens-view .timeline-days { scrollbar-width: thin; }
   .answer-detail .panel-heading, .answer-detail .qa-result-heading { flex-wrap: wrap; }
   .answer-detail .finding-title strong { min-width: 0; flex-basis: 100%; overflow-wrap: anywhere; }
   .suggestions-review > .form-actions { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
   .about-page .about-links li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
+
+/* Evidence waiting for deployment remains visibly distinct from verified Good. */
+.mark-awaiting_live, .status-awaiting_live { color: var(--orange); }
+.mark-awaiting_live { background: var(--orange-tint); }
+.live-debt ul { list-style: none; margin: 0; padding: 0; }
+.live-debt .link-button { justify-self: start; text-align: left; }
+.live-debt-note { color: var(--secondary); overflow-wrap: anywhere; }
+.live-debt li { display: grid; gap: 4px; margin: 12px 0; overflow-wrap: anywhere; }
+.live-debt li span, .measured-answers p { color: var(--secondary); }
+.measured-answers details { margin-top: 12px; }
+.answers-panel + .measured-answers { margin-top: 16px; }
+.measured-answers .panel-heading { flex-wrap: wrap; gap: 8px; }

@@ -6,19 +6,27 @@ import { answerFor, answerPanelMarkup, backMarkup } from './answer.mjs';
 import { findingsMarkup } from './issues.mjs';
 import { qaMarkup } from './tests.mjs';
 
-function thingMarkup(feature) {
-  const expected = feature.expected || 'What should happen is not written down yet.';
-  const note = feature.note ? `<p class="thing-note">${escapeHtml(feature.note)}</p>` : '';
-  return `<li class="thing" data-thing>${answerMarkMarkup(feature.name, feature.status)}<div><strong class="thing-name">${escapeHtml(feature.name)}</strong><p class="thing-expected">${escapeHtml(expected)}</p>${note}${verdictByMarkup(feature.by, feature.at)}</div></li>`;
+function liveDebtNote(feature) {
+  if (!feature.liveDebt || feature.liveDebt.state === 'verified') return '';
+  const label = feature.liveDebt.state === 'pending' ? 'To do after deploy' : 'Awaiting live verification';
+  return `<p class="live-debt-note"><strong>${label}</strong> · ${escapeHtml(feature.liveDebt.reason)}</p>`;
 }
 
-function thingOptions(status) {
-  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work'], ['blocked', 'Blocked']].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
+function thingMarkup(feature) {
+  const expected = feature.expected || 'What should happen is not written down yet.';
+  const debt = liveDebtNote(feature);
+  const note = feature.note ? `<p class="thing-note">${escapeHtml(feature.note)}</p>` : '';
+  return `<li class="thing" data-thing>${answerMarkMarkup(feature.name, feature.status)}<div><strong class="thing-name">${escapeHtml(feature.name)}</strong><p class="thing-expected">${escapeHtml(expected)}</p>${note}${debt}${verdictByMarkup(feature.by, feature.at)}</div></li>`;
+}
+
+function thingOptions(status, feature) {
+  const deferred = feature.requiresLive && feature.liveDebt?.state !== 'pending' ? [['awaiting_live', 'Awaiting live verification']] : [];
+  return [['untested', 'Not checked'], ['pass', 'Good'], ['needs_work', 'Needs work'], ['blocked', 'Blocked'], ...deferred].map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
 }
 
 function thingEditorMarkup(feature) {
   const id = `thing-${feature.id}`;
-  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" aria-describedby="things-error" placeholder="What happened when you tried it? Needed for Good, Needs work, or Blocked.">${escapeHtml(feature.note)}</textarea></div>`;
+  return `<div class="question-edit" data-thing-row data-id="${escapeHtml(feature.id)}"><label for="${escapeHtml(id)}-status">${escapeHtml(feature.name)}</label><select id="${escapeHtml(id)}-status">${thingOptions(feature.status, feature)}</select><label class="sr-only" for="${escapeHtml(id)}-note">What happened when you tried it?</label><textarea id="${escapeHtml(id)}-note" rows="2" maxlength="1200" aria-describedby="things-error" placeholder="What happened when you tried it? Describe the result or the reason live verification must wait.">${escapeHtml(feature.note)}</textarea></div>`;
 }
 
 function thingsFormMarkup(page) {
@@ -27,7 +35,7 @@ function thingsFormMarkup(page) {
 
 function addThingMarkup() {
   if (!state.addingThing) return '<button type="button" class="link-button" data-action="add-thing">Add a thing people can do</button>';
-  return `<form id="add-thing-form" class="finding-form" novalidate><label for="thing-name">What can people do here?</label><input id="thing-name" name="name" required maxlength="80" placeholder="For example: Book a lesson for a child"><label for="thing-expected">What should happen when it works?</label><input id="thing-expected" name="expected" required maxlength="200" placeholder="For example: the booking is confirmed and an email arrives"><div id="add-thing-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Add</button><button class="text-button" type="button" data-action="cancel-add-thing">Cancel</button></div></form>`;
+  return `<form id="add-thing-form" class="finding-form" novalidate><label for="thing-name">What can people do here?</label><input id="thing-name" name="name" required maxlength="80" placeholder="For example: Book a lesson for a child"><label for="thing-expected">What should happen when it works?</label><input id="thing-expected" name="expected" required maxlength="200" placeholder="For example: the booking is confirmed and an email arrives"><label class="capture-choice"><input type="checkbox" name="requiresLive"> Can only be proven after deployment</label><div id="add-thing-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Add</button><button class="text-button" type="button" data-action="cancel-add-thing">Cancel</button></div></form>`;
 }
 
 export function remainingSuggestions(page, review) {
@@ -73,7 +81,7 @@ export async function addThing(form) {
   try {
     state.project = await readJson(`/api/projects/${state.project.id}/pages/${page.id}/features`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ features: [{ name: String(data.get('name')).trim(), expected: String(data.get('expected')).trim() }] }),
+      body: JSON.stringify({ features: [{ name: String(data.get('name')).trim(), expected: String(data.get('expected')).trim(), requiresLive: data.has('requiresLive') }] }),
     });
     Object.assign(state, { addingThing: false, message: 'Added' });
     render();

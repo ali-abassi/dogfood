@@ -8,7 +8,7 @@ import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import {
   addFeatures, createFinding, createProject, listProjects, pageById, projectView, readProject, recordCapture,
-  recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setBrowserProfile, setConnections, setCoreFeatures, updateFinding,
+  acceptMeasuredAnswers, updateFeature, recordDeployment, setFixtureSetup, recordVerdicts, registerPage, removePage, retireFeature, saveAudit, setBrowserProfile, setConnections, setCoreFeatures, updateFinding,
 } from './lib/store.mjs';
 import { auditKeys, captureTiers, checkKeys, connectionProvenance, devices, httpMethods, severities, verdicts } from './lib/schema.mjs';
 import { runTests } from './lib/test-runs.mjs';
@@ -17,6 +17,9 @@ import { pendingSuggestions } from './lib/suggestions.mjs';
 import { startReview } from './lib/reviews.mjs';
 import { addCompetitor, listCompetitors, recordCompetitorSummary, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { dataDir } from './lib/paths.mjs';
+import { auditDependencyKeys } from './lib/audit-evidence.mjs';
+import { pageLiveDebts } from './lib/completion.mjs';
+import { freshToolRequest, watchToolList } from './lib/mcp-runtime.mjs';
 
 function competitorOf(competitors, id) {
   return competitors.find(item => item.id === id);
@@ -46,6 +49,14 @@ const verdictSchema = {
   },
   required: ['status', 'note'],
 };
+const featureVerdictSchema = { ...verdictSchema, properties: { ...verdictSchema.properties, status: { type: 'string', enum: [...verdictValues, 'awaiting_live'] } } };
+const scanProperties = {
+  liveUrl: { type: 'string', description: 'Explicit live target URL. Rebase each exact registered path/query/hash onto this origin; keep local configuration unchanged.' },
+  browserProfile: { type: 'string', description: 'Chrome profile for this scan, such as Default; leave existing sessions open.' },
+  requiredRole: { type: 'string', description: 'Required role; a visible registered roleProof must verify it on both viewports.' },
+  fixtures: { type: 'array', items: { type: 'string' }, description: 'Explicit opt-in to named project fixtureSetup commands. Local only; refused for live scans.' },
+};
+const dependencySchema = { type: 'array', items: { type: 'string', enum: [...auditDependencyKeys] }, minItems: 1, maxItems: 20, description: 'Bounded facts this exact audit question depends on. Unchanged facts and scan context can carry its answer. Human judgments require fingerprint and reviewed captures.' };
 const projectPageProperties = {
   project: { type: 'string', description: 'Project ID already registered in dogfood.' },
   page: { type: 'string', description: 'Page ID within the selected project.' },
@@ -55,7 +66,7 @@ const auditVerdictSchema = {
   type: 'object',
   properties: Object.fromEntries(auditKeys.map(key => [key, {
     type: 'array',
-    items: { type: 'object', properties: { id: { type: 'string' }, ...verdictSchema.properties }, required: ['id', ...verdictSchema.required] },
+    items: { type: 'object', properties: { id: { type: 'string' }, dependsOn: dependencySchema, ...verdictSchema.properties }, required: ['id', ...verdictSchema.required] },
   }])),
 };
 const connectionsSchema = {
@@ -107,6 +118,13 @@ function requirementTool(id) {
   return requirementTools[id] ?? 'dogfood_page';
 }
 
+function pageEvidenceSummary(page) {
+  return {
+    liveDebt: pageLiveDebts(page).map(feature => ({ feature: feature.id, name: feature.name, ...feature.liveDebt })),
+    measuredAnswers: (page.measuredAnswers ?? []).map(({ key, id, question, status, note }) => ({ key, id, question, status, note })),
+  };
+}
+
 function pageOutcome(page, issue) {
   const outcome = {
     page: page.id,
@@ -117,6 +135,7 @@ function pageOutcome(page, issue) {
     checkoutFingerprint: page.progress.checkoutFingerprint ?? null,
     acceptanceMissing: (page.progress.acceptanceRequirements ?? []).filter(item => !item.met),
     changedSinceReview: page.progress.changedSinceReview,
+    ...pageEvidenceSummary(page),
     answers: page.progress.answers.map(({ id, name, status, summary }) => ({ id, name, status, summary })),
     missing: page.progress.requirements.filter(item => !item.met).map(({ id, label, missing }) => ({ id, label, missing, tool: requirementTool(id) })),
   };
@@ -157,7 +176,7 @@ function keepExistingQuestions(audit, currentAudit) {
 
 function checklist({ project, page, agent, audit }) {
   const current = pageById(readProject(project), page);
-  return savePage(page, () => saveAudit(project, page, { audit: keepExistingQuestions(audit, current.audit), connections: current.connections }, byAgent(agent)));
+  return savePage(page, () => saveAudit(project, page, { audit: keepExistingQuestions(audit, current.audit) }, byAgent(agent)));
 }
 
 function complete({ project, page }) {
@@ -192,13 +211,13 @@ function onboardWithOptionalReview({ confirmAiReviewUsage, ...input }) {
   return onboardProject({ ...input, aiReview: confirmAiReviewUsage === true });
 }
 
-async function scanRegisteredPage({ project, page }) {
-  await scanPage(project, page);
+async function scanRegisteredPage({ project, page, ...options }) {
+  await scanPage(project, page, options);
   return pageOutcomeFrom(readProject(project), page);
 }
 
-async function scanEntireProject({ project }) {
-  const result = await scanProject(project);
+async function scanEntireProject({ project, ...options }) {
+  const result = await scanProject(project, undefined, options);
   return { project, scanned: result.scanned, failed: result.failed, changed: result.changed };
 }
 
@@ -223,13 +242,13 @@ const definitions = [
   {
     name: 'dogfood_scan_page',
     description: 'Rescan one registered page at desktop and mobile sizes, save validated screenshots and measured facts, and return its compact QA outcome. Prefer this over recording captures by hand.',
-    inputSchema: objectSchema(projectPageProperties, projectPageRequired),
+    inputSchema: objectSchema({ ...projectPageProperties, ...scanProperties }, projectPageRequired),
     run: scanRegisteredPage,
   },
   {
     name: 'dogfood_scan_project',
     description: 'Rescan every page of a project at desktop and mobile sizes, and list which pages changed visually since the previous scan.',
-    inputSchema: objectSchema({ project: projectPageProperties.project }, ['project']),
+    inputSchema: objectSchema({ project: projectPageProperties.project, ...scanProperties }, ['project']),
     run: scanEntireProject,
   },
   {
@@ -278,9 +297,12 @@ const definitions = [
         group: { type: 'string', description: 'Navigation group such as Public or Account.' },
         route: { type: 'string', description: 'Route checked within the product.' },
         url: { type: 'string', description: 'Optional full page URL when the route alone does not locate it, for example https://app.example/#/billing in a hash-routed app. Scans open this URL.' },
+        requiredRole: { type: 'string', description: 'Role needed to see the real page. A roleProof and explicit profile/fixture are required.' },
+        roleProof: objectSchema({ selector: { type: 'string' }, expectedText: { type: 'string' } }, ['selector', 'expectedText']),
+        fixture: { type: 'array', items: { type: 'string' }, description: 'Named local prerequisites that must be explicitly opted in during scans.' },
         signedIn: { type: 'boolean', description: 'Optional: true when the page needs a signed-in visitor; a scan that lands signed out fails its captures instead of passing.' },
         expectedStatus: { type: 'integer', description: 'Optional: the HTTP status the page itself is meant to answer with, such as 404 for a not-found page, so a scan does not count it as a failed request.' },
-        features: { type: 'array', items: objectSchema({ id: { type: 'string' }, name: { type: 'string' } }, ['id', 'name']) },
+        features: { type: 'array', items: objectSchema({ id: { type: 'string' }, name: { type: 'string' }, expected: { type: 'string' }, requiresLive: { type: 'boolean' } }, ['id', 'name']) },
         tests: { type: 'array', items: objectSchema({ id: { type: 'string' }, label: { type: 'string' }, file: { type: 'string' }, reason: { type: 'string' } }, ['id', 'label', 'file', 'reason']) },
         untestedNote: { type: 'string', description: 'A clear boundary that this page QA does not cover.' },
       }, ['id', 'name', 'group', 'route', 'features', 'untestedNote']),
@@ -296,7 +318,7 @@ const definitions = [
       features: {
         type: 'array',
         description: 'Features to add, each with a name and one sentence of expected behavior.',
-        items: objectSchema({ name: { type: 'string' }, expected: { type: 'string' } }, ['name']),
+        items: objectSchema({ name: { type: 'string' }, expected: { type: 'string' }, requiresLive: { type: 'boolean' } }, ['name']),
       },
     }, ['project', 'page', 'agent', 'features']),
     run: addPageFeatures,
@@ -390,6 +412,36 @@ const definitions = [
     },
   },
   {
+    name: 'dogfood_set_fixture_setup',
+    description: 'Configure named local fixture setup commands for an existing project, retaining history. Commands are explicit argv arrays and run only when a scan opts in to them; refused on live targets. Do not put credentials in command arguments.',
+    inputSchema: objectSchema({ project: projectPageProperties.project, agent: { type: 'string' }, fixtureSetup: { type: 'object', additionalProperties: objectSchema({ argv: { type: 'array', items: { type: 'string' } }, cwd: { type: 'string' }, timeoutMs: { type: 'integer' } }, ['argv']) } }, ['project', 'agent', 'fixtureSetup']),
+    run: ({ project, agent, fixtureSetup }) => {
+      const saved = setFixtureSetup(project, fixtureSetup, byAgent(agent));
+      return { project, fixtureSetup: saved.fixtureSetup, updated: saved.fixtureSetupUpdated };
+    },
+  },
+  {
+    name: 'dogfood_accept_measured',
+    description: 'Accept the current scan’s objective answer candidates in one attributed write. Candidates are visible on dogfood_page; human keyboard, contrast, security, clarity and indexing intent remain judgment calls.',
+    inputSchema: objectSchema({ ...projectPageProperties, agent: { type: 'string' } }, [...projectPageRequired, 'agent']),
+    run: ({ project, page, agent }) => savePage(page, () => acceptMeasuredAnswers(project, page, byAgent(agent))),
+  },
+  {
+    name: 'dogfood_update_feature',
+    description: 'Edit a feature’s name, expected behavior or requiresLive declaration. Material expectation changes invalidate its earlier verdict and retain history; use retire_feature for obsolete behavior.',
+    inputSchema: objectSchema({ ...projectPageProperties, agent: { type: 'string' }, feature: { type: 'string' }, input: objectSchema({ name: { type: 'string' }, expected: { type: 'string' }, requiresLive: { type: 'boolean' } }, []) }, [...projectPageRequired, 'agent', 'feature', 'input']),
+    run: ({ project, page, agent, feature, input }) => savePage(page, () => updateFeature(project, page, feature, input, byAgent(agent))),
+  },
+  {
+    name: 'dogfood_record_deployment',
+    description: 'Record an explicit reported deployment receipt and activate awaiting_live features as pending to-dos. Preserves local URL; does not deploy or independently prove a deployed revision. Verify debt with a fresh live scan and explicit feature verdict.',
+    inputSchema: objectSchema({ project: projectPageProperties.project, agent: { type: 'string' }, input: objectSchema({ id: { type: 'string' }, url: { type: 'string' }, revision: { type: 'string' }, note: { type: 'string' } }, ['url']) }, ['project', 'agent', 'input']),
+    run: ({ project, agent, input }) => {
+      const saved = recordDeployment(project, input, byAgent(agent));
+      return { project, deployment: saved.deployments.at(-1), liveDebt: projectView(saved).pages.flatMap(page => page.features.filter(feature => feature.liveDebt?.state === 'pending').map(feature => ({ page: page.id, feature: feature.id, ...feature.liveDebt }))) };
+    },
+  },
+  {
     name: 'dogfood_retire_feature',
     description: 'Retire a feature the page no longer has because its UI was redesigned away, so the completion gate stops waiting on it. Needs a reason; the feature and its last verdict stay in the manifest. Never mark a still-present feature retired to pass the gate.',
     inputSchema: objectSchema({
@@ -440,7 +492,7 @@ const definitions = [
       agent: { type: 'string', description: 'Agent name used to attribute each changed verdict.' },
       checkoutFingerprint: { type: 'string', description: 'Fingerprint read before testing; recording rejects a changed checkout.' },
       checks: objectSchema(Object.fromEntries(checkKeys.map(key => [key, verdictSchema])), []),
-      features: { type: 'array', items: objectSchema({ id: { type: 'string' }, ...verdictSchema.properties }, ['id', ...verdictSchema.required]) },
+      features: { type: 'array', items: objectSchema({ id: { type: 'string' }, ...featureVerdictSchema.properties }, ['id', ...featureVerdictSchema.required]) },
       audit: auditVerdictSchema,
     }, ['project', 'page', 'agent']),
     run: ({ project, page, agent, checks, features, audit, checkoutFingerprint }) => savePage(page, () => recordVerdicts(project, page, { checks, features, audit, ...(checkoutFingerprint === undefined ? {} : { checkoutFingerprint }) }, byAgent(agent))),
@@ -459,7 +511,7 @@ const definitions = [
       agent: { type: 'string', description: 'Agent name used to attribute changed checklist verdicts.' },
       audit: objectSchema(Object.fromEntries(auditKeys.map(key => [key, {
         type: 'array',
-        items: objectSchema({ id: { type: 'string' }, question: { type: 'string' }, ...verdictSchema.properties }, ['id', 'question', ...verdictSchema.required]),
+        items: objectSchema({ id: { type: 'string' }, question: { type: 'string' }, dependsOn: dependencySchema, ...verdictSchema.properties }, ['id', 'question', ...verdictSchema.required]),
       }])), auditKeys),
     }, ['project', 'page', 'agent', 'audit']),
     run: checklist,
@@ -528,7 +580,7 @@ function rpcError(id, code, message) {
 function initialize({ protocolVersion }) {
   return {
     protocolVersion: supportedVersions.has(protocolVersion) ? protocolVersion : '2024-11-05',
-    capabilities: { tools: {} },
+    capabilities: { tools: { listChanged: true } },
     serverInfo: { name: 'dogfood', version: packageInfo.version },
   };
 }
@@ -548,6 +600,10 @@ async function runTool(tool, args) {
 }
 
 async function callTool(request) {
+  return process.env.DOGFOOD_MCP_DIRECT === '1' ? directToolCall(request) : freshResponse(request);
+}
+
+async function directToolCall(request) {
   const params = request.params ?? {};
   const tool = tools.get(params.name);
   if (!tool) return rpcError(request.id, -32602, `Unknown tool: ${params.name}`);
@@ -567,7 +623,13 @@ function pingResponse(request) {
 }
 
 function listToolsResponse(request) {
+  if (process.env.DOGFOOD_MCP_DIRECT !== '1') return freshResponse(request);
   return { jsonrpc: '2.0', id: request.id, result: { tools: toolList } };
+}
+
+async function freshResponse(request) {
+  try { return await freshToolRequest(request); }
+  catch (error) { return rpcError(request.id, -32603, errorMessage(error)); }
 }
 
 const methods = new Map([
@@ -599,20 +661,31 @@ function invalidRequest(request) {
   return request === null || typeof request !== 'object' || Array.isArray(request);
 }
 
+function observeNotification(request) {
+  if (request.method === 'notifications/initialized') clientReady = true;
+}
+
 async function processLine(line) {
   if (!line.trim()) return;
   const parsed = parseLine(line);
   if (parsed.error) return writeMessage(parsed.error);
   const request = parsed.request;
   if (invalidRequest(request)) return writeMessage(rpcError(null, -32600, 'Invalid request'));
+  observeNotification(request);
   if (!Object.hasOwn(request, 'id')) return;
   writeMessage(await responseFor(request));
 }
 
 async function main() {
   const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
-  for await (const line of input) await processLine(line);
+  const stopWatching = process.env.DOGFOOD_MCP_DIRECT === '1' ? () => {} : watchToolList(toolList, () => {
+    if (clientReady) writeMessage({ jsonrpc: '2.0', method: 'notifications/tools/list_changed' });
+  });
+  try { for await (const line of input) await processLine(line); }
+  finally { stopWatching(); }
 }
+
+let clientReady = false;
 
 // One call from a shell, for an agent whose MCP client has not loaded dogfood yet:
 //   node mcp.mjs dogfood_next '{"project":"shop"}'

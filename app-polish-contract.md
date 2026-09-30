@@ -19,6 +19,23 @@ Evidence directory: data/reviews/app-polish-2026-09-29
 Locked checks version / date: v1 locked 2026-09-29 before presentation edits
 Required reviewer assignments: One independent page/critical-flow reviewer for each named surface; separate cross-surface consistency reviewer; main agent verifies real web viewports and accepts final evidence. Native-window reviewer is unnecessary because this is web UI.
 
+## Shared floor criteria
+
+These are the unchanged UI floor checks used by the final evidence rows:
+
+- F1: no horizontal overflow, clipped controls or overlapping content.
+- F2: the primary job and next action are clear on entry.
+- F3: readable type and WCAG A/AA text/control contrast in both themes.
+- F4: named controls and visible focus.
+- F5: actual keyboard use for native project selection and forms.
+- F6: respect reduced motion; focus remains usable at 640 CSS pixels/DPR2.
+- F7: normal, long, empty, loading and degraded states remain usable.
+- F8: errors identify a cause and an actionable recovery.
+- F9: saves, waits and selections give honest state feedback.
+- F10: complete long content and evidence can be inspected.
+- F11: actual native controls work without fabricated provider results.
+- F12: actual web viewports at 1280 and 390 remain usable.
+
 ## Surface: navigation — Project navigation
 
 - **Register and usage moment:** Local web workbench, select project and find work
@@ -47,7 +64,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/navigation/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/navigation/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/navigation/empty-default.png` and `data/reviews/app-polish-2026-09-29/navigation/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/navigation/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/navigation/normal-default.png`, `data/reviews/app-polish-2026-09-29/navigation/interaction-default.png`, `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/navigation/normal-default.png` and `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/navigation/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/navigation/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/navigation/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/navigation/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/navigation/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/navigation/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/navigation/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/navigation/empty-default.png`, `data/reviews/app-polish-2026-09-29/navigation/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/navigation/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/navigation/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/navigation/normal-default.json`, `data/reviews/app-polish-2026-09-29/navigation/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- navigation-C1 — PASS — `data/reviews/app-polish-2026-09-29/navigation-review.md`, `data/reviews/app-polish-2026-09-29/navigation/normal-default.png`
+- navigation-C2 — PASS — `data/reviews/app-polish-2026-09-29/navigation-review.md`, `data/reviews/app-polish-2026-09-29/navigation/long-minimum-full.png`
+- navigation-C3 — PASS — `data/reviews/app-polish-2026-09-29/navigation-review.md`, `data/reviews/app-polish-2026-09-29/navigation/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/navigation-review.md`
+- **Verdict:** Pass
 
 ## Surface: overview — Project overview
 
@@ -77,7 +117,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/overview/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/overview/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/overview/empty-default.png` and `data/reviews/app-polish-2026-09-29/overview/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/overview/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/overview/normal-default.png`, `data/reviews/app-polish-2026-09-29/overview/interaction-default.png`, `data/reviews/app-polish-2026-09-29/overview/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/overview/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/overview/normal-default.png` and `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/overview/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/overview/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/overview/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/overview/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/overview/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/overview/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/overview/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/overview/empty-default.png`, `data/reviews/app-polish-2026-09-29/overview/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/overview/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/overview/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/overview/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/overview/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/overview/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/overview/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/overview-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/overview/normal-default.json`, `data/reviews/app-polish-2026-09-29/overview/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- overview-C1 — PASS — `data/reviews/app-polish-2026-09-29/overview-review.md`, `data/reviews/app-polish-2026-09-29/overview/normal-default.png`
+- overview-C2 — PASS — `data/reviews/app-polish-2026-09-29/overview-review.md`, `data/reviews/app-polish-2026-09-29/overview/long-minimum-full.png`
+- overview-C3 — PASS — `data/reviews/app-polish-2026-09-29/overview-review.md`, `data/reviews/app-polish-2026-09-29/overview/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/overview-review.md`
+- **Verdict:** Pass
 
 ## Surface: vision — Vision document
 
@@ -107,7 +170,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/vision/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/vision/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/vision/empty-default.png` and `data/reviews/app-polish-2026-09-29/vision/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/vision/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/vision/normal-default.png`, `data/reviews/app-polish-2026-09-29/vision/interaction-default.png`, `data/reviews/app-polish-2026-09-29/vision/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/vision/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/vision/normal-default.png` and `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/vision/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/vision/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/vision/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/vision/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/vision/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/vision/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/vision/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/vision/empty-default.png`, `data/reviews/app-polish-2026-09-29/vision/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/vision/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/vision/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/vision/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/vision/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/vision/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/vision/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/vision-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/vision/normal-default.json`, `data/reviews/app-polish-2026-09-29/vision/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- vision-C1 — PASS — `data/reviews/app-polish-2026-09-29/vision-review.md`, `data/reviews/app-polish-2026-09-29/vision/normal-default.png`
+- vision-C2 — PASS — `data/reviews/app-polish-2026-09-29/vision-review.md`, `data/reviews/app-polish-2026-09-29/vision/long-minimum-full.png`
+- vision-C3 — PASS — `data/reviews/app-polish-2026-09-29/vision-review.md`, `data/reviews/app-polish-2026-09-29/vision/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/vision-review.md`
+- **Verdict:** Pass
 
 ## Surface: guide — Design document
 
@@ -137,7 +223,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/guide/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/guide/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/guide/empty-default.png` and `data/reviews/app-polish-2026-09-29/guide/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/guide/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/guide/normal-default.png`, `data/reviews/app-polish-2026-09-29/guide/interaction-default.png`, `data/reviews/app-polish-2026-09-29/guide/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/guide/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/guide/normal-default.png` and `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/guide/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/guide/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/guide/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/guide/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/guide/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/guide/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/guide/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/guide/empty-default.png`, `data/reviews/app-polish-2026-09-29/guide/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/guide/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/guide/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/guide/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/guide/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/guide/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/guide/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/guide-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/guide/normal-default.json`, `data/reviews/app-polish-2026-09-29/guide/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- guide-C1 — PASS — `data/reviews/app-polish-2026-09-29/guide-review.md`, `data/reviews/app-polish-2026-09-29/guide/normal-default.png`
+- guide-C2 — PASS — `data/reviews/app-polish-2026-09-29/guide-review.md`, `data/reviews/app-polish-2026-09-29/guide/long-minimum-full.png`
+- guide-C3 — PASS — `data/reviews/app-polish-2026-09-29/guide-review.md`, `data/reviews/app-polish-2026-09-29/guide/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/guide-review.md`
+- **Verdict:** Pass
 
 ## Surface: features — Feature coverage
 
@@ -167,7 +276,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/features/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/features/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/features/empty-default.png` and `data/reviews/app-polish-2026-09-29/features/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/features/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/features/normal-default.png`, `data/reviews/app-polish-2026-09-29/features/interaction-default.png`, `data/reviews/app-polish-2026-09-29/features/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/features/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/features/normal-default.png` and `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/features/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/features/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/features/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/features/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/features/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/features/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/features/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/features/empty-default.png`, `data/reviews/app-polish-2026-09-29/features/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/features/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/features/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/features/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/features/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/features/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/features/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/features/normal-default.json`, `data/reviews/app-polish-2026-09-29/features/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- features-C1 — PASS — `data/reviews/app-polish-2026-09-29/features/features-review.md`, `data/reviews/app-polish-2026-09-29/features/normal-default.png`
+- features-C2 — PASS — `data/reviews/app-polish-2026-09-29/features/features-review.md`, `data/reviews/app-polish-2026-09-29/features/long-minimum-full.png`
+- features-C3 — PASS — `data/reviews/app-polish-2026-09-29/features/features-review.md`, `data/reviews/app-polish-2026-09-29/features/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/features/features-review.md`
+- **Verdict:** Pass
 
 ## Surface: competitors — Competitor research flow
 
@@ -197,7 +329,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/competitors/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/competitors/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/competitors/empty-default.png` and `data/reviews/app-polish-2026-09-29/competitors/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/competitors/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/competitors/normal-default.png`, `data/reviews/app-polish-2026-09-29/competitors/interaction-default.png`, `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/competitors/normal-default.png` and `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/competitors/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/competitors/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/competitors/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/competitors/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/competitors/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/competitors/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/competitors/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/competitors/empty-default.png`, `data/reviews/app-polish-2026-09-29/competitors/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/competitors/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/competitors/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/competitors/normal-default.json`, `data/reviews/app-polish-2026-09-29/competitors/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- competitors-C1 — PASS — `data/reviews/app-polish-2026-09-29/competitors-review.md`, `data/reviews/app-polish-2026-09-29/competitors/normal-default.png`
+- competitors-C2 — PASS — `data/reviews/app-polish-2026-09-29/competitors-review.md`, `data/reviews/app-polish-2026-09-29/competitors/long-minimum-full.png`
+- competitors-C3 — PASS — `data/reviews/app-polish-2026-09-29/competitors-review.md`, `data/reviews/app-polish-2026-09-29/competitors/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/competitors-review.md`
+- **Verdict:** Pass
 
 ## Surface: report — Page report
 
@@ -227,7 +382,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/report/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/report/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/report/empty-default.png` and `data/reviews/app-polish-2026-09-29/report/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/report/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/report/normal-default.png`, `data/reviews/app-polish-2026-09-29/report/interaction-default.png`, `data/reviews/app-polish-2026-09-29/report/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/report/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/report/normal-default.png` and `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/report/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/report/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/report/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/report/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/report/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/report/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/report/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/report/empty-default.png`, `data/reviews/app-polish-2026-09-29/report/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/report/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/report/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/report/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/report/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/report/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/report/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/report/normal-default.json`, `data/reviews/app-polish-2026-09-29/report/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- report-C1 — PASS — `data/reviews/app-polish-2026-09-29/report/report-review.md`, `data/reviews/app-polish-2026-09-29/report/normal-default.png`
+- report-C2 — PASS — `data/reviews/app-polish-2026-09-29/report/report-review.md`, `data/reviews/app-polish-2026-09-29/report/long-minimum-full.png`
+- report-C3 — PASS — `data/reviews/app-polish-2026-09-29/report/report-review.md`, `data/reviews/app-polish-2026-09-29/report/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/report/report-review.md`
+- **Verdict:** Pass
 
 ## Surface: answers — Answer and findings flow
 
@@ -257,7 +435,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/answers/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/answers/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/answers/empty-default.png` and `data/reviews/app-polish-2026-09-29/answers/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/answers/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/answers/normal-default.png`, `data/reviews/app-polish-2026-09-29/answers/interaction-default.png`, `data/reviews/app-polish-2026-09-29/answers/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/answers/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/answers/normal-default.png` and `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/answers/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/answers/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/answers/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/answers/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/answers/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/answers/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/answers/empty-default.png`, `data/reviews/app-polish-2026-09-29/answers/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/answers/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/answers/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/answers/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/answers/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/answers/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/answers/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/answers-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/answers/normal-default.json`, `data/reviews/app-polish-2026-09-29/answers/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- answers-C1 — PASS — `data/reviews/app-polish-2026-09-29/answers-review.md`, `data/reviews/app-polish-2026-09-29/answers/normal-default.png`
+- answers-C2 — PASS — `data/reviews/app-polish-2026-09-29/answers-review.md`, `data/reviews/app-polish-2026-09-29/answers/long-minimum-full.png`
+- answers-C3 — PASS — `data/reviews/app-polish-2026-09-29/answers-review.md`, `data/reviews/app-polish-2026-09-29/answers/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/answers-review.md`
+- **Verdict:** Pass
 
 ## Surface: screens — Screenshot inspector
 
@@ -287,7 +488,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/screens/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/screens/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/screens/empty-default.png` and `data/reviews/app-polish-2026-09-29/screens/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/screens/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/screens/normal-default.png`, `data/reviews/app-polish-2026-09-29/screens/interaction-default.png`, `data/reviews/app-polish-2026-09-29/screens/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/screens/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/screens/normal-default.png` and `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/screens/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/screens/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/screens/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/screens/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/screens/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/screens/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/screens/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/screens/empty-default.png`, `data/reviews/app-polish-2026-09-29/screens/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/screens/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/screens/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/screens/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/screens/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/screens/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/screens/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/screens-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/screens/normal-default.json`, `data/reviews/app-polish-2026-09-29/screens/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- screens-C1 — PASS — `data/reviews/app-polish-2026-09-29/screens-review.md`, `data/reviews/app-polish-2026-09-29/screens/normal-default.png`
+- screens-C2 — PASS — `data/reviews/app-polish-2026-09-29/screens-review.md`, `data/reviews/app-polish-2026-09-29/screens/long-minimum-full.png`
+- screens-C3 — PASS — `data/reviews/app-polish-2026-09-29/screens-review.md`, `data/reviews/app-polish-2026-09-29/screens/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/screens-review.md`
+- **Verdict:** Pass
 
 ## Surface: suggestions — Suggested capability flow
 
@@ -317,7 +541,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/suggestions/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/suggestions/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/suggestions/empty-default.png` and `data/reviews/app-polish-2026-09-29/suggestions/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/suggestions/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/suggestions/normal-default.png`, `data/reviews/app-polish-2026-09-29/suggestions/interaction-default.png`, `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/normal-default.png` and `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/suggestions/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/suggestions/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/suggestions/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/suggestions/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/empty-default.png`, `data/reviews/app-polish-2026-09-29/suggestions/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/suggestions/normal-default.json`, `data/reviews/app-polish-2026-09-29/suggestions/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- suggestions-C1 — PASS — `data/reviews/app-polish-2026-09-29/suggestions-review.md`, `data/reviews/app-polish-2026-09-29/suggestions/normal-default.png`
+- suggestions-C2 — PASS — `data/reviews/app-polish-2026-09-29/suggestions-review.md`, `data/reviews/app-polish-2026-09-29/suggestions/long-minimum-full.png`
+- suggestions-C3 — PASS — `data/reviews/app-polish-2026-09-29/suggestions-review.md`, `data/reviews/app-polish-2026-09-29/suggestions/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/suggestions-review.md`
+- **Verdict:** Pass
 
 ## Surface: onboarding — Add project flow
 
@@ -347,7 +594,30 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/onboarding/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/onboarding/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/onboarding/empty-default.png` and `data/reviews/app-polish-2026-09-29/onboarding/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/onboarding/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/onboarding/normal-default.png`, `data/reviews/app-polish-2026-09-29/onboarding/interaction-default.png`, `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/normal-default.png` and `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/onboarding/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/onboarding/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/onboarding/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/onboarding/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/empty-default.png`, `data/reviews/app-polish-2026-09-29/onboarding/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/onboarding/normal-default.json`, `data/reviews/app-polish-2026-09-29/onboarding/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- onboarding-C1 — PASS — `data/reviews/app-polish-2026-09-29/onboarding-review.md`, `data/reviews/app-polish-2026-09-29/onboarding/normal-default.png`
+- onboarding-C2 — PASS — `data/reviews/app-polish-2026-09-29/onboarding-review.md`, `data/reviews/app-polish-2026-09-29/onboarding/long-minimum-full.png`
+- onboarding-C3 — PASS — `data/reviews/app-polish-2026-09-29/onboarding-review.md`, `data/reviews/app-polish-2026-09-29/onboarding/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/onboarding-review.md`
+- **Verdict:** Pass
 
 ## Surface: plan — Plan continuity
 
@@ -377,12 +647,37 @@ Required reviewer assignments: One independent page/critical-flow reviewer for e
   1. Critical job or next action is not understandable on entry.
   2. Overflow, unreadable state text, unnamed controls or broken keyboard path.
   3. Action fails, loses data or silently claims unsupported evidence.
-- **Evidence:** Captures and review results are collected after implementation.
+- **Evidence:** Actual rendered local fixture states and native controls; provider effects excluded.
+
+- **normal @ default:** `data/reviews/app-polish-2026-09-29/plan/normal-default.png`
+- **long/maximum @ default:** `data/reviews/app-polish-2026-09-29/plan/long-default-full.png`
+- **empty/degraded @ default:** `data/reviews/app-polish-2026-09-29/plan/empty-default.png` and `data/reviews/app-polish-2026-09-29/plan/degraded-default.png`
+- **normal @ minimum:** `data/reviews/app-polish-2026-09-29/plan/normal-minimum.png`
+- **interaction before/after or recording:** `data/reviews/app-polish-2026-09-29/plan/normal-default.png`, `data/reviews/app-polish-2026-09-29/plan/interaction-default.png`, `data/reviews/app-polish-2026-09-29/plan/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/plan/interaction-proof-minimum.json`
+- F1 — PASS — `data/reviews/app-polish-2026-09-29/all-surface-proof.json` and `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F2 — PASS — `data/reviews/app-polish-2026-09-29/plan/normal-default.png` and `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F3 — PASS — `data/reviews/app-polish-2026-09-29/plan/axe-light-default.json`, `data/reviews/app-polish-2026-09-29/plan/axe-dark-default.json`, `data/reviews/app-polish-2026-09-29/plan/axe-light-minimum.json`, `data/reviews/app-polish-2026-09-29/plan/axe-dark-minimum.json`, `data/reviews/app-polish-2026-09-29/answers/status-contrast.json` and `data/reviews/app-polish-2026-09-29/screens/status-contrast.json`
+- F4 — PASS — `data/reviews/app-polish-2026-09-29/plan/retina-reduced-motion.json` and `data/reviews/app-polish-2026-09-29/final-floor-proof.log`
+- F5 — PASS — `data/reviews/app-polish-2026-09-29/navigation/keyboard-default.json`, `data/reviews/app-polish-2026-09-29/navigation/keyboard-minimum.json`, `data/reviews/app-polish-2026-09-29/report/all-six-keyboard-default.json` and `data/reviews/app-polish-2026-09-29/onboarding/keyboard-validation-minimum.json`
+- F6 — PASS — `data/reviews/app-polish-2026-09-29/plan/retina-reduced-motion.png`, `data/reviews/app-polish-2026-09-29/plan/retina-reduced-motion.json`
+- F7 — PASS — `data/reviews/app-polish-2026-09-29/plan/empty-default.png`, `data/reviews/app-polish-2026-09-29/plan/degraded-minimum.png`, `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F8 — PASS — `data/reviews/app-polish-2026-09-29/plan/degraded-minimum.png` and `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F9 — PASS — `data/reviews/app-polish-2026-09-29/plan/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/plan/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F10 — PASS — `data/reviews/app-polish-2026-09-29/plan/long-minimum-full.png` and `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F11 — PASS — `data/reviews/app-polish-2026-09-29/plan/interaction-proof-default.json`, `data/reviews/app-polish-2026-09-29/plan/interaction-proof-minimum.json` and `data/reviews/app-polish-2026-09-29/plan-review.md`
+- F12 — PASS — `data/reviews/app-polish-2026-09-29/plan/normal-default.json`, `data/reviews/app-polish-2026-09-29/plan/normal-minimum.json`, `data/reviews/app-polish-2026-09-29/all-surface-proof.json`
+- plan-C1 — PASS — `data/reviews/app-polish-2026-09-29/plan-review.md`, `data/reviews/app-polish-2026-09-29/plan/normal-default.png`
+- plan-C2 — PASS — `data/reviews/app-polish-2026-09-29/plan-review.md`, `data/reviews/app-polish-2026-09-29/plan/long-minimum-full.png`
+- plan-C3 — PASS — `data/reviews/app-polish-2026-09-29/plan-review.md`, `data/reviews/app-polish-2026-09-29/plan/interaction-proof-minimum.json`
+- **Independent reviewer:** Non-implementing surface reviewer; `data/reviews/app-polish-2026-09-29/plan-review.md`
+- **Verdict:** Pass
 
 ## Completion packet
 
 - Final surface inventory: navigation, overview, vision, guide, features, competitors, report, answers, screens, suggestions, onboarding, plan
-- Reviewer verdicts: Pending independent rendered review after implementation.
-- Unresolved unknowns / risks: Pending actual browser verification.
-- Check-change log: none
-- Final decision: Rework
+- Reviewer verdicts: `data/reviews/app-polish-2026-09-29/navigation-review.md`, `data/reviews/app-polish-2026-09-29/overview-review.md`, `data/reviews/app-polish-2026-09-29/vision-review.md`, `data/reviews/app-polish-2026-09-29/guide-review.md`, `data/reviews/app-polish-2026-09-29/features/features-review.md`, `data/reviews/app-polish-2026-09-29/competitors-review.md`, `data/reviews/app-polish-2026-09-29/report/report-review.md`, `data/reviews/app-polish-2026-09-29/answers-review.md`, `data/reviews/app-polish-2026-09-29/screens-review.md`, `data/reviews/app-polish-2026-09-29/suggestions-review.md`, `data/reviews/app-polish-2026-09-29/onboarding-review.md`, `data/reviews/app-polish-2026-09-29/plan-review.md`; cross-surface consistency Pass in `data/reviews/app-polish-2026-09-29/consistency-release-recheck.md` and `data/reviews/app-polish-2026-09-29/consistency-followups-review.md`; daily-workflow Pass in `data/reviews/app-polish-2026-09-29/workflow-recheck-review.md`.
+- Unresolved unknowns / risks: none
+- Check-change log: Locked C1-C3 IDs unchanged. MCP baseline proof now requires a real scan before attribution; human screenshot staleness follows actual visual changes, with recompression and noise regressions. New native Plan failed-save regression verifies raw draft, selections and retry feedback through unrelated renders, clears the previous error while retrying, and verifies successful persistence. Twelve full axe caption-context variants cover Live, Mock and configured remote labels.
+- Final decision: Pass
+
+Known scope boundary: local tool and explicitly synthetic UI/provider fixtures; paid integrations, real authenticated Chrome and remote production revision proofs are outside this release.

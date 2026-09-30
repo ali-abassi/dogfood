@@ -85,7 +85,6 @@ export function planDocumentMarkup() {
 function finishGuideLoading(frame) {
   const guide = frame.closest('.doc-guide');
   if (!guide) return;
-  guide.setAttribute('aria-busy', 'false');
   guide.querySelector('.doc-guide-loading')?.remove();
 }
 

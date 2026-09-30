@@ -1,5 +1,6 @@
-import { answerMarkMarkup, escapeHtml, plainMessageMarkup, shortReason } from '../format.mjs';
+import { answerMarkMarkup, environmentLabel, escapeHtml, plainMessageMarkup, shortReason } from '../format.mjs';
 import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
+import { measuredAnswersMarkup } from './measured.mjs';
 import { aboutMarkup } from './about.mjs';
 import { shownShot, timelineMarkup } from './history.mjs';
 import { qaAgentMarkup } from './qa-agent.mjs';
@@ -12,10 +13,16 @@ function screenPictureMarkup(page, device, shot) {
 }
 
 // Each screenshot is the whole page; its frame scrolls so the page can be read top to bottom.
+function reportProvenanceMarkup(shot) {
+  const context = environmentLabel(shot?.environment, shot?.sourceUrl);
+  const label = ['Live', 'Mock', 'Configured environment'].includes(context) ? context : '';
+  return label ? ` · ${escapeHtml(label)}` : '';
+}
+
 function screenMarkup(page, device) {
   const shot = shownShot(page, device);
-  const caption = shot?.caption ?? 'No screenshot';
-  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption title="${escapeHtml(caption)}"><strong>${escapeHtml(deviceNames[device])}</strong> ${escapeHtml(caption)}</figcaption></figure>`;
+  const provenance = reportProvenanceMarkup(shot);
+  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><span><strong>${escapeHtml(deviceNames[device])}</strong>${provenance}</span><span class="report-capture-age">${escapeHtml(shot?.age ?? 'No screenshot')}</span></figcaption></figure>`;
 }
 
 const emptyScreens = {
@@ -70,5 +77,5 @@ function answersMarkup(page) {
 }
 
 export function pageReportMarkup(page) {
-  return `${screensMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}${aboutMarkup(page)}`;
+  return `${screensMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}${measuredAnswersMarkup(page)}${aboutMarkup(page)}`;
 }

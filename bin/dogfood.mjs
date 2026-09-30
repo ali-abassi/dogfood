@@ -24,7 +24,10 @@ const help = `dogfood — plan, build, verify, and resume a web project
   dogfood verify TASK --agent NAME
   dogfood task accept TASK --agent NAME
   dogfood attach-url URL [--project ID]
-  dogfood gate [PAGE ...] [--accept] [--project ID]
+  dogfood gate [PAGE ...] [--accept] [--verbose] [--project ID]
+  dogfood scan [PAGE] [--live-url URL] [--browser-profile Default] [--required-role ROLE] [--fixtures NAME]
+  dogfood accept-measured PAGE --agent NAME
+  dogfood deployed --url URL [--revision SHA] --agent NAME
   dogfood report [--project ID]
   dogfood tool TOOL --input args.json
   dogfood schema [TOOL]
@@ -36,8 +39,8 @@ Checks are explicit argv arrays: ["npm","test"], never parsed as shell.
 Audit completion and acceptance are separate. gate --accept requires acceptance.
 `;
 
-const options = Object.fromEntries(['project', 'input', 'checkout', 'id', 'name', 'url', 'environment', 'agent'].map(name => [name, { type: 'string' }]));
-Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' }, 'serves-checkout': { type: 'boolean' } });
+const options = Object.fromEntries(['project', 'input', 'checkout', 'id', 'name', 'url', 'environment', 'agent', 'revision', 'live-url', 'browser-profile', 'required-role'].map(name => [name, { type: 'string' }]));
+Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' }, 'serves-checkout': { type: 'boolean' }, verbose: { type: 'boolean' }, fixtures: { type: 'string', multiple: true } });
 
 function inputJson(values) {
   if (!values.input) throw new Error('Provide --input FILE, or --input - for JSON from stdin.');
@@ -79,12 +82,19 @@ async function taskCommand([action, task], values) {
   return runNamedTool(operations[action], args);
 }
 
+function scanOptions(values) {
+  const pairs = [['liveUrl', 'live-url'], ['browserProfile', 'browser-profile'], ['requiredRole', 'required-role']];
+  const selected = Object.fromEntries(pairs.filter(([, flag]) => values[flag] !== undefined).map(([key, flag]) => [key, values[flag]]));
+  if (values.fixtures) selected.fixtures = values.fixtures.flatMap(value => value.split(','));
+  return selected;
+}
+
 function gateMode(values) { return values.accept ? 'acceptance' : 'audit'; }
 
 function gate(pageIds, values) {
   const project = projectView(readProject(projectId(values)));
   const pages = pageIds.length ? pageIds.map(id => pageById(project, id)) : project.pages;
-  const result = pagesGate(pages, gateMode(values));
+  const result = pagesGate(pages, gateMode(values), { verbose: values.verbose });
   if (!pages.length) result.lines = ['This project has no pages. Register pages once the app runs; use task acceptance for work before a UI exists.'];
   if (!result.complete) process.exitCode = 1;
   return { project: project.id, mode: gateMode(values), ...result };
@@ -107,6 +117,9 @@ const commands = {
   verify: (args, values) => taskCommand(['verify', ...args], values),
   'attach-url': (args, values) => runNamedTool('dogfood_attach_url', { project: projectId(values), url: args[0] ?? values.url, servesCheckout: values['serves-checkout'] }),
   gate,
+  scan: (args, values) => runNamedTool(args.length ? 'dogfood_scan_page' : 'dogfood_scan_project', { project: projectId(values), ...(args.length ? { page: args[0] } : {}), ...scanOptions(values) }),
+  'accept-measured': (args, values) => runNamedTool('dogfood_accept_measured', { project: projectId(values), page: args[0], agent: actor(values) }),
+  deployed: (args, values) => runNamedTool('dogfood_record_deployment', { project: projectId(values), agent: actor(values), input: { url: values.url ?? args[0], revision: values.revision } }),
   report: (args, values) => runNamedTool('dogfood_report', { project: projectId(values) }),
   tool: (args, values) => runNamedTool(args[0], inputJson(values)),
   schema: args => schema(args[0]),
@@ -133,7 +146,9 @@ async function main() {
   if (helpRequested(command, values)) return process.stdout.write(help);
   const run = commands[command];
   if (!run) throw new Error(`Unknown command: ${command}. Run dogfood --help.`);
-  printResult(await run(args, values), values.json);
+  const result = await run(args, values);
+  if (command === 'gate' && !values.json) return process.stdout.write(`${result.lines.join('\n')}\n`);
+  printResult(result, values.json);
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {

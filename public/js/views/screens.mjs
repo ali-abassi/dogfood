@@ -50,6 +50,6 @@ function changesMarkup(page) {
 }
 
 export function screensMarkup(page) {
-  const source = externalLinkMarkup(page.captures[state.screensDevice].sourceUrl, 'Open page ↗', 'link-button');
+  const source = externalLinkMarkup(shownShot(page, state.screensDevice)?.sourceUrl, 'Open page ↗', 'link-button');
   return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${changesMarkup(page)}</section>`;
 }

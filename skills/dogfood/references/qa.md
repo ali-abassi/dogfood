@@ -11,7 +11,7 @@ The person you are helping built an app and wants to know if it works. They may 
 | Fast & findable | Does it load quickly and show up properly in search? | The page check's load time and the search questions |
 | Works as expected | Does everything you can do here work, with no bugs? | Your verdict on each thing a person can do there, open bugs, and errors the page check found |
 
-Your job: set dogfood up, add the app, write down what people can do on each page, answer the six questions with real evidence, and tell the person what you found. A page audit is complete only when `dogfood_complete` confirms coverage. Page acceptance is stricter: `dogfood_accept_page` requires current evidence, six Good answers and no open findings.
+Your job: set dogfood up, add the app, write down what people can do on each page, answer the six questions with real evidence, and tell the person what you found. A page audit is complete only when `dogfood_complete` confirms coverage. Page acceptance is stricter: `dogfood_accept_page` requires current evidence, six Good answers or explicitly declared awaiting-live debt, and no open findings.
 
 ## 1. Set up dogfood (once)
 

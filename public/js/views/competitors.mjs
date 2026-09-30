@@ -160,7 +160,7 @@ function researchEmptyMarkup(competitor) {
 
 function detailMarkup(competitor) {
   const pages = competitor.scan?.pages ?? [];
-  const status = `${externalLinkMarkup(competitor.url, `${hostOf(competitor.url)} ↗`)} · ${escapeHtml(scanWords(competitor))}${competitor.scan ? ` · Scanned ${escapeHtml(dateLabel(competitor.scan.scannedAt))}. Saved research may differ from the live site.` : ''}`;
+  const status = `${externalLinkMarkup(competitor.url, `${hostOf(competitor.url)} ↗`)} · ${escapeHtml(competitor.scan ? pagesWords(competitor.scan.pages) : scanWords(competitor))}${competitor.scan ? ` · Scanned ${escapeHtml(dateLabel(competitor.scan.scannedAt))}. Saved research may differ from the live site.` : ''}`;
   return `<section class="overview-content competitor-detail" aria-label="${escapeHtml(competitor.name)}"><button type="button" class="back-button" data-action="close-competitor">‹ Competitors</button><header class="overview-heading"><div><h1 id="competitor-heading" tabindex="-1">${escapeHtml(competitor.name)}</h1><p>${status}</p></div>${detailActionsMarkup(competitor)}</header>${noticeMarkup()}${summaryMarkup(competitor)}${researchEmptyMarkup(competitor)}${pages.map(pageMarkup).join('')}</section>`;
 }
 
