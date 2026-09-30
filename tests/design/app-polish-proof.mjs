@@ -29,6 +29,7 @@ const cases = [
 function pageId(surface, state, normal) {
   if (surface === 'report') return state === 'long' ? 'revenue' : state === 'empty' ? 'pipeline' : normal;
   if (surface === 'answers') return state === 'long' ? 'revenue' : state === 'empty' ? 'admin' : normal;
+  if (surface === 'screens' && state === 'long') return 'classes-long';
   if (surface === 'screens' && state === 'empty') return 'admin';
   return normal;
 }
@@ -45,6 +46,7 @@ function click(selector) {
 }
 
 async function prepare(surface, variant) {
+  if (surface === 'screens' && variant === 'long' && evaluate('return innerWidth <= 760;')) click('[data-screens-device="mobile"]');
   if (surface === 'navigation' && evaluate('return innerWidth <= 760;')) click('[data-action="open-pages"]');
   if (surface === 'navigation' && variant === 'empty') browser('fill', '#page-search', 'unmatched scheduling and fiscal-calendar query');
   if (surface === 'onboarding' && variant === 'long') {
@@ -64,17 +66,29 @@ function capture(surface, state, viewport) {
   const dir = join(out, surface);
   mkdirSync(dir, { recursive: true });
   browser('eval', 'window.scrollTo(0,0)');
+  if (surface === 'screens' && state === 'long') {
+    const image = evaluate(`const x=document.querySelector('[data-screens-image]');return {name:document.querySelector('h1').textContent,src:x.getAttribute('src'),width:x.naturalWidth,height:x.naturalHeight,renderedWidth:x.clientWidth,renderedHeight:x.clientHeight};`);
+    assert.match(image.src, /classes-long(?:-mobile)?\.png/);
+    assert.ok(image.height > image.width * 4);
+    assert.ok(Math.abs(image.height / image.width - image.renderedHeight / image.renderedWidth) < 0.02, 'The complete tall screenshot retains its aspect ratio.');
+    writeFileSync(join(dir, `long-image-${viewport}.json`), JSON.stringify(image, null, 2));
+  }
   browser('screenshot', join(dir, `${state}-${viewport}.png`));
   browser('screenshot', join(dir, `${state}-${viewport}-full.png`), '--full');
   const facts = layout();
   assert.ok(facts.scrollWidth <= facts.width, `${surface}/${state}/${viewport} overflows: ${JSON.stringify(facts)}`);
   if (surface === 'report' && state === 'normal' && viewport === 'default') assert.ok(facts.lastAnswerBottom <= 900, 'All six report rows must fit first paint');
+  if (surface === 'report' && state === 'normal') {
+    const captions = evaluate(`return [...document.querySelectorAll('.report-capture-age')].map(x=>({text:x.textContent,width:x.clientWidth,scrollWidth:x.scrollWidth,overflow:getComputedStyle(x).overflow}));`);
+    assert.ok(captions.every(item=>item.text.startsWith('Taken ') && item.scrollWidth<=item.width+1 && item.overflow==='visible'));
+    writeFileSync(join(dir, `caption-${viewport}.json`), JSON.stringify(captions, null, 2));
+  }
   results.push({ surface, state, viewport, controlledFixture: true, ...facts });
   writeFileSync(join(dir, `${state}-${viewport}.json`), JSON.stringify(facts, null, 2));
 }
 
 async function interaction(surface, viewport) {
-  if (surface === 'navigation') { browser('select', '#project-select', 'northwind'); browser('wait', '200'); assert.match(evaluate('return document.querySelector("h1").textContent;'), /Northwind/); }
+  if (surface === 'navigation') { browser('click', '#project-select'); browser('press', 'n'); browser('press', 'Enter'); browser('wait', '200'); assert.match(evaluate('return document.querySelector("h1").textContent;'), /Northwind/); assert.equal(evaluate('return document.activeElement.id;'), 'project-select'); }
   if (surface === 'overview') { const report = evaluate(`return await fetch(document.querySelector('a[download]').href).then(x=>x.text());`); assert.match(report, /Tidepool/); writeFileSync(join(out, surface, 'downloaded-report.md'), report); click('.overview-page [data-page]'); assert.ok(evaluate('return !!document.querySelector("[data-answer-row]");')); }
   if (surface === 'vision') { const links = evaluate(`return [...document.querySelectorAll('.doc-contents a')].map(x=>x.getAttribute('href'));`); if (links.length) { click('.doc-contents summary'); click('.doc-contents a'); assert.match(evaluate('return location.hash;'), /doc-section/); } browser('eval', 'window.scrollTo(0,0)'); click('.doc-actions [data-project-view="plan"]'); assert.equal(evaluate('return document.querySelector("h1").textContent;'), 'Plan'); }
   if (surface === 'guide') {
@@ -87,14 +101,23 @@ async function interaction(surface, viewport) {
     writeFileSync(join(out,surface,`standalone-${viewport}.json`),JSON.stringify(full,null,2));
     browser('screenshot',join(out,surface,`standalone-${viewport}.png`));browser('tab','close');
   }
-  if (surface === 'features') click('.feature-page');
+  if (surface === 'features') { browser('focus', '.feature-page'); browser('press', 'Enter'); browser('wait', '200'); }
   if (surface === 'competitors') { browser('fill', '#competitor-url', 'invalid'); click('#competitor-form button[type="submit"]'); assert.match(evaluate(`return document.querySelector('#competitor-error')?.textContent||'';`), /address|website|http/i); }
-  if (surface === 'report') click('[data-answer-row="design"]');
-  if (surface === 'answers') { click('[data-action="edit-answer"]'); browser('check', '#answer-form input[value="needs_work"]'); browser('fill', '#answer-note', 'The isolated fixture contrast was inspected and needs a clearer primary action.'); click('#answer-form button[type="submit"]'); assert.match(evaluate(`return document.querySelector('.answer-text')?.textContent||'';`), /isolated fixture/); }
-  if (surface === 'screens') { click('[data-screens-device="mobile"]'); assert.equal(evaluate(`return document.querySelector('[data-screens-device="mobile"]')?.getAttribute('aria-pressed');`), 'true'); }
+  if (surface === 'report') { browser('focus', '[data-answer-row="design"]'); browser('press', 'Enter'); browser('wait', '200'); assert.equal(evaluate('return document.querySelector("[data-answer-detail]")?.dataset.answerDetail;'), 'design'); capture(surface, 'keyboard-detail', viewport); browser('focus','[data-action="back-to-report"]'); browser('press','Enter'); browser('wait','200'); assert.equal(evaluate('return document.activeElement.dataset.answerRow;'), 'design'); writeFileSync(join(out,surface,`keyboard-${viewport}.json`),JSON.stringify({keyboardEnterOpened:'design',backFocus:'design'},null,2)); click('[data-answer-row="design"]'); assert.equal(evaluate('return document.querySelector("[data-answer-detail]")?.dataset.answerDetail;'), 'design'); assert.equal(evaluate('return document.querySelector("h1").textContent;'), 'Looks right'); }
+  if (surface === 'answers') {
+    click('[data-action="edit-answer"]'); browser('check', '#answer-form input[value="needs_work"]');
+    const note = 'The isolated fixture contrast was inspected and needs a clearer primary action.';
+    browser('fill', '#answer-note', note); click('#answer-form button[type="submit"]');
+    assert.equal(evaluate(`return document.querySelector('.answer-text')?.textContent;`), note);
+    click('[data-action="back-to-report"]'); click('[data-answer-row="design"]');
+    browser('reload'); browser('wait','h1'); browser('wait','250');
+    assert.equal(evaluate(`return document.querySelector('.answer-text')?.textContent;`), note);
+    writeFileSync(join(out,surface,`reopened-${viewport}.json`),JSON.stringify({savedNote:note,leftAndReopened:true,reloaded:true,persisted:true},null,2));
+  }
+  if (surface === 'screens') { click('[data-screens-device="mobile"]'); assert.equal(evaluate(`return document.querySelector('[data-screens-device="mobile"]')?.getAttribute('aria-pressed');`), 'true'); browser('focus','[data-action="back-to-report"]'); browser('press','Enter'); browser('wait','200'); assert.equal(evaluate('return document.activeElement.dataset.action;'),'view-screens'); click('[data-action="view-screens"]'); }
   if (surface === 'suggestions') { const boxes = evaluate(`return document.querySelectorAll('input[name="project-suggestion"]:checked').length;`); browser('uncheck', 'input[name="project-suggestion"]'); const label = evaluate(`return document.querySelector('[data-action="add-project-suggestions"]')?.textContent;`); assert.match(label, new RegExp(String(boxes - 1))); }
-  if (surface === 'onboarding') { browser('fill', '#product-url', 'https://example.com/draft'); click('[data-action="copy-agent-prompt"]'); assert.equal(evaluate('return document.querySelector("#product-url").value;'), 'https://example.com/draft'); browser('fill', '#product-url', 'invalid'); click('#add-project-form button[type="submit"]'); assert.equal(evaluate(`return document.querySelector('#product-url')?.getAttribute('aria-invalid');`), 'true'); }
-  if (surface === 'plan') { click('[data-action="add-task"]'); assert.ok(evaluate(`return !!document.querySelector('#task-form');`)); }
+  if (surface === 'onboarding') { browser('fill', '#product-url', 'https://example.com/draft'); click('[data-action="copy-agent-prompt"]'); assert.equal(evaluate('return document.querySelector("#product-url").value;'), 'https://example.com/draft'); click('#onboarding-options summary'); browser('fill', '#product-url', 'invalid'); click('#add-project-form button[type="submit"]'); assert.equal(evaluate(`return document.querySelector('#product-url')?.getAttribute('aria-invalid');`), 'true'); assert.equal(evaluate(`return document.querySelector('#onboarding-options').open;`), true); }
+  if (surface === 'plan') { browser('focus','[data-action="add-task"]'); browser('press','Enter'); browser('wait','200'); assert.ok(evaluate(`return !!document.querySelector('#task-form');`)); }
 }
 
 async function degraded(surface) {
@@ -102,12 +125,12 @@ async function degraded(surface) {
     vision: "state.docs.error='The project document could not be read. Retry when the checkout is available.';state.docs.loading=false;",
     guide: "state.docs.error='The brand guide could not be read. Retry when the checkout is available.';state.docs.loading=false;",
     competitors: "state.competitors.loadError='The saved research could not be read. Try again.';state.competitors.error='';state.competitors.loading=false;",
-    suggestions: "state.suggestions.error='The suggestions request failed. Your earlier choices are retained.';state.suggestions.loading=false;",
+    suggestions: "state.suggestions.error='The suggestions request failed.';state.suggestions.loading=false;",
     onboarding: "state.onboarding.error='The app could not be opened. Start its server and try again.';state.onboarding.running=false;",
     plan: "state.workflow.error='The work plan could not be loaded. Try again.';state.workflow.loading=false;",
     report: "state.scan={key:state.project.id+'/'+state.pageId,running:false,error:'The page could not be opened. Start its server and check again.'};",
     answers: "state.visual.error='The optional model check is unavailable; manual evidence remains usable.';",
-    screens: "state.project.pages.find(x=>x.id===state.pageId).captures.mobile={state:'blocked',reason:'No phone capture. Check the page to take one.'};state.screensDevice='mobile';",
+    screens: "state.project.pages.find(x=>x.id===state.pageId).captures.mobile={state:'blocked',reason:'No phone capture. Check the page to take one.'};state.screensDevice='mobile';state.history.error='Synthetic history read failure; current capture remains available.';state.history.loading=false;",
     features: "state.project.coreFeatures[0].pageIds=[];state.project.coreFeatures[0].status='untested';",
     overview: "state.scanAll.error='The page check failed. Start the app and try again.';",
   };
@@ -115,7 +138,7 @@ async function degraded(surface) {
 }
 
 async function pending(surface) {
-  const changes = {vision:'state.docs.loading=true;state.docs.data=null;',guide:'state.docs.loading=true;state.docs.data=null;',competitors:'state.competitors.loading=true;',suggestions:'state.suggestions.loading=true;',onboarding:'state.onboarding.running=true;',plan:'state.workflow.loading=true;'};
+  const changes = {answers:'state.visual.running=true;state.project.pages.find(page=>page.id===state.pageId).progress.aiReview="stale";',overview:'state.scanAll={...state.scanAll,running:true,total:state.project.pages.length,scanned:0};',screens:'state.history.loading=true;state.history.error="";',report:'state.scan={...state.scan,key:state.project.id+"/"+state.pageId,running:true};',vision:'state.docs.loading=true;state.docs.data=null;',guide:'state.docs.loading=true;state.docs.data=null;',competitors:'state.competitors.loading=true;',suggestions:'state.suggestions.loading=true;',onboarding:'state.onboarding.running=true;',plan:'state.workflow.loading=true;'};
   if (!changes[surface]) return false;
   await evaluate(`const {state}=await import('/js/state.mjs');${changes[surface]}const {render}=await import('/js/app.mjs');render();return true;`);
   return true;
@@ -127,6 +150,19 @@ function audit(surface, viewport, theme) {
   const result = JSON.parse(browser('a11y', '--tags', 'wcag2a,wcag2aa', '--json'));
   writeFileSync(join(out, surface, `axe-${theme}-${viewport}.json`), JSON.stringify(result, null, 2));
   assert.equal(result.data.counts.violations, 0, `${surface} ${theme} has accessibility violations`);
+  if (surface === 'report') auditCaptionContexts(viewport, theme);
+}
+
+function auditCaptionContexts(viewport, theme) {
+  const original = evaluate(`const {state}=await import('/js/state.mjs');return state.project.pages.find(item=>item.id===state.pageId).captures;`);
+  for (const [environment, sourceUrl, label] of [['mock', 'http://127.0.0.1:4433', 'Mock'], ['live', 'https://live.example.test', 'Live'], ['local', 'https://staging.example.test', 'Configured environment']]) {
+    evaluate(`const {state}=await import('/js/state.mjs');const page=state.project.pages.find(item=>item.id===state.pageId);for(const capture of Object.values(page.captures))Object.assign(capture,${JSON.stringify({environment,sourceUrl})});const {render}=await import('/js/app.mjs');render();return true;`);
+    assert.ok(evaluate(`return [...document.querySelectorAll('.report-screen figcaption')].every(item=>item.textContent.includes(${JSON.stringify(label)}) && item.querySelector('.report-capture-age').textContent.startsWith('Taken '));`));
+    const result = JSON.parse(browser('a11y', '--json'));
+    writeFileSync(join(out, 'report', `caption-context-${environment}-${theme}-${viewport}.json`), JSON.stringify(result, null, 2));
+    assert.equal(result.data.counts.violations, 0, `${environment} caption ${theme} has accessibility violations`);
+  }
+  evaluate(`const {state}=await import('/js/state.mjs');state.project.pages.find(item=>item.id===state.pageId).captures=${JSON.stringify(original)};const {render}=await import('/js/app.mjs');render();return true;`);
 }
 
 try {

@@ -15,5 +15,10 @@ Scope: plain Node modules, JSON workflow data, existing browser and MCP tools. N
 
 6. Extend the approved Plan across the whole app and correct project selection.
    Check: `npm run check`, `npm run lint`, `npm test`, `npm run test:acceptance`.
-   Visible: at1280 and390 wide, one inset project arrow, readable documents and research, complete long evidence, preserved drafts and choices, and actionable loading/error/empty states.
+   Visible: at 1280 and 390 wide, one inset project arrow, readable documents and research, complete long evidence, preserved drafts and choices, and actionable loading/error/empty states.
    Scope: native controls, shared tokens, project/QA views and their supporting brand guide; acceptance and ownership semantics remain server-backed.
+
+7. Remove daily QA friction without weakening proof.
+   Check: `node --test scripts/daily-evidence.test.mjs scripts/daily-gates.test.mjs scripts/daily-scanner.test.mjs scripts/daily-workflow.test.mjs scripts/mcp-reload.test.mjs` and `node tests/acceptance/daily-scanner.mjs`.
+   Visible: at 1280 and 390, current measured answers can be accepted in one action, original carried attribution remains visible, and postdeploy debt is clearly distinct from Good.
+   Scope: bounded scan facts/context, feature/deployment lifecycle, live role/fixture scans, CLI/MCP/UI and skill; no runtime dependencies, provider calls or production-data changes.

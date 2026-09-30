@@ -67,8 +67,36 @@ For a crashed or renamed owner, explicitly recover the claim with `task update` 
 
 Verification stores command exits and bounded output tied to the current task definition and source fingerprint. If checks change files, verification fails and must be repeated after the generated state is stable. Changing source after verification invalidates acceptance. Finish edits and commits before collecting the final evidence; a later commit changes the revision too.
 
-Before there are pages, the page gate reports that there is nothing to audit; use task acceptance. Audit completion means every required item was checked, including recorded failures. `dogfood gate --project my-app` checks that. `dogfood gate --accept --project my-app` also requires all answers Good, no unresolved findings, current checkout and environment evidence. `dogfood_accept_page` checks a single page. Never resolve or retire a real problem to force a pass. Never manually edit Dogfood's project/workflow JSON files.
+Before there are pages, the page gate reports that there is nothing to audit; use task acceptance. Audit completion means every required item was checked, including recorded failures. `dogfood gate --project my-app` checks that. `dogfood gate --accept --project my-app` also requires all answers Good (or explicitly declared awaiting-live feature debt), no unresolved findings, current checkout and environment evidence. `dogfood_accept_page` checks a single page. Never resolve or retire a real problem to force a pass. Never manually edit Dogfood's project/workflow JSON files.
 
 If blocked, update your task using `{"status":"blocked","blocker":"What is missing","handoff":"What was done and how to continue","releaseOwner":true}`. To hand off available work use status `todo` with `handoff` and `releaseOwner:true`. The next agent can claim it. Plan changes invalidate the earlier verification and dependent acceptance where appropriate.
 
 Report the accepted outcome, concrete evidence and remaining blockers. Do not call an accepted local task deployed or production-ready: run the project's authorized shipping gate and verify its real environment separately. Paid model checks, public posting, account actions and production effects retain the user's authorization boundaries. No screenshot or model opinion proves an untested integration.
+
+
+## Reuse scan evidence and finish live checks
+
+An audit verdict can declare `dependsOn` (inspect `dogfood_set_checklist` schema for supported keys). Dogfood snapshots those facts and the URL, environment, role and fixture context. Rescanning carries unchanged facts and visually unchanged captures with their original attribution and a `carriedFrom` marker. Changed relevant facts require review again. Human security, keyboard, contrast and zoom judgments default to the code and reviewed captures; don't replace their dependencies with a convenient title merely to pass. Existing stale legacy answers without a valid original snapshot still need one fresh review.
+
+`dogfood_page` exposes objective `measuredAnswers`. Review them, then accept all current candidates in one attributed write. They record title/description presence, robots directives, alt/name counts, and overflow as verified by scan. Failed requests already inform Works as expected. They do not answer clarity, intended indexing visibility, keyboard operation, contrast, security or 200% zoom. An audit-only checklist write preserves connections when omitted.
+
+```sh
+dogfood accept-measured PAGE --project my-app --agent codex
+dogfood gate --accept --project my-app
+dogfood gate --accept --verbose --project my-app
+```
+
+For behavior that truly can only be proven after deploying, declare the feature `requiresLive:true` via registration, add, or `dogfood_update_feature`. Record its status `awaiting_live` with a concrete reason. It is visible debt and permits local release readiness; it is not Good or evidence that the integration works. Normal blocked and needs-work checks still fail acceptance. Editing expected behavior invalidates its old verdict and retains history. Retire obsolete behavior with `dogfood_retire_feature`; never retire something still present to pass.
+
+After an authorized deploy, record its URL (and known revision) explicitly. This receipt reports a deployment; it does not deploy or independently prove that revision. Outstanding debt becomes an untested to-do. Scan the live target, exercise the actual integration within the user's authorization, and record an explicit feature verdict. Closing debt requires a live scan at the exact deployed page URL later than the receipt.
+
+```sh
+dogfood deployed --project my-app --url https://app.example.com --revision ACTUAL_SHA --agent codex
+dogfood scan PAGE --project my-app --live-url https://app.example.com --browser-profile Default
+```
+
+Only an explicit `--live-url` scan uses deployment-receipt acceptance. Configured remote or LAN URLs retain their ordinary configured-environment acceptance. Live scans retain registered path/query/hash and expectedStatus while leaving the local URL intact. Evidence is labelled live, with no local checkout fingerprint pretending to prove deployed code. A Chrome profile is a browser context, not proof of authentication. Leave existing browser sessions open.
+
+Declare role-restricted pages with `requiredRole`, `roleProof:{selector,expectedText}` and, if needed, named `fixture` prerequisites via `dogfood_register_page`. The scan verifies visible role proof on desktop and phone. A wrong role returns setup-required rather than recording a misleading not-found page. Configure local fixture commands with `dogfood_set_fixture_setup` as argv arrays, never shell strings or credentials. Explicitly opt in with `dogfood scan --fixtures NAME` (comma-separated or repeated). Requested fixture setup runs once per scan invocation; each page still validates its prerequisites. Fixture execution is bounded and refused on live scans; select the needed real profile for live checks.
+
+Persistent MCP connections advertise tool-list changes and load fresh implementations per request. An old server that predates this implementation needs one restart to install it; subsequent saved schema changes notify clients with `notifications/tools/list_changed`. CLI calls always load the current source.

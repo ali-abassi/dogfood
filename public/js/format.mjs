@@ -1,5 +1,15 @@
 import { answerWords, statusNames } from './state.mjs';
 
+export function environmentLabel(environment, sourceUrl) {
+  if (environment !== 'local') return { live: 'Live', mock: 'Mock' }[environment] ?? 'Context unknown';
+  try { return localHostname(new URL(sourceUrl).hostname) ? 'Local' : 'Configured environment'; }
+  catch { return 'Configured environment'; }
+}
+
+function localHostname(host) {
+  return ['localhost', '127.0.0.1', '[::1]'].includes(host) || host.endsWith('.localhost');
+}
+
 export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
@@ -70,7 +80,7 @@ export function externalLinkMarkup(value, label, className = '') {
 }
 
 // The shape carries the state as well as the colour: ✓ good, ! needs work, ◐ partly, – not checked, ↻ recheck, × blocked.
-const markShapes = { pass: '✓', needs_work: '!', partial: '◐', untested: '–', recheck: '↻', blocked: '×' };
+const markShapes = { awaiting_live: '◷', pass: '✓', needs_work: '!', partial: '◐', untested: '–', recheck: '↻', blocked: '×' };
 
 export function answerMarkMarkup(name, status) {
   const word = answerWords[status];

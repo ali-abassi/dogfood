@@ -230,7 +230,8 @@ try {
     assert.match(stillOpen.text, /- issues:/);
     assert.match(stillOpen.text, /- design:/);
     assert.match(stillOpen.text, /- ease:/);
-    assert.doesNotMatch(stillOpen.text, /- (purpose|safety|works):/, 'answered answers are not listed');
+    assert.doesNotMatch(stillOpen.text, /- (purpose|works):/, 'current directly answered answers are not listed');
+    assert.match(stillOpen.text, /- safety:/, 'audit answers recorded before a scan have no reusable evidence baseline');
   });
 
   const resolved = await call('dogfood_resolve_issue', { project: 'shop', page: 'home', agent: 'proof', issue: 'QA-001', note: 'Retested at 390 px; the hero no longer overlaps the button.' });
@@ -238,6 +239,23 @@ try {
   // Stand-in for dogfood_scan_page (proved separately against a live fixture site).
   const facts = { loadMs: 300, consoleErrors: [], pageErrors: [], failedRequests: [], requests: [], horizontalOverflow: false, seo: { h1Count: 1 }, accessibility: { imagesWithoutAlt: 0, unlabeledFields: 0, unnamedButtons: 0 }, headers: {} };
   store.recordScan('shop', 'home', { sourceUrl: 'https://shop.example/', actor: 'Visitor', tier: 'automated', desktop: { file: good, viewport: '1440 × 900', facts }, mobile: { file: good, viewport: '390 × 844', facts } });
+  const scannedPage = (await call('dogfood_page', { project: 'shop', page: 'home' })).json();
+  const candidates = await call('dogfood_update_feature', { project: 'shop', page: 'home', feature: 'hero', agent: 'proof', input: { requiresLive: true } });
+  check('compact outcomes expose measured candidates without their evidence snapshots', () => {
+    assert.equal(candidates.isError, false, candidates.text);
+    assert.ok(candidates.json().measuredAnswers.length > 0);
+    assert.ok(candidates.json().measuredAnswers.every(row => !Object.hasOwn(row, 'evidence')));
+  });
+  const deferred = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', features: [{ id: 'hero', status: 'awaiting_live', note: 'Synthetic provider can only be verified against a deployed fixture.' }] });
+  check('compact outcomes report declared deployment debt', () => {
+    assert.equal(deferred.isError, false, deferred.text);
+    assert.equal(deferred.json().liveDebt[0].feature, 'hero');
+    assert.equal(deferred.json().liveDebt[0].state, 'awaiting_deploy');
+  });
+  await call('dogfood_update_feature', { project: 'shop', page: 'home', feature: 'hero', agent: 'proof', input: { requiresLive: false } });
+  await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', features: [{ id: 'hero', status: 'pass', note }] });
+  const baselined = await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: auditPass(scannedPage) });
+  check('fresh scan permits an attributed review of previously unbound audit answers', () => assert.equal(baselined.isError, false, baselined.text));
   const reviewedCaptures = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8')).pages[0].captures;
   const reviews = join(data, 'visual-reviews/shop/home');
   (await import('node:fs')).mkdirSync(reviews, { recursive: true });

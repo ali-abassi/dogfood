@@ -1,6 +1,7 @@
 import { readJson } from './api.mjs';
 import { addCompetitor, reloadCompetitors, removeOpenCompetitor, rescanOpenCompetitor, summarizeOpenCompetitor } from './views/competitors.mjs';
 import { fitDocFrame, retryDocs } from './views/docs.mjs';
+import { retryHistory } from './views/history.mjs';
 import { startQaAgent } from './views/qa-agent.mjs';
 import { app, loadProject, render, showError, start } from './app.mjs';
 import { answerIds, state, menuPages, activePage } from './state.mjs';
@@ -9,10 +10,11 @@ import { saveAnswer, saveQuestions, saveThings } from './views/answer.mjs';
 import { handleFindingButton, resolveFinding, saveFinding } from './views/issues.mjs';
 import { scanAllPages } from './views/overview.mjs';
 import { pageOptionsMarkup } from './views/page.mjs';
-import { cancelTaskForm, cancelTaskRecovery, openTaskForm, openTaskRecovery, recoverTask, retryWorkflow, saveTask, selectTask, taskAction } from './views/plan.mjs';
+import { cancelTaskForm, cancelTaskRecovery, openTaskForm, openTaskRecovery, recoverTask, rememberTaskDraft, retryWorkflow, saveTask, selectTask, taskAction } from './views/plan.mjs';
 import { addProjectSuggestions, openProjectSuggestions, reloadProjectSuggestions, updateProjectSuggestionsButton } from './views/suggestions.mjs';
 import { runQa } from './views/tests.mjs';
 import { addSuggestedFeatures, runVisualReview, updateSuggestedButton } from './views/visual.mjs';
+import { acceptMeasured } from './views/measured.mjs';
 import { addThing } from './views/works.mjs';
 
 async function scanActivePage() {
@@ -106,7 +108,7 @@ function restoreFocus(selector) {
 
 function closeEditors() {
   Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null });
-  Object.assign(state.workflow, { formOpen: false, editing: '', recovering: '' });
+  Object.assign(state.workflow, { formOpen: false, editing: '', recovering: '', draft: null, formError: '' });
 }
 
 // An unchanged editor closes quietly; one with changes asks to save or discard at the form itself.
@@ -179,7 +181,7 @@ function backToReport() {
   closeEditors();
   Object.assign(state, { view: 'report', message: '' });
   render();
-  restoreFocus(`[data-answer-row="${from}"]`);
+  restoreFocus(from === 'screens' ? '[data-action="view-screens"]' : `[data-answer-row="${from}"]`);
 }
 
 function openScreens() {
@@ -223,6 +225,8 @@ const buttonActions = new Map([
   ['add-project-suggestions', addProjectSuggestions],
   ['cancel-project-suggestions', selectOverview],
   ['scan', scanActivePage],
+  ['retry-history', retryHistory],
+  ['accept-measured', acceptMeasured],
   ['scan-all', scanAllPages],
   ['retry-competitors', reloadCompetitors],
   ['add-project', openAddProject],
@@ -346,6 +350,7 @@ export function registerEvents() {
   app.addEventListener('change', event => {
     markDirty(event.target);
     rememberProjectDraft(event.target);
+    rememberTaskDraft(event.target.form);
     if (event.target.id === 'project-select') return handleProjectSelection(event.target);
     if (event.target.id === 'page-filter') return handlePageFilter(event.target);
     if (event.target.id === 'page-sort') return handlePageSort(event.target);
@@ -368,6 +373,7 @@ export function registerEvents() {
   app.addEventListener('input', event => {
     markDirty(event.target);
     rememberProjectDraft(event.target);
+    rememberTaskDraft(event.target.form);
     if (event.target.id === 'competitor-url') state.competitors.draft = event.target.value;
     if (event.target.id !== 'page-search') return;
     state.query = event.target.value;

@@ -103,7 +103,7 @@ function failOnboarding(message, invalidUrl = false) {
 
 export async function submitOnboarding(form) {
   const input = onboardingInput(form);
-  state.projectDraft = { url: '', name: '', browserProfile: '', ...input };
+  state.projectDraft = { url: '', name: '', browserProfile: '', optionsOpen: state.projectDraft.optionsOpen, ...input };
   if (!isHttpUrl(input.url)) return failOnboarding('Enter your app’s address, starting with http:// or https://.', true);
   state.onboarding = { ...idleOnboarding, running: true };
   render();

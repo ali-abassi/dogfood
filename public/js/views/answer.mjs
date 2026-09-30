@@ -1,3 +1,4 @@
+import { measuredAnswersMarkup } from './measured.mjs';
 import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, secondsLabel, sourceLabel, verdictByMarkup } from '../format.mjs';
 import { activePage, answerWords, displayAnswerStatus, primaryClass, questionTopics, state } from '../state.mjs';
@@ -67,7 +68,13 @@ function answerFormMarkup(answer) {
 function questionMarkup(row, topic) {
   const note = row.note ? `<p class="question-note">${escapeHtml(row.note)}</p>` : '';
   const status = row.status === 'untested' ? 'untested' : row.status;
-  return `<li class="question" data-question>${answerMarkMarkup(row.question, status)}<div><strong>${escapeHtml(row.question)}</strong><span class="question-topic">${escapeHtml(questionTopics[topic])} · ${escapeHtml(answerWords[status])}</span>${note}${verdictByMarkup(row.by, row.at)}</div></li>`;
+  return `<li class="question" data-question>${answerMarkMarkup(row.question, status)}<div><strong>${escapeHtml(row.question)}</strong><span class="question-topic">${escapeHtml(questionTopics[topic])} · ${escapeHtml(answerWords[status])}</span>${note}${verdictByMarkup(row.by, row.at)}${auditSourceMarkup(row)}</div></li>`;
+}
+
+function auditSourceMarkup(row) {
+  const scan = row.verifiedBy === 'scan' ? '<small class="verdict-by">Verified by page check</small>' : '';
+  const carried = row.carriedFrom ? `<small class="verdict-by">Carried from ${escapeHtml(new Date(row.carriedFrom.scannedAt).toLocaleString())}; checked facts unchanged.</small>` : '';
+  return `${scan}${carried}`;
 }
 
 function questionOptions(status) {
@@ -138,8 +145,9 @@ function purposeFactsMarkup(id, analysis) {
 }
 
 function improvementsMarkup(analysis) {
-  if (!analysis.improvements.length) return '';
-  return `<h3>What would make it better</h3><ul>${analysis.improvements.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+  const improvements = analysis.improvements ?? [];
+  if (!improvements.length) return '';
+  return `<h3>What would make it better</h3><ul>${improvements.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
 }
 
 // The AI's own words about this answer, from its check of the current screenshots.
@@ -159,9 +167,9 @@ function designRulesMarkup() {
 const evidenceFor = {
   design: page => `${aiNotesMarkup('design')}${designRulesMarkup(page)}`,
   purpose: () => aiNotesMarkup('purpose'),
-  ease: page => `${aiNotesMarkup('ease')}${easeFactsMarkup(page)}${questionsMarkup(page, answerTopics.ease)}`,
+  ease: page => `${aiNotesMarkup('ease')}${easeFactsMarkup(page)}${measuredAnswersMarkup(page)}${questionsMarkup(page, answerTopics.ease)}`,
   safety: page => `${questionsMarkup(page, answerTopics.safety)}${safetyFactsMarkup(page)}`,
-  speed: page => `${speedFactsMarkup(page)}${questionsMarkup(page, answerTopics.speed)}`,
+  speed: page => `${speedFactsMarkup(page)}${measuredAnswersMarkup(page)}${questionsMarkup(page, answerTopics.speed)}`,
 };
 
 export function answerDetailMarkup(page) {

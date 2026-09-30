@@ -120,29 +120,39 @@ function statusOptions(task) {
   return ['todo', 'blocked'];
 }
 
-function workStateMarkup(task) {
-  return `<label for="task-status">Work state</label><select id="task-status" name="status">${statusOptions(task).map(status => `<option value="${status}" ${task.status === status ? 'selected' : ''}>${labels[status]}</option>`).join('')}</select><label for="task-blocker">Blocked by <span class="field-optional">if blocked</span></label><input id="task-blocker" name="blocker" value="${escapeHtml(task.blocker)}" placeholder="What needs to change?"><label for="task-handoff">Handoff <span class="field-optional">optional</span></label><textarea id="task-handoff" name="handoff" rows="2" placeholder="What should the next person know?">${escapeHtml(task.handoff)}</textarea>${ownerReleaseMarkup(task)}`;
+function workStateMarkup(task, data) {
+  return `<label for="task-status">Work state</label><select id="task-status" name="status">${statusOptions(task).map(status => `<option value="${status}" ${data.status === status ? 'selected' : ''}>${labels[status]}</option>`).join('')}</select><label for="task-blocker">Blocked by <span class="field-optional">if blocked</span></label><input id="task-blocker" name="blocker" value="${escapeHtml(data.blocker)}" placeholder="What needs to change?"><label for="task-handoff">Handoff <span class="field-optional">optional</span></label><textarea id="task-handoff" name="handoff" rows="2" placeholder="What should the next person know?">${escapeHtml(data.handoff)}</textarea>${ownerReleaseMarkup(data)}`;
 }
 
 function ownerReleaseMarkup(task) {
   if (!task.owner) return '';
-  return `<label class="task-release"><input type="checkbox" name="releaseOwner"> Release ${escapeHtml(task.owner)} as owner</label>`;
+  return `<label class="task-release"><input type="checkbox" name="releaseOwner" ${task.releaseOwner ? 'checked' : ''}> Release ${escapeHtml(task.owner)} as owner</label>`;
 }
 
 function taskSubmitLabel(task) {
+  if (state.workflow.action === 'save') return 'Saving…';
   return task ? 'Save task' : 'Add task';
 }
 
 function workStateForForm(task, data) {
-  return task && task.status !== 'accepted' ? workStateMarkup(data) : '';
+  return task && task.status !== 'accepted' ? workStateMarkup(task, data) : '';
+}
+
+function taskFormData(task) {
+  const data = { ...blankTask, ...task };
+  return { ...data, checks: data.checks.map(check => JSON.stringify(check.command)).join('\n'), scope: data.scope.join('\n'), ...state.workflow.draft };
+}
+
+function taskFormErrorMarkup() {
+  const error = state.workflow.formError;
+  return `<p id="task-form-error" class="form-error" role="alert" ${error ? '' : 'hidden'}>${escapeHtml(error || '')}</p>`;
 }
 
 function taskFormMarkup(task) {
   if (!state.workflow.formOpen) return '';
-  const data = { ...blankTask, ...task };
-  const commands = data.checks.map(check => JSON.stringify(check.command)).join('\n');
+  const data = taskFormData(task);
   const action = task ? 'Edit' : 'Add';
-  return `<form id="task-form" class="content-panel task-form" data-task-id="${escapeHtml(data.id)}"><h2>${action} task</h2><label for="task-title">Task</label><input id="task-title" name="title" required maxlength="140" value="${escapeHtml(data.title)}" placeholder="What needs to be done?"><label for="task-outcome">Done when</label><textarea id="task-outcome" name="outcome" required rows="2" placeholder="What result should be visible?">${escapeHtml(data.outcome)}</textarea><label for="task-checks">Checks</label><textarea id="task-checks" name="checks" required rows="3" spellcheck="false" placeholder='["npm","test"]'>${escapeHtml(commands)}</textarea><p class="field-hint">One command array per line, for example <code>["npm","test"]</code>. Each runs directly, without a shell.</p><label for="task-scope">Scope <span class="field-optional">optional</span></label><textarea id="task-scope" name="scope" rows="2" placeholder="One file or area per line">${escapeHtml(data.scope.join('\n'))}</textarea><label for="task-look">What should be visible <span class="field-optional">optional</span></label><textarea id="task-look" name="look" rows="2" placeholder="For example: no overflow at phone width">${escapeHtml(data.look)}</textarea>${checkedPagesMarkup(data)}${workStateForForm(task, data)}<p id="task-form-error" class="form-error" role="alert" hidden></p><div class="form-actions"><button type="submit" class="save-button" ${state.workflow.action ? 'disabled' : ''}>${taskSubmitLabel(task)}</button><button type="button" class="text-button" data-action="cancel-task-form">Cancel</button></div></form>`;
+  return `<form id="task-form" class="content-panel task-form" data-task-id="${escapeHtml(data.id)}" data-dirty="${Boolean(state.workflow.draft)}"><h2>${action} task</h2><label for="task-title">Task</label><input id="task-title" name="title" required maxlength="140" value="${escapeHtml(data.title)}" placeholder="What needs to be done?"><label for="task-outcome">Done when</label><textarea id="task-outcome" name="outcome" required rows="2" placeholder="What result should be visible?">${escapeHtml(data.outcome)}</textarea><label for="task-checks">Checks</label><textarea id="task-checks" name="checks" required rows="3" spellcheck="false" placeholder='["npm","test"]'>${escapeHtml(data.checks)}</textarea><p class="field-hint">One command array per line, for example <code>["npm","test"]</code>. Each runs directly, without a shell.</p><label for="task-scope">Scope <span class="field-optional">optional</span></label><textarea id="task-scope" name="scope" rows="2" placeholder="One file or area per line">${escapeHtml(data.scope)}</textarea><label for="task-look">What should be visible <span class="field-optional">optional</span></label><textarea id="task-look" name="look" rows="2" placeholder="For example: no overflow at phone width">${escapeHtml(data.look)}</textarea>${checkedPagesMarkup(data)}${workStateForForm(task, data)}${taskFormErrorMarkup()}<div class="form-actions"><button type="submit" class="save-button" ${state.workflow.action ? 'disabled' : ''}>${taskSubmitLabel(task)}</button><button type="button" class="text-button" data-action="cancel-task-form" ${state.workflow.action ? 'disabled' : ''}>Cancel</button></div></form>`;
 }
 
 function loadingMarkup(workflow) {
@@ -236,7 +246,12 @@ async function loadWorkflow(projectId) {
   render();
 }
 
+function clearOtherProjectDraft() {
+  if (state.workflow.key !== state.project?.id) Object.assign(state.workflow, { draft: null, formError: '' });
+}
+
 export function syncWorkflowState() {
+  clearOtherProjectDraft();
   if (state.view !== 'plan' || !state.project || state.workflow.key === state.project.id) return;
   state.workflow = { key: state.project.id, loading: true, data: null, error: '', action: '', formOpen: false, selected: '', editing: '', recovering: '' };
   void loadWorkflow(state.project.id);
@@ -250,13 +265,13 @@ export function retryWorkflow() {
 }
 
 export function openTaskForm(taskId = '') {
-  Object.assign(state.workflow, { formOpen: true, editing: taskId, error: '' });
+  Object.assign(state.workflow, { formOpen: true, editing: taskId, error: '', draft: null, formError: '' });
   render();
   document.querySelector('#task-title')?.focus();
 }
 
 export function cancelTaskForm() {
-  Object.assign(state.workflow, { formOpen: false, editing: '', error: '' });
+  Object.assign(state.workflow, { formOpen: false, editing: '', error: '', draft: null, formError: '' });
   render();
 }
 
@@ -301,10 +316,18 @@ export async function recoverTask(form) {
   render();
 }
 
-function formError(form, message) {
+function formError(form, message, workflow = state.workflow) {
+  if (workflow.key !== state.project?.id) return;
+  workflow.formError = message;
   const box = form.querySelector('#task-form-error');
   box.textContent = message;
-  box.hidden = false;
+  box.hidden = !message;
+}
+
+export function rememberTaskDraft(form) {
+  if (form?.id !== 'task-form') return;
+  const values = new FormData(form);
+  state.workflow.draft = { ...Object.fromEntries(values), pageIds: values.getAll('pageIds'), releaseOwner: values.has('releaseOwner') };
 }
 
 function fieldText(values, name) {
@@ -359,20 +382,33 @@ async function persistTask(task, existing) {
 }
 
 export async function saveTask(form) {
+  if (state.workflow.action) return;
+  const workflow = state.workflow;
+  rememberTaskDraft(form);
   const existing = workflowTasks().find(task => task.id === form.dataset.taskId);
   let task;
   try { task = buildTask(new FormData(form), existing); }
   catch (error) { return formError(form, error.message); }
-  state.workflow.action = 'save';
-  form.querySelector('button[type="submit"]').disabled = true;
+  workflow.action = 'save';
+  formError(form, '');
+  const submit = form.querySelector('button[type="submit"]');
+  const cancel = form.querySelector('[data-action="cancel-task-form"]');
+  submit.disabled = true;
+  submit.textContent = 'Saving…';
+  cancel.disabled = true;
   try {
     const saved = await persistTask(task, existing);
-    Object.assign(state.workflow, { formOpen: false, editing: '', selected: saved.id, error: '' });
-    await loadWorkflow(state.project.id);
-  } catch (error) { formError(form, error.message); }
-  state.workflow.action = '';
-  form.querySelector('button[type="submit"]')?.removeAttribute('disabled');
-  render();
+    if (workflow.key !== state.project.id) return;
+    Object.assign(workflow, { formOpen: false, editing: '', selected: saved.id, error: '', draft: null, formError: '' });
+    await loadWorkflow(workflow.key);
+  } catch (error) { formError(form, error.message, workflow); }
+  finally {
+    workflow.action = '';
+    submit.disabled = false;
+    submit.textContent = taskSubmitLabel(existing);
+    cancel.disabled = false;
+    render();
+  }
 }
 
 export async function taskAction(action, id) {

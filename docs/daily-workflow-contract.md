@@ -22,3 +22,15 @@ Gate lane owns `lib/completion.mjs`, `lib/answers.mjs`, `lib/report.mjs`, `scrip
 Scanner lane owns `lib/scanner.mjs`, `lib/scans.mjs`, `scripts/scan.mjs`, focused scanner/live/role tests. Keep existing scanPage/scanProject callers compatible; options are a final argument for explicit `{liveUrl,browserProfile,requiredRole,fixtures}`. Expose safe helpers/option contracts to root; coordinate persistence metadata with its owner. Verify role via explicit bounded visible DOM evidence and named fixtures configured with argv arrays in the local checkout; refuse fixture execution on live targets. Do not launch paid integrations or write production data.
 
 Root owns MCP/CLI/server/frontend integration, supporting skill/docs, final acceptance and shipping. Lanes work in isolated worktrees, do not push/deploy/stash, and accommodate each other rather than reverting edits.
+
+## Source-checked implementation mechanics
+
+- MCP protocol 2025-11-25 requires declaring `tools.listChanged` and specifies `notifications/tools/list_changed`: https://modelcontextprotocol.io/specification/2025-11-25/server/tools . Source inspected in the maintained TypeScript SDK (2026-09-29, commit 7f4c12a6ae6b8f22411f7772c88036e1c8055423), `packages/server/src/server/server.ts::sendToolListChanged`; its license was read. Borrow the protocol message, not the SDK dependency.
+- Use Node's existing child-process and filesystem primitives: one fresh worker per MCP tools/list or tools/call request reloads the whole module graph without ESM cache tricks. Arguments travel over stdin. A debounced source watcher validates the new tool list before notification; broken source fails closed rather than running a stale writer. Native persistent-connection test proves added tools and changed transitive implementations without session restart.
+- Objective measurement rows are separate from human semantic questions. A known absence (no robots/canonical) is a measured value; an omitted structural fact is unknown and cannot fabricate a passing answer.
+
+## Independent review corrections
+
+Human capture dependencies use per-device visual baselines under the existing comparison threshold, including pixel-identical recompression and insignificant noise. A real visual change or scan-context change requires review; a standalone capture replacement remains stale. Carry markers are removed as soon as their facts change. Reaccepting unchanged measurements is refused and preserves the original attribution. Failed requests remain the existing automatic Works measurement.
+
+Configured URL-only and LAN projects keep the base configured-environment acceptance path. Only an explicit live target requires a reported deployment receipt. Requested local fixture setup runs once per invocation, while every page still validates its own prerequisites. Screenshot history records its original environment and source URL; missing legacy metadata is explicitly unknown. Project-level deployment and fixture writes retry bounded concurrent conflicts without losing other writers.

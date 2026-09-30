@@ -10,7 +10,7 @@ import { currentReview, startReview } from './lib/reviews.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
 import { projectReport } from './lib/report.mjs';
 import { pendingSuggestions } from './lib/suggestions.mjs';
-import { addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, setCoreFeatures, updateFinding, validationError } from './lib/store.mjs';
+import { acceptMeasuredAnswers, updateFeature, addFeatures, addFeaturesToPages, createFinding, listProjects, projectView, readProject, recordVerdicts, removePage, setCoreFeatures, updateFinding, validationError } from './lib/store.mjs';
 import { designGuide, projectDocs } from './lib/project-docs.mjs';
 import { captureHistory } from './lib/history.mjs';
 import { qaAgentConfigured, qaAgentRuns, startQaAgent } from './lib/qa-agent.mjs';
@@ -52,8 +52,8 @@ async function startTests(projectId, pageId) {
   return { run, project: projectView(project) };
 }
 
-async function scanProjectPage(projectId, pageId) {
-  await scanPage(projectId, pageId);
+async function scanProjectPage(projectId, pageId, options = {}) {
+  await scanPage(projectId, pageId, options);
   return projectView(readProject(projectId));
 }
 
@@ -83,17 +83,22 @@ function runningProjectScan(projectId) {
 
 // Rescanning every page also runs in the background; the job lists what changed visually.
 // A second request while one runs joins it, so two tabs cannot scan the same pages at once.
-function startProjectScan(projectId) {
+function startProjectScan(projectId, options = {}) {
   readProject(projectId);
   const running = runningProjectScan(projectId);
-  if (running) return { job: running };
+  if (running) return joinedScan(running, options);
   const id = randomUUID();
-  const job = { kind: 'scan', status: 'running', total: null, scanned: 0, current: '', projectId, failed: [], changed: [], error: '' };
+  const job = { kind: 'scan', options, status: 'running', total: null, scanned: 0, current: '', projectId, failed: [], changed: [], error: '' };
   jobs.set(id, job);
-  scanProject(projectId, progress => Object.assign(job, progress)).then(
+  scanProject(projectId, progress => Object.assign(job, progress), options).then(
     result => Object.assign(job, { status: 'done', total: result.scanned + result.failed.length, scanned: result.scanned, current: '', projectId, failed: result.failed, changed: result.changed }),
     error => Object.assign(job, { status: 'failed', error: error.message }),
   );
+  return { job: id };
+}
+
+function joinedScan(id, options) {
+  if (JSON.stringify(jobs.get(id).options) !== JSON.stringify(options)) throw Object.assign(new Error('A different page check is already running for this project. Wait for it before changing the target or setup.'), { status: 409 });
   return { job: id };
 }
 
@@ -130,6 +135,7 @@ function addPageFeatures(projectId, pageId, input, by) {
   return addFeatures(projectId, pageId, input.features, by);
 }
 const taskPath = '/api/projects/([a-z0-9-]+)/tasks/([a-z0-9-]+)';
+const scanOptions = request => request.headers['content-type']?.startsWith('application/json') ? requestJson(request) : {};
 const routes = [
   ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => workflow(id)],
   ['GET', '/api/projects/([a-z0-9-]+)/context', ([id]) => context(id)],
@@ -142,7 +148,7 @@ const routes = [
   ['GET', '/api/jobs/([a-f0-9-]+)', ([id]) => backgroundJob(id)],
   ['GET', '/api/projects', () => listProjects()],
   ['GET', '/api/projects/([a-z0-9-]+)', ([id]) => projectView(readProject(id))],
-  ['POST', '/api/projects/([a-z0-9-]+)/scan', ([id]) => startProjectScan(id), 202],
+  ['POST', '/api/projects/([a-z0-9-]+)/scan', async ([id], request) => startProjectScan(id, await scanOptions(request)), 202],
   ['GET', '/api/projects/([a-z0-9-]+)/report', ([id]) => projectReport(id), 200, 'text/markdown; charset=utf-8'],
   ['GET', '/api/projects/([a-z0-9-]+)/suggestions', ([id]) => pendingSuggestions(id)],
   ['GET', '/api/projects/([a-z0-9-]+)/docs', ([id]) => projectDocs(readProject(id))],
@@ -162,7 +168,9 @@ const routes = [
   ['POST', `${pagePath}/visual-review`, params => startReview(...params)],
   ['GET', `${pagePath}/qa-runs`, params => testOverview(...params)],
   ['POST', `${pagePath}/qa-runs`, params => startTests(...params)],
-  ['POST', `${pagePath}/scan`, params => scanProjectPage(...params)],
+  ['POST', `${pagePath}/scan`, async (params, request) => scanProjectPage(...params, await scanOptions(request))],
+  ['POST', `${pagePath}/accept-measured`, ([id, page]) => projectView(acceptMeasuredAnswers(id, page, person))],
+  ['PATCH', `${pagePath}/features/([a-z0-9-]+)`, withBody(updateFeature)],
   ['POST', `${pagePath}/features`, withBody(addPageFeatures)],
   ['PATCH', `${pagePath}/verdicts`, withBody(recordVerdicts)],
   ['POST', `${pagePath}/findings`, withBody(createFinding)],
