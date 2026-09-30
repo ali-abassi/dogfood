@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
-import { encodePng } from '../lib/diff.mjs';
+import { decodePng } from '../lib/capture.mjs';
+import { crc32, deflateSync } from 'node:zlib';
+import { encodePng, imageDifference } from '../lib/diff.mjs';
 import { auditEvidence, auditRowFresh, carryAuditEvidence, measuredAnswers } from '../lib/audit-evidence.mjs';
 
 const data = mkdtempSync(join(tmpdir(), 'dogfood-daily-evidence-'));
@@ -85,13 +87,13 @@ test('scan context, custom question, and legacy evidence fail closed', () => {
 
 test('measured candidates expose bad facts without inventing human judgments', () => {
   const page = freshPage();
-  assert.equal(measuredAnswers(page).length, 6);
+  assert.equal(measuredAnswers(page).length, 5);
   assert.ok(measuredAnswers(page).every(row => row.status === 'pass'));
   page.scan.viewports.desktop.seo.title = '';
   page.scan.viewports.mobile.accessibility.unlabeledFields = 2;
   page.scan.viewports.mobile.horizontalOverflow = true;
   const candidates = measuredAnswers(page);
-  assert.equal(candidates.length, 6);
+  assert.equal(candidates.length, 5);
   assert.deepEqual(candidates.filter(row => row.status === 'needs_work').map(row => row.id), ['measured-title', 'measured-controls', 'measured-overflow']);
   assert.ok(candidates.every(row => !['keyboard', 'contrast', 'headers', 'indexing'].includes(row.id)));
 });
@@ -281,4 +283,164 @@ test('measurement candidates exclude omitted facts instead of pretending they pa
   const ids = measuredAnswers(target).map(row => row.id);
   assert.ok(!ids.includes('measured-controls'));
   assert.ok(!ids.includes('measured-requests'));
+});
+
+
+function encodedScreenshot(name, pixels, level = 9) {
+  const width = 40;
+  const height = 20;
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const rows = Buffer.alloc((width * 3 + 1) * height);
+  for (let y = 0; y < height; y += 1) pixels.copy(rows, y * (width * 3 + 1) + 1, y * width * 3, (y + 1) * width * 3);
+  const file = join(data, name);
+  writeFileSync(file, Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), pngChunk('IHDR', header), pngChunk('IDAT', deflateSync(rows, { level })), pngChunk('IEND', Buffer.alloc(0))]));
+  return file;
+}
+
+function pngChunk(type, body) {
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(body.length);
+  const checksum = Buffer.alloc(4);
+  checksum.writeUInt32BE(crc32(Buffer.concat([Buffer.from(type), body])));
+  return Buffer.concat([length, Buffer.from(type), body, checksum]);
+}
+
+function scanInput(file, overrides = {}) {
+  return { sourceUrl: 'http://localhost:4322/app?tab=one#exact', actor: 'QA agent', tier: 'automated', environment: 'local',
+    desktop: { file, viewport: '1280 x 900', facts: facts() }, mobile: { file, viewport: '390 x 844', facts: facts() }, ...overrides };
+}
+
+function allAuditVerdicts(id) {
+  const audit = Object.fromEntries(Object.entries(page(id).audit).map(([key, rows]) => [key, rows.map(row => ({ id: row.id, status: 'pass', note: 'Reviewed the visible page and supporting code evidence.' }))]));
+  store.recordVerdicts(id, 'home', { audit }, 'original-reviewer');
+}
+
+test('pixel-identical re-encoding and subthreshold noise preserve all visual audit evidence', () => {
+  const id = 'visual-baseline';
+  create(id);
+  const file = image();
+  const pixels = decodePng(readFileSync(file)).pixels;
+  const reencoded = encodedScreenshot('reencoded.png', pixels, 0);
+  assert.equal(imageDifference(readFileSync(file), readFileSync(reencoded)).changedShare, 0);
+  assert.notDeepEqual(readFileSync(file), readFileSync(reencoded));
+  store.recordScan(id, 'home', scanInput(file));
+  const legacyScan = store.readProject(id);
+  delete legacyScan.pages[0].scan.visualBaseline;
+  store.writeProject(legacyScan);
+  allAuditVerdicts(id);
+  const original = page(id);
+  store.recordScan(id, 'home', scanInput(reencoded));
+  let target = page(id);
+  assert.notEqual(target.captures.desktop.sha256, original.captures.desktop.sha256);
+  assert.equal(target.scan.visualBaseline.desktop, original.captures.desktop.sha256);
+  assert.equal(target.scan.changes.desktop.changed, false);
+  assert.ok(Object.values(target.audit).flat().every(row => auditRowFresh(target, row)));
+  assert.equal(store.pageProgress(store.readProject(id), target).staleCount, 0);
+  const noise = Buffer.from(pixels);
+  noise[0] = 255 - noise[0];
+  const noisyFile = encodedScreenshot('subthreshold.png', noise);
+  store.recordScan(id, 'home', scanInput(noisyFile));
+  target = page(id);
+  assert.equal(target.scan.changes.desktop.changed, false);
+  assert.equal(target.scan.visualBaseline.desktop, original.captures.desktop.sha256);
+  assert.ok(Object.values(target.audit).flat().every(row => auditRowFresh(target, row)));
+});
+
+test('real per-device visual change stales exactly visual dependencies and clears their carry marker', () => {
+  const id = 'visual-change';
+  create(id);
+  const file = image();
+  store.recordScan(id, 'home', scanInput(file));
+  allAuditVerdicts(id);
+  store.recordScan(id, 'home', scanInput(file));
+  const carried = page(id);
+  assert.ok(carried.audit.security[0].carriedFrom);
+  const pixels = Buffer.from(decodePng(readFileSync(file)).pixels);
+  for (let i = 0; i < 300; i += 1) pixels[i] = 255 - pixels[i];
+  const changed = encodedScreenshot('real-change.png', pixels);
+  store.recordScan(id, 'home', scanInput(file, { desktop: { file: changed, viewport: '1280 x 900', facts: facts() } }));
+  const target = page(id);
+  assert.equal(target.scan.changes.desktop.changed, true);
+  assert.equal(target.scan.visualBaseline.mobile, carried.scan.visualBaseline.mobile);
+  const stale = Object.entries(target.audit).flatMap(([key, rows]) => rows.filter(row => !auditRowFresh(target, row)).map(row => `${key}:${row.id}`));
+  assert.deepEqual(stale, ['security:inputs', 'security:private-data', 'scraping:bulk', 'scraping:public-copy', 'accessibility:keyboard', 'accessibility:contrast', 'accessibility:reflow']);
+  assert.equal(target.audit.security[0].carriedFrom, undefined);
+  assert.ok(target.audit.seo[0].carriedFrom);
+});
+
+test('changed facts clear their old carry marker and explicit contexts still invalidate baselines', () => {
+  const id = 'changed-carry';
+  create(id);
+  const file = image();
+  store.recordScan(id, 'home', scanInput(file));
+  allAuditVerdicts(id);
+  store.recordScan(id, 'home', scanInput(file));
+  assert.ok(page(id).audit.seo[0].carriedFrom);
+  const desktopFacts = facts();
+  desktopFacts.seo.title = 'A new title';
+  store.recordScan(id, 'home', scanInput(file, { desktop: { file, viewport: '1280 x 900', facts: desktopFacts } }));
+  assert.equal(page(id).audit.seo[0].carriedFrom, undefined);
+  const target = page(id);
+  target.scan.environment = 'mock';
+  assert.equal(auditRowFresh(target, target.audit.security[0]), false);
+});
+
+test('measurement acceptance is idempotent, preserves attribution, and offers only changed evidence', () => {
+  const id = 'measured-idempotent';
+  create(id);
+  const file = image();
+  store.recordScan(id, 'home', scanInput(file));
+  assert.equal(store.projectView(store.readProject(id)).pages[0].measuredAnswers.length, 5);
+  store.acceptMeasuredAnswers(id, 'home', 'first-reviewer');
+  const accepted = page(id).audit.seo.find(row => row.id === 'measured-title');
+  assert.equal(measuredAnswers(page(id)).length, 0);
+  assert.throws(() => store.acceptMeasuredAnswers(id, 'home', 'second-reviewer'), error => error.status === 400 && error.message === 'No new measured answers for the current scan.');
+  assert.equal(page(id).audit.seo.find(row => row.id === 'measured-title').by, 'first-reviewer');
+  assert.equal(page(id).audit.seo.find(row => row.id === 'measured-title').at, accepted.at);
+  store.recordScan(id, 'home', scanInput(file));
+  assert.equal(measuredAnswers(page(id)).length, 0);
+  const changedFacts = facts();
+  changedFacts.seo.title = '';
+  store.recordScan(id, 'home', scanInput(file, { desktop: { file, viewport: '1280 x 900', facts: changedFacts } }));
+  assert.deepEqual(measuredAnswers(page(id)).map(row => row.id), ['measured-title']);
+  store.acceptMeasuredAnswers(id, 'home', 'changed-reviewer');
+  assert.equal(page(id).audit.seo.find(row => row.id === 'measured-title').status, 'needs_work');
+  assert.equal(measuredAnswers(page(id)).length, 0);
+});
+
+
+test('a deployment retries a conflicting write without losing it or duplicating the receipt', () => {
+  const id = 'deployment-retry';
+  create(id);
+  let attempts = 0;
+  const input = { id: 'raced-deploy', get url() {
+    attempts += 1;
+    if (attempts === 1) store.createFinding(id, 'home', { severity: 'P3', title: 'Concurrent finding preserved', detail: 'A page finding races the project deployment write.', attachCapture: false }, 'concurrent-writer');
+    return 'https://live.example.com';
+  } };
+  store.recordDeployment(id, input, 'shipper');
+  const project = store.readProject(id);
+  assert.equal(attempts, 2);
+  assert.equal(project.deployments.length, 1);
+  assert.equal(project.deployments[0].id, 'raced-deploy');
+  assert.equal(project.pages[0].findings.length, 1);
+});
+
+test('project retry is bounded and never overwrites writers that keep racing it', () => {
+  const id = 'deployment-bounded';
+  create(id);
+  let attempts = 0;
+  const input = { id: 'cannot-land', get url() {
+    attempts += 1;
+    store.createFinding(id, 'home', { severity: 'P3', title: 'Concurrent finding ' + attempts, detail: 'Each attempt races with another correctly attributed write.', attachCapture: false }, 'concurrent-writer');
+    return 'https://live.example.com';
+  } };
+  assert.throws(() => store.recordDeployment(id, input, 'shipper'), error => error.code === 'STALE_PROJECT');
+  const project = store.readProject(id);
+  assert.equal(attempts, 5);
+  assert.equal(project.deployments, undefined);
+  assert.equal(project.pages[0].findings.length, 5);
 });
