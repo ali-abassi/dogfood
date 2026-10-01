@@ -58,6 +58,9 @@ store.createProject({ id: 'zz-guide-security', name: 'ZZ Guide security fixture'
 const session = `dogfood-ui2-proof-${process.pid}`;
 let passed = 0;
 const servers = [];
+// Synchronous browser commands block socket-close handling. Keep native fixture
+// requests off the idle keepalive pool (Node 22 can reuse a server-closed socket).
+const fixtureRequest = { headers: { Connection: 'close' } };
 
 async function freePort() {
   return new Promise(done => { const probe = createServer(); probe.listen(0, '127.0.0.1', () => { const { port } = probe.address(); probe.close(() => done(port)); }); });
@@ -68,7 +71,11 @@ async function startServer(dataDir) {
   const url = `http://127.0.0.1:${port}`;
   servers.push(spawn(process.execPath, [join(repo, 'server.mjs')], { env: { ...process.env, DOGFOOD_PORT: String(port), DOGFOOD_DATA: dataDir }, stdio: 'ignore' }));
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    try { if ((await fetch(`${url}/api/projects`)).ok) return url; } catch { /* starting */ }
+    try {
+      const response = await fetch(`${url}/api/projects`, fixtureRequest);
+      await response.arrayBuffer();
+      if (response.ok) return url;
+    } catch { /* starting */ }
     await new Promise(done => setTimeout(done, 100));
   }
   throw new Error('server did not start');
@@ -108,7 +115,7 @@ function stubApi(responses) {
 
 try {
   const url = await startServer(data);
-  const project = await (await fetch(`${url}/api/projects/tidepool`)).json();
+  const project = await (await fetch(`${url}/api/projects/tidepool`, fixtureRequest)).json();
   browser('open', url);
   browser('set', 'viewport', '1440', '900');
   settle();
@@ -234,7 +241,7 @@ try {
   });
 
   const guideUrl = `${url}/api/projects/zz-guide-security/design`;
-  const guideResponse = await fetch(guideUrl);
+  const guideResponse = await fetch(guideUrl, fixtureRequest);
   check('standalone project HTML guides have a response-level sandbox', () => {
     assert.equal(guideResponse.status, 200);
     assert.equal(guideResponse.headers.get('content-security-policy'), 'sandbox allow-same-origin');

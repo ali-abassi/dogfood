@@ -6,6 +6,8 @@ Hill Climber generated three real GPT-6.1 Sol candidates and selected the smalle
 
 Permanent evidence includes twelve native search regressions and eleven browser checks at 1280 and 390. They prove same-page matching, literal punctuation, Unicode, current-data reads, preserved input focus/caret, report navigation and no sideways overflow. An independent review passed the bounded source/test review. Final source, native checks, browser evidence and task/page acceptance are recorded locally in `data/reviews/hillclimb-search-2026-10-01/release.json`.
 
+CI also exposed an existing Node 22 guide-test transport failure, reproduced locally and with an isolated two-request proof. Closing the native fixture connections fixes it without changing runtime code or weakening the guide's security checks; the focused nineteen-check suite passes on Node 22.
+
 The fixed experiment remains at `/home/user/experiments/dogfood-search-climb-live-20261001`; its verified receipt records promotion with `applied:false` because the owner integrated the winning patch after review. These scores measure the defined page-search cases, not overall product quality or search relevance across arbitrary datasets.
 
 ## 2026-09-29 — agent workflow
