@@ -27,3 +27,8 @@ Scope: plain Node modules, JSON workflow data, existing browser and MCP tools. N
    Check: `node --test scripts/daily-evidence.test.mjs scripts/daily-gates.test.mjs`, `node tests/acceptance/mcp.mjs`, `npm run check`, `npm run lint`.
    Visible: at 1280 and 390, custom answers without selected evidence explain that they require review after each check; selected known evidence carries unchanged answers and original attribution.
    Scope: dependency completeness, API/MCP feedback, question feedback and supporting skill; no automatic guesses or old-verdict backfill.
+
+9. Find pages from routes, feature words and open bug identifiers.
+   Check: `node --test scripts/search.test.mjs`, `node tests/acceptance/search.mjs`, `npm test`, `npm run check`, `npm run lint`.
+   Visible: at 1280 and 390, reordered words locate a page, routes and open bug IDs work, an unmatched query explains the empty result, typing retains focus/caret, and choosing a result opens its report without sideways scrolling.
+   Scope: pure sidebar matching, its accessible label and independent regressions. Preserve filters, order, blog-menu policy and QA semantics; no dependency or server changes. Select source through a fixed Hill Climber experiment with a separate private panel.

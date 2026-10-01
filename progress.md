@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-10-01 — Hill Climber page search
+
+Hill Climber generated three real GPT-6.1 Sol candidates and selected the smallest patch. Development search outcomes improved from 19/34 to 34/34; a separate private panel improved from 18/39 to 39/39 with every compatibility gate passing. The selected matcher searches page identifiers, routes, feature names and open bug IDs/titles using every query word, independent of order, case or accents. Resolved bug text and explanatory prose stay excluded; filters, ordering and QA rules retain their existing behavior. No dependency or server change was needed.
+
+Permanent evidence includes twelve native search regressions and eleven browser checks at 1280 and 390. They prove same-page matching, literal punctuation, Unicode, current-data reads, preserved input focus/caret, report navigation and no sideways overflow. An independent review passed the bounded source/test review. Final source, native checks, browser evidence and task/page acceptance are recorded locally in `data/reviews/hillclimb-search-2026-10-01/release.json`.
+
+The fixed experiment remains at `/home/user/experiments/dogfood-search-climb-live-20261001`; its verified receipt records promotion with `applied:false` because the owner integrated the winning patch after review. These scores measure the defined page-search cases, not overall product quality or search relevance across arbitrary datasets.
+
 ## 2026-09-29 — agent workflow
 
 Implemented and verified checkout-first initialization, CLI/MCP tasks, dependencies and atomic claims, Plan UI, native check receipts, explicit recovery, resume handoffs and separate audit/acceptance gates. No runtime dependencies were added.

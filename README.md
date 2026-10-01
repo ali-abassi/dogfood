@@ -57,6 +57,8 @@ Use `attach-url URL` once the app runs, then register its pages with the existin
 
 Each answer is **Good**, **Needs work**, **Partly checked**, **Not checked**, **Recheck**, or **Blocked**, and opens to show where it came from: you, a named agent, the AI, or a measurement. A person's or agent's verdict outranks the AI's, every Good or Needs work carries a note saying what was seen, and nothing unproven is shown as good.
 
+Use the sidebar search to find a page by its name, group, route, page ID, something you can do there, or an open bug's ID or title. Words can appear in any order: `invoice download` finds a page with “Download invoice.” Case, extra whitespace and accents don't prevent matches. Every word must match the same page; punctuation stays literal, and resolved bugs are excluded. The selected filter and sort still apply.
+
 ## With your coding agent
 
 Give your agent (Claude Code, Codex, Cursor, or any agent that can run a shell) this sentence:
