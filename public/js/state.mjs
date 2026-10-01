@@ -23,10 +23,18 @@ function answeredCount(page) {
   return page.progress.answers.filter(answer => answer.status === 'pass' || answer.status === 'needs_work').length;
 }
 
+function normalizeSearch(text) {
+  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
 function matchesSearch(page) {
-  const query = state.query.trim().toLowerCase();
+  const query = normalizeSearch(state.query).trim();
   if (!query) return true;
-  return [page.name, page.group, ...page.features.map(item => item.name)].join(' ').toLowerCase().includes(query);
+  const fields = [page.id, page.name, page.group, page.route,
+    ...page.features.map(item => item.name),
+    ...(page.findings ?? []).filter(item => item.status === 'open').flatMap(item => [item.id, item.title])];
+  const corpus = normalizeSearch(fields.join(' '));
+  return query.split(/\s+/u).every(term => corpus.includes(term));
 }
 
 const pageFilters = {

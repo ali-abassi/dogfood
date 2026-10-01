@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-10-01 — improve Dogfood with Hill Climber
+
+- Target an observed discovery failure: “coverage inspect” could not find Overview's “Inspect page coverage and acceptance” feature. Routes and open bug identifiers were also absent from the matcher. Improving this existing control avoids adding another screen or search system.
+- Use a frozen behavioral evaluator: 34 public development cases, 39 different private cases outside the repository, compatibility gates and all existing native tests. An always-empty negative control fails both score and compatibility. Three candidates in one round suffice because the selected patch passes both panels; don't spend another round against a disclosed holdout.
+- Keep deterministic all-term substring matching and site order. Search only names and identifiers people see; exclude expected/detail prose and resolved bugs. Preserve the existing blog menu policy. No fuzzy ranking, caching or dependency is needed for this small local menu.
+- Prior art: [cmdk's matcher](https://github.com/dip/cmdk/blob/main/cmdk/src/command-score.ts) joins aliases and normalizes inputs. Retain that simple corpus idea, explicitly add Unicode accent folding, and skip its recursive fuzzy ranker. The accessible search name now describes routes and open bugs.
+- A preflight format error was corrected before any model generation. The first generation attempt then retained the baseline because bundled Codex 0.149.0 rejected the current configuration schema; no holdout ran. The successful experiment uses the real SDK with `codexPathOverride` pointing at the installed authenticated CLI 0.159.3 through an external adapter. Global configuration and credentials were preserved. All three successful candidate turns have real SDK traces and reported usage.
+- Candidate count and timeouts bound this pilot. The 150,000-token threshold is checked between rounds, so the in-flight round exceeded it: reported usage was 868,347 input tokens (748,160 cached) and 6,970 output tokens. Completed runtime was 336.696 seconds. This is evidence of this bounded correctness gain; it is not proof of cheap or universal optimization.
+
 ## 2026-09-29 — agent workflow
 - Keep Dogfood a local workspace; coding agents build with their existing tools. This preserves its lightweight purpose.
 - Store executable tasks once in `data/workflows`, separate from Markdown intent and page manifests. Native argv checks accommodate different stacks without adding adapters.

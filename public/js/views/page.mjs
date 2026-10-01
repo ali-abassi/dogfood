@@ -62,7 +62,7 @@ export function sidebarMarkup() {
       <nav class="page-list" aria-label="Project">
         <div class="project-nav">${projectNavMarkup()}</div>
         <div class="pages-head"><h2>Pages</h2></div>
-        <label class="search-field"><span class="sr-only">Search pages or things to do</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages" value="${escapeHtml(state.query)}"></label>
+        <label class="search-field"><span class="sr-only">Search pages, routes, things to do or open bugs</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages" value="${escapeHtml(state.query)}"></label>
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
         <div class="page-groups">${pageOptionsMarkup(pages)}</div>
       </nav>
