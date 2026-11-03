@@ -28,6 +28,28 @@ URLs and redirects. It never probes the project's application URL as if it were 
 CLI and server must use the same `DOGFOOD_DATA`; symbolic links to the same folder match.
 If an older running server lacks the health/data-store check, restart it after updating.
 
+## Discovery and the project map
+
+Use **New idea → Start discovery** in the app to create a managed local Git workspace, or call
+`dogfood_start_project` through `dogfood tool` with a JSON file containing `name`, `idea` and `agent`.
+`dogfood init` connects an existing checkout and preserves its history. Existing imports are labeled
+as not discovery-certified rather than silently claiming a completed interview.
+
+Read `dogfood_project_readiness` before saving with `dogfood_save_brief`. Existing briefs require the
+returned `revision` as `input.expectedRevision`. Planned pages/features, material questions and
+answers, decisions and the required proof are durable. Scope review binds the exact answers and real
+Vision/Plan contents; changing that contract requires review again. A new build also requires the
+reviewed documents at committed HEAD. Ordinary implementation edits do not invalidate scope review.
+
+The operator can explicitly create missing draft documents, review the scope and save the exact
+managed drafts as a local source baseline with `dogfood_create_project_documents`,
+`dogfood_review_scope` and `dogfood_save_scope_baseline`. Native requests may propose brief changes but lack authority to self-approve, write those source files through readiness tools or commit the baseline; recognized native contexts are refused.
+Inspect each schema before calling it; the [Discovery guide](discovery.md) explains the boundary.
+
+`dogfood_project_map` derives the page/feature/task/request/evidence links and reports saved Graphify
+context as current, stale, absent or unavailable. It never starts extraction or invents links.
+`context` includes requests and a unified `nextAction`; task `next` retains its task-specific meaning.
+
 ## Request work
 
 Save `request.json`:
@@ -37,6 +59,7 @@ Save `request.json`:
   "title": "Clarify booking confirmation",
   "request": "Show the selected date and time after booking. Verify it in the actual page.",
   "backend": "codex",
+  "intent": "build",
   "pageId": "booking"
 }
 ```
@@ -52,12 +75,12 @@ dogfood board start CARD --project my-app
 
 Creation saves for later by default. To explicitly authorize immediate execution, use
 `dogfood board create --input request.json --start`, or set `"start": true` in the JSON.
-The backend is `codex` or `claude`; page/feature/task links are optional and validated.
+The backend is `codex` or `claude`; page/feature/task links are optional and validated, including planned pages. `intent` is `build` by default, `discovery` for questions/brief proposals, or `qa` for an audit without application source edits. QA can also use a labeled URL-only audit workspace.
 
 The selected project's registered committed checkout is the source. Each native session uses
 an isolated worktree; uncommitted source changes are not copied. Starting via CLI or MCP waits
 for the first dispatch acknowledgement, not for the model turn to finish. Keep the Dogfood web
-server running so finished results and in-flight feedback continue to reconcile. When both agent
+server running so finished results and in-flight feedback continue to reconcile. Native worktrees retain the stable project identity; explicit `--project ID` is always available for a read-only context refresh. When both agent
 slots are occupied, a start remains queued and exits successfully; the returned card shows whether
 it launched or is waiting for capacity.
 
@@ -85,8 +108,42 @@ dogfood board reopen CARD --project my-app
 
 Discarding queued feedback retains its comment history. A running request must stop before it
 can be closed. Done closes the request after review, or closes an idle Needs-you request; it
-never merges, deploys or accepts the linked planned task or page QA. `changes` is a bounded
-source summary, not behavioral verification.
+never applies source, deploys or accepts the linked planned task or page QA. `changes` returns a bounded inspected snapshot, including safe patches/new-file contents, a fingerprint and whether source integration is available. It is source inspection, not behavioral verification.
+
+## Review and apply a result
+
+```sh
+dogfood board changes CARD --project my-app --json
+dogfood board integrate CARD --project my-app --input reviewed.json
+dogfood board show CARD --project my-app --json
+dogfood board save-source CARD --project my-app --input integration.json
+```
+
+`reviewed.json` contains only `{"fingerprint":"THE_EXACT_INSPECTED_FINGERPRINT"}`. Apply is an
+explicit operator action against the clean matching source base; it stages only that unchanged
+reviewed change set. It refuses conflicts, unrelated changes and withheld files. The app exposes
+this as **Inspect changes → Apply reviewed changes to source**.
+
+After inspecting the staged result, `integration.json` contains only
+`{"integrationId":"THE_LATEST_INTEGRATION_RECEIPT_ID"}` from the card. **Save reviewed changes**
+locally commits the exact unchanged reviewed staging. Its receipt reports the saved revision and
+whether the same native worktree can continue; concurrent work is preserved. No push or deployment
+occurs. Then run task checks and page QA against the integrated source before acceptance. Recognized native request contexts are refused by both source actions. These are safeguards against accidental self-approval; same-user local code still has the owner's filesystem and API access.
+
+## Browser and screenshot feedback
+
+Set the server's `DOGFOOD_BROWSER_SESSION` and `DOGFOOD_BROWSER_PROFILE` to the operator's existing
+browser preview. Native requests receive those values, reuse that session across viewports and
+leave it open. Missing session, profile or authentication is reported as setup-required; requests
+do not substitute a fresh browser or close another session.
+
+`dogfood_add_annotation` pins a comment to the current screenshot hash and a device position.
+`dogfood_annotation_request` saves its page-linked request unless `start:true` is explicit.
+`dogfood_resolve_annotation` needs a retest note; it does not accept the page or finish the request.
+Use `dogfood_annotations` to read the immutable capture, finding, current/stale marker and request.
+
+**Ask the QA agent** uses the same durable native board with `qa` intent. `DOGFOOD_QA_BACKEND` may
+prefer `codex` or `claude`; legacy custom `DOGFOOD_QA_AGENT` commands are not executed.
 
 ## MCP and native agent configuration
 
@@ -106,3 +163,8 @@ Board tools are `dogfood_agent_board`, `dogfood_agent_card`, `dogfood_agent_chan
 Inspect their exact schemas with `dogfood schema TOOL`, or call one with
 `dogfood tool TOOL --input args.json`. Starting or sending work requires the user's delegation
 authorization. Ordinary project planning and QA tools remain separate.
+
+If source was changed outside Dogfood, finish or preserve local edits until source is clean, then use `dogfood board release-integration CARD --project my-app --input integration.json`
+with its latest `integrationId`. This releases only the application record and preserves its history
+and the agent worktree. If source moved on, start a fresh request before integrating further changes. `save-source` can recognize an exact external reviewed commit instead;
+unrelated commits or local changes are refused.

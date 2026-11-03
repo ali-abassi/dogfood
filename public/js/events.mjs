@@ -1,3 +1,8 @@
+import { registerDiscoveryEvents } from './views/discovery.mjs';
+import { registerProductMapEvents } from './views/product-map.mjs';
+import { registerAnnotationEvents } from './views/annotations.mjs';
+import { submitNewProject } from './views/new-project.mjs';
+import { registerProjectWorkEvents } from './views/project-work.mjs';
 import { readJson } from './api.mjs';
 import { addCompetitor, reloadCompetitors, removeOpenCompetitor, rescanOpenCompetitor, summarizeOpenCompetitor } from './views/competitors.mjs';
 import { fitDocFrame, retryDocs } from './views/docs.mjs';
@@ -99,7 +104,7 @@ function closePages() {
   document.querySelector('.page-menu-toggle')?.focus();
 }
 
-const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form, #task-form, #task-recovery-form, #board-request-form, #board-comment-form';
+const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form, #task-form, #task-recovery-form, #board-request-form, #board-comment-form, #discovery-form, #annotation-form, #new-project-form';
 let keyboardInput = false;
 let boardNavigation;
 
@@ -173,7 +178,7 @@ function openAddProject() {
   state.browseOpen = false;
   state.onboarding = { ...idleOnboarding };
   render();
-  document.querySelector('#product-url')?.focus();
+  document.querySelector(state.projectEntry === 'existing' ? '#product-url' : '#new-project-name')?.focus();
 }
 
 // Opens one inline editor, closing any other, and puts the cursor in its first field.
@@ -341,6 +346,7 @@ const formHandlers = new Map([
   ['remove-page-form', submitRemovePage],
   ['competitor-form', addCompetitor],
   ['task-form', saveTask],
+  ['new-project-form', submitNewProject],
   ['task-recovery-form', recoverTask],
 ]);
 
@@ -350,6 +356,7 @@ function handleSuggestionToggle(target) {
 }
 
 function rememberProjectDraft(target) {
+  if (target.form?.id === 'new-project-form') state.newProjectDraft = Object.fromEntries(new FormData(target.form));
   const form = target.closest('#add-project-form');
   if (!form) return;
   const fields = new FormData(form);
@@ -361,8 +368,19 @@ function handleBugButton(button) {
   handleFindingButton(button);
 }
 
+function sharedClick(button) {
+  if (button.dataset.projectEntry) { state.projectEntry = button.dataset.projectEntry; render(); return; }
+  if (button.id === 'retry') return start();
+  if (button.id === 'retry-docs') return retryDocs();
+  if (button.dataset.findingAction) return handleBugButton(button);
+  handleButton(button);
+}
 export function registerEvents() {
   registerBoardEvents(app);
+  registerDiscoveryEvents(app);
+  registerProductMapEvents(app);
+  registerAnnotationEvents(app);
+  registerProjectWorkEvents(app, action => { if (!blockOpenFormNavigation(action)) action(); });
   app.addEventListener('toggle', event => {
     if (event.target.id === 'onboarding-options') state.projectDraft.optionsOpen = event.target.open;
   }, true);
@@ -372,10 +390,7 @@ export function registerEvents() {
   app.addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
-    if (button.id === 'retry') return start();
-    if (button.id === 'retry-docs') return retryDocs();
-    if (button.dataset.findingAction) return handleBugButton(button);
-    handleButton(button);
+    sharedClick(button);
   });
 
   app.addEventListener('change', event => {

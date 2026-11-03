@@ -1,3 +1,4 @@
+import { projectWorkMarkup } from './project-work.mjs';
 import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, plural, scanPosition } from '../format.mjs';
 import { answerIds, answerShortNames, displayAnswerStatus, groupedPages, state } from '../state.mjs';
@@ -85,6 +86,7 @@ export function overviewMarkup() {
   const pages = groups ? `${columnsMarkup()}${groups}` : '<div class="overview-empty"><p>No pages yet. Start with the work plan, then add pages when the app runs.</p><button type="button" class="text-button" data-project-view="plan">Open Plan</button></div>';
   return `<section class="overview-content" aria-label="Project overview">
     <header class="overview-heading"><div><h1>${escapeHtml(state.project.name)}</h1><p data-answer-sentence>${escapeHtml(answerSentence(state.project.pages))}</p>${acceptanceCountsMarkup(state.project.pages)}</div><div class="overview-actions"><a class="text-button" href="/api/projects/${escapeHtml(state.project.id)}/report" download="${escapeHtml(state.project.id)}-qa-report.md">Download report</a>${state.project.pages.length && state.project.source?.url ? scanAllButtonMarkup() : ''}</div></header>
+    ${projectWorkMarkup()}
     ${scanAllNoticeMarkup()}
     ${integrityNoticeMarkup()}
     ${fixFirstMarkup(state.project.pages)}

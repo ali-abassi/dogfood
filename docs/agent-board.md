@@ -1,51 +1,89 @@
 # Agent board
 
 The board answers: **What is running, what needs me, and what is ready to review?**
-Its primary action is **New request**. A person can give Claude Code or Codex a request,
-continue it from the same card, inspect the result, and explicitly finish the request.
+Create a request for Claude Code or Codex, continue it from the same card, inspect its actual
+changes, and explicitly decide what enters the project source.
 
-## Scope
+## From scope to work
 
-- Project-scoped cards, optionally linked to an existing page, feature or planned task.
-- To do, Working, Needs you, Review and Done lanes with counts derived from cards.
-- An explicit Create & start action, and a save-for-later path.
-- Durable isolated agent worktrees and native conversations through the locally installed PAL runner.
-- Separate notes and requests sent to the agent; followups retain the conversation.
-- Results return to Review. A finished agent turn is not QA acceptance, a merge or a deployment.
-- Process errors, unavailable runner, stopped work, and pending feedback remain visible.
-  Idle stopped/blocked requests can be closed. Queued feedback can be explicitly discarded
-  without deleting its comments. Temporary result-read failures retry without losing a turn.
+A new idea starts in Discovery: saved answers, material questions, planned pages/features, real
+Vision and Plan documents, and an attributed review of the current scope. The reviewed documents
+must match committed source before a build starts. Ordinary implementation edits do not revoke
+scope readiness; changed Vision/Plan content or scope requires review again. Existing imports
+remain usable and explicitly say that discovery has not been certified.
 
-The existing Plan remains the source of implementation tasks and verification receipts.
-The board records requests, conversations and execution; linking a task never changes its
-ownership or acceptance. Agent changes remain in their worktree until reviewed and integrated.
+Plan's **Send to agent** opens a request linked to that task. **Work myself** claims the task for
+the person. The product map connects planned/registered pages, features, tasks, requests and QA
+using actual links. Context and Overview include pending requests and the next project action.
 
-## Design decisions
+Request intents are distinct:
 
-Preserve Dogfood's native system type, restrained semantic colors, logo, spacing and stack.
-The current Plan provides a useful readable task detail but has no way to send an agent work.
-The three highest-impact changes are a visible work queue, a concise conversation beside the
-selected request, and direct page/feature context. Desktop uses lanes; narrow screens retain
-readable cards and complete controls without sideways page scrolling. Missing state is never
-represented by made-up progress or KPI numbers.
+- `build` changes application source within the linked outcome, scope and acceptance contract.
+- `discovery` asks material questions and saves attributed brief proposals; it does not implement
+  features, approve its own scope or commit the source baseline.
+- `qa` audits the named page and records evidence/findings through the same durable lifecycle.
+  A URL-only audit uses an explicitly labeled execution workspace, not application source.
 
-## Verification
+## Conversation and context
 
-Native checks cover isolated dispatch, invalid input, duplicate starts, queued feedback,
-restart recovery, successful review, stop, and explicit completion. Browser checks use one
-existing Chrome session at 1280 and 390 wide, exercise request and thread controls, and check
-draft retention and escaping. A bounded disposable Git project proves an actual native agent
-can make a change and receive a second request through the same card.
+Requests use isolated native Git worktrees and durable PAL sessions. Their starting point is
+committed source; unrelated uncommitted files are not copied. Each native brief carries the stable
+project ID, explicit context command, actual linked task/feature expectations, document references,
+source revision and selected browser contract. Oversized inline context points to the full tools.
+It never silently drops an acceptance requirement.
 
-## Boundaries
+Notes stay notes. Explicitly sent feedback is persisted in order; feedback during a turn waits for
+the next turn in the same session. Stop, retry and queued-feedback discard retain the conversation.
+Finished turns return to Review or Needs you. A concise result summary leads the card; exact checks
+and unverified items remain visible. Agent-reported checks are distinct from independent receipts.
 
-The server binds to loopback and requires a local Origin for mutations. Backend names and
-launch arguments are controlled by the server. Cards do not accept executable commands,
-credential values, deployment authority or arbitrary working directories. PAL and a working
-native provider login are prerequisites; installed software alone does not prove authentication.
-Ordinary agent runs inherit the user's existing provider subscription/account. No login,
-top-up or paid API provisioning is performed by the board.
+Native browser work reuses the operator's selected existing session/profile. Set
+`DOGFOOD_BROWSER_SESSION` and `DOGFOOD_BROWSER_PROFILE` on the server to that contract. Missing
+session/profile or authentication is setup-required. The agent must not substitute a fresh browser,
+close the preview, change accounts or stop services.
 
-Discovery interviews, a visual product map, screenshot-position annotations, Graphify imports
-and ongoing KPI goal automation remain separate follow-on work. This release completes the
-request → agent → feedback → review loop first.
+## Inspect, apply, save, verify
+
+1. **Inspect changes** reads bounded patches and new-file contents. Unsafe/secret-bearing paths,
+   symlinks, oversized/binary changes and other withheld content require local review. Static HTML
+   previews are inert snapshots; actual behavior still needs the running application.
+2. **Apply reviewed changes to source** is an explicit operator action tied to the inspected
+   fingerprint. It requires a clean matching source base, checks the exact patch again, and stages
+   it without overwriting unrelated work.
+3. **Save reviewed changes** locally commits only the unchanged reviewed staging. Its receipt
+   identifies the saved revision and whether the same native worktree can continue. Concurrent
+   changes are preserved and may require a fresh request.
+4. Run source task checks and page QA. Accept the task/page only when their own current gates pass.
+
+Applying, saving source, finishing a request, task acceptance, page acceptance, pushing and deploying
+are separate actions. **Mark reviewed & done** only closes the request. Native requests lack authority to
+apply/save source, create source documents through readiness tools, self-approve scope or commit a
+scope baseline; operator tools reject recognized native request contexts. An ordinary authorized operator can use the corresponding CLI/MCP actions.
+
+## Page feedback and QA
+
+**Pin feedback** on the latest computer/phone screenshot records its device, normalized position,
+immutable image revision and a finding. Choose an agent to create its linked request; it saves for
+later until explicitly started. New captures mark older pins as historical. Resolve a pin with fresh
+retest evidence; that does not accept the page or finish its request.
+
+**Ask the QA agent** creates a `qa` request on this board. Legacy launch receipts remain read-only;
+`DOGFOOD_QA_AGENT` custom commands are no longer executed. Screenshot-only **Check with AI** is a
+separate provider-backed visual opinion, bound to actual device coverage and the review contract.
+
+See [Discovery](discovery.md) and the [CLI guide](cli.md) for exact operations. The server remains a
+single-user loopback workbench with controlled backend/argv selection and local-origin writes.
+No card grants publication, deployment, account changes, purchases or credential access.
+
+These native-context safeguards prevent accidental workflow bypass. They are not an OS security sandbox: code running as the same user retains that user's filesystem and local HTTP/CLI access. Treat native agents and local integrations as trusted operator-authorized code.
+
+### Changes made outside Dogfood
+
+Save recognizes an external commit only when it has the exact reviewed tree and the original
+base as its single parent, with clean source and the unchanged agent snapshot. It records that
+existing revision and prepares the same conversation without making another commit.
+
+If the applied source changes were discarded, **Release applied-change record** clears only the
+active application record after verifying source is clean. If source moved on, the archived record names that revision and a fresh request is needed before integrating further work.
+The receipt remains in history. Dirty or unrelated source is refused; Dogfood never restores,
+resets or deletes those files to recover a request.

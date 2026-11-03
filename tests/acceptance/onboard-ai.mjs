@@ -89,7 +89,8 @@ try {
   browser('wait', '700');
   evaluate(`(document.querySelector('[data-action="add-project"]').click(), true)`);
   browser('wait', '400');
-  check('Add project offers the AI review as an unchecked, priced opt-in', () => {
+  evaluate(`(document.querySelector('[data-project-entry="existing"]').click(), true)`);
+  check('Existing app offers the AI review as an unchecked, priced opt-in', () => {
     assert.equal(evaluate(`document.querySelector('#add-project-form input[name="aiReview"]')?.checked`), false);
     assert.match(evaluate(`document.querySelector('#add-project-form input[name="aiReview"]').closest('label').textContent`), /cent|cost|\\$/i);
   });

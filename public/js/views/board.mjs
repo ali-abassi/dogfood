@@ -9,7 +9,7 @@ const agentNames = { codex: 'Codex', claude: 'Claude Code' };
 let poll;
 
 function freshBoard(key = '', selected = '') {
-  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, replies: {}, note: {}, formError: '' };
+  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, note: {}, formError: '' };
 }
 
 function board() { return state.board ??= freshBoard(); }
@@ -30,22 +30,22 @@ function summary() {
   return `${count('running')} working · ${attention} ${attention === 1 ? 'needs' : 'need'} you · ${review} ready for review`;
 }
 
-function linkForPage(id) {
-  return state.project.pages.find(page => page.id === id);
-}
+function requestPages() { const planned = board().plannedPages || []; return [...state.project.pages, ...planned.filter(page => !state.project.pages.some(item => item.id === page.id))]; }
+function linkForPage(id) { return requestPages().find(page => page.id === id); }
 
 function pageLink(page) {
   return `<button type="button" class="link-button" data-page="${escapeHtml(page.id)}">${escapeHtml(page.name)}</button>`;
 }
 
-function cardPreview(card) { return card.error || card.comments?.at(-1)?.text || card.request; }
+function commentPreview(card) { return (card.comments?.at(-1)?.text || card.request).slice(0, 280); }
+function cardPreview(card) { if (card.summary) return card.summary; if (card.error) return card.error; return commentPreview(card); }
 function cardPageName(card) {
   const page = linkForPage(card.pageId);
   return page ? `<span>${escapeHtml(page.name)}</span>` : '';
 }
 function cardMarkup(card) {
   const selected = board().selected === card.id;
-  return `<li><button type="button" class="board-card ${selected ? 'selected' : ''}" data-board-action="select" data-card-id="${escapeHtml(card.id)}" aria-pressed="${selected}"><strong>${escapeHtml(card.title)}</strong><span class="board-card-preview">${escapeHtml(cardPreview(card))}</span><span class="board-card-meta"><span>${escapeHtml(agentName(card.backend))}</span>${cardPageName(card)}</span></button></li>`;
+  return `<li><button type="button" aria-label="${escapeHtml(card.title)} · ${escapeHtml(cardStateLabel(card))} · ${escapeHtml(agentName(card.backend))}" class="board-card ${selected ? 'selected' : ''}" data-board-action="select" data-card-id="${escapeHtml(card.id)}" aria-pressed="${selected}"><strong>${escapeHtml(card.title)}</strong><span class="board-card-preview">${escapeHtml(cardPreview(card))}</span><span class="board-card-meta"><span>${escapeHtml(agentName(card.backend))}</span>${cardPageName(card)}</span></button></li>`;
 }
 
 function lanesMarkup() {
@@ -122,8 +122,11 @@ function replyLabel(card, note) {
   return card.status === 'running' ? 'Send follow-up' : 'Send to agent';
 }
 function queuedReplyHint(card) { return card.pendingCount ? `${card.pendingCount} follow-up${card.pendingCount === 1 ? '' : 's'} queued for the next turn.` : 'Follow-ups wait for the current turn to finish.'; }
+function unsavedIntegration(card) { return card.integration && !card.integration.sourceSaved; }
+function replyDisabled(card, note) { return Boolean(board().action || (!note && unsavedIntegration(card))); }
 function replyHint(card, note) {
   if (note) return 'Notes stay on this request without starting the agent.';
+  if (unsavedIntegration(card)) return 'Save the applied changes above before sending another agent turn. Your reply stays here.';
   if (card.status === 'running') return queuedReplyHint(card);
   if (card.status === 'done') return 'Sending reopens this request in the same agent session.';
   return 'Replies continue this request’s agent session.';
@@ -136,15 +139,62 @@ function replyFormMarkup(card) {
   const value = board().replies[card.id] || '';
   const note = Boolean(board().note[card.id]);
   const label = card.status === 'done' ? 'Follow up on this request' : 'Your reply';
-  return `<form id="board-comment-form" class="board-comment-form" data-card-id="${escapeHtml(card.id)}" data-dirty="${Boolean(value)}"><label for="board-reply">${label}</label><textarea id="board-reply" name="text" rows="3" maxlength="10000" ${disabled()} required placeholder="Add feedback, answer a question, or ask for a change…">${escapeHtml(value)}</textarea><label class="board-note-choice"><input id="board-note" type="checkbox" name="note" ${disabled()} ${note ? 'checked' : ''}> Keep as a note; don’t send to the agent</label><p id="board-reply-hint" class="board-reply-hint">${replyHint(card, note)}</p>${formErrorMarkup('board-comment-error')}<div class="form-actions"><button id="board-reply-send" type="submit" class="save-button" ${disabled()}>${replyLabel(card, note)}</button></div></form>`;
+  return `<form id="board-comment-form" class="board-comment-form" data-card-id="${escapeHtml(card.id)}" data-dirty="${Boolean(value)}"><label for="board-reply">${label}</label><textarea id="board-reply" name="text" rows="3" maxlength="10000" ${disabled()} required placeholder="Add feedback, answer a question, or ask for a change…">${escapeHtml(value)}</textarea><label class="board-note-choice"><input id="board-note" type="checkbox" name="note" ${disabled()} ${note ? 'checked' : ''}> Keep as a note; don’t send to the agent</label><p id="board-reply-hint" class="board-reply-hint">${replyHint(card, note)}</p>${formErrorMarkup('board-comment-error')}<div class="form-actions"><button id="board-reply-send" type="submit" class="save-button" ${replyDisabled(card, note) ? 'disabled' : ''}>${replyLabel(card, note)}</button></div></form>`;
 }
 
-function changePaths(card) { return card.changedFiles || []; }
-function diffSummaryMarkup(card) { return card.diffSummary ? `<pre>${escapeHtml(card.diffSummary)}</pre>` : ''; }
+function reviewedChanges(card) { const value = board().reviews[card.id]; return value?.turn === card.turn ? value : null; }
+function fileChangesMarkup(file) {
+  const body = file.omittedReason ? `<p class="muted">${escapeHtml(file.omittedReason)}</p>` : `<pre><code>${escapeHtml(file.patch || file.content || 'No text change.')}</code></pre>`;
+  return `<details class="review-file"><summary>${escapeHtml(file.path)} · ${escapeHtml(file.status)}</summary>${body}</details>`;
+}
+function inertSnapshot(content) {
+  const template = document.createElement('template'); template.innerHTML = content;
+  template.content.querySelectorAll('script,meta,base,iframe,object,embed,link').forEach(node => node.remove());
+  template.content.querySelectorAll('*').forEach(node => stripSnapshotAttributes(node));
+  return template.innerHTML;
+}
+function stripSnapshotAttributes(node) {
+  for (const attribute of [...node.attributes]) {
+    if (/^(?:on|src|href|action|formaction|target)/i.test(attribute.name)) node.removeAttribute(attribute.name);
+  }
+}
+function snapshotFrame(content, title) {
+  const policy = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">`;
+  return `<div><h4>${title}</h4><iframe title="${title} HTML snapshot" sandbox="" referrerpolicy="no-referrer" srcdoc="${escapeHtml(policy + inertSnapshot(content))}"></iframe></div>`;
+}
+function staticPreview(file) {
+  if (!file?.content || !/\.html?$/i.test(file.path)) return '';
+  return `<details class="review-preview"><summary>Preview ${escapeHtml(file.path)}</summary><p class="field-hint">HTML snapshots. Interactive behavior and external resources are not checked here.</p><div class="review-preview-pair">${file.beforeContent ? snapshotFrame(file.beforeContent, 'Before') : ''}${snapshotFrame(file.content, 'Proposed')}</div></details>`;
+}
+function integrationRecovery(card) { return card.integration.sourceSaved ? '' : integrationRecoveryMarkup(); }
+function integrationRecoveryMarkup() {
+  return '<details class="integration-recovery"><summary>Changed source outside Dogfood?</summary><p>If you committed exactly these changes, Save reviewed changes recognizes that commit. Otherwise, finish or preserve any local edits until source is clean, then release this applied-change record. Source stays untouched. If its revision moved on, start a fresh request from the updated source before integrating further changes. Your earlier agent worktree and conversation stay available.</p><button type="button" class="text-button" data-board-action="release-integration">Release applied-change record</button></details>';
+}
+function appliedMarkup(card) {
+  if (!card.integration || card.integration.turn !== card.turn) return '';
+  const saved = card.integration.sourceSaved;
+  const action = saved ? '<strong>Changes saved to the project source.</strong>' : '<span>Changes applied and staged.</span> <button type="button" class="text-button" data-board-action="save-source">Save reviewed changes</button>';
+  return `<p class="integration-receipt" role="status">${action} Run source checks and page QA before accepting the task. ${card.taskId ? '<button type="button" class="link-button" data-project-view="plan">Open linked task</button>' : ''}</p>${integrationRecovery(card)}`;
+}
+function integrationMarkup(card, review) {
+  if (card.integration?.turn === card.turn) return appliedMarkup(card);
+  const button = review.integration.available ? `<button type="button" class="text-button" data-board-action="integrate" ${disabled()}>Apply reviewed changes to source</button>` : `<p class="field-hint">${escapeHtml(review.integration.reason)}</p>`;
+  return `${button}<p class="field-hint">Applying stages this exact change set in the source checkout. It does not commit, accept QA or deploy.</p>`;
+}
 function changedFilesMarkup(card) {
-  const paths = changePaths(card);
-  if (!paths.length && !card.diffSummary) return '';
-  return `<details class="board-changes"><summary>Changes · ${paths.length} files</summary><ul>${paths.map(path => `<li><code>${escapeHtml(path)}</code></li>`).join('')}</ul>${diffSummaryMarkup(card)}</details>`;
+  if (!card.checkout) return '';
+  const review = reviewedChanges(card);
+  const inspect = `<button type="button" class="text-button" data-board-action="inspect" ${disabled()}>${review ? 'Refresh changes' : 'Inspect changes'}</button>`;
+  if (!review) return `<section class="board-review-tools">${appliedMarkup(card)}${inspect}</section>`;
+  return `<section class="board-review-tools"><h3>Changes and proof</h3>${inspect}${review.files.map(fileChangesMarkup).join('')}${review.files.filter(file => /\.html?$/i.test(file.path)).slice(0, 2).map(staticPreview).join('')}${integrationMarkup(card, review)}</section>`;
+}
+function outcomeChecks(checks) { return checks ? `<details><summary>Agent-reported checks</summary><ul>${checks}</ul><p class="field-hint">Run source checks after applying. These are the agent’s reported observations.</p></details>` : ''; }
+function outcomeGaps(gaps) { return gaps ? `<details open><summary>Still unverified</summary><ul>${gaps}</ul></details>` : ''; }
+function outcomeMarkup(card) {
+  const outcome = card.outcome; if (!outcome) return '';
+  const checks = outcome.checks.map(check => `<li><code>${escapeHtml(check.command)}</code><p>${escapeHtml(check.result)}</p></li>`).join('');
+  const gaps = outcome.unverified.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  return `<section class="board-outcome"><h3>${outcome.decision ? 'Decision needed' : 'Agent outcome'}</h3><p>${escapeHtml(outcome.summary)}</p>${outcome.previewUrl ? `<a class="text-button" href="${escapeHtml(outcome.previewUrl)}" target="_blank" rel="noopener noreferrer">Open agent preview ↗</a>` : ''}${outcomeChecks(checks)}${outcomeGaps(gaps)}</section>`;
 }
 function runDetailsMarkup(card) {
   if (!card.session && !card.checkout) return '';
@@ -153,7 +203,7 @@ function runDetailsMarkup(card) {
 function cardErrorMarkup(card) { return card.error ? `<p class="board-error form-error" role="alert">${escapeHtml(card.error)}</p>` : ''; }
 function reviewNoteMarkup(card) { return card.status === 'review' ? '<p class="board-review-note">The agent finished its turn. Review its changes and checks before marking this request done. Page and task acceptance are tracked separately.</p>' : ''; }
 function detailContentMarkup(card) {
-  return `<div class="board-detail-top"><div>${statusMarkup(card)}<h2 id="board-request-heading" tabindex="-1">${escapeHtml(card.title)}</h2></div><button type="button" class="text-button" data-board-action="close" aria-label="Close request">Close</button></div>${contextMarkup(card)}<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(card.request)}</p></div>${cardErrorMarkup(card)}<div class="board-detail-actions">${cardActions(card)}</div>${reviewNoteMarkup(card)}${changedFilesMarkup(card)}${commentsMarkup(card)}`;
+  return `<div class="board-detail-top"><div>${statusMarkup(card)}<h2 id="board-request-heading" tabindex="-1">${escapeHtml(card.title)}</h2></div><button type="button" class="text-button" data-board-action="close" aria-label="Close request">Close</button></div>${contextMarkup(card)}<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(card.request)}</p></div>${cardErrorMarkup(card)}<div class="board-detail-actions">${cardActions(card)}</div>${reviewNoteMarkup(card)}${outcomeMarkup(card)}${changedFilesMarkup(card)}${commentsMarkup(card)}`;
 }
 function detailMarkup(card) {
   if (!card) return '';
@@ -171,10 +221,10 @@ function featureOptions(data) {
 function hasRequestDraft() { return Boolean(board().draft?.title || board().draft?.request); }
 function runnerAvailable(backend) { return board().data?.agents?.find(agent => agent.id === backend)?.available === true; }
 function requestFieldsMarkup(data) {
-  return `<label for="board-title">Title</label><input id="board-title" name="title" required maxlength="160" value="${escapeHtml(data.title)}" placeholder="What needs to change?"><label for="board-request">What should the agent do?</label><textarea id="board-request" name="request" rows="4" required maxlength="10000" placeholder="Describe the result you want and how to check it.">${escapeHtml(data.request)}</textarea><div class="board-form-pair"><div><label for="board-backend">Agent</label><select id="board-backend" name="backend">${Object.entries(agentNames).map(([id, label]) => option(id, label, data.backend)).join('')}</select></div><div><label for="board-page">Related page <span class="field-optional">optional</span></label><select id="board-page" name="pageId">${option('', 'Project-wide', data.pageId)}${state.project.pages.map(page => option(page.id, page.name, data.pageId)).join('')}</select></div></div>`;
+  return `<label for="board-title">Title</label><input id="board-title" name="title" required maxlength="160" value="${escapeHtml(data.title)}" placeholder="What needs to change?"><label for="board-request">What should the agent do?</label><textarea id="board-request" name="request" rows="4" required maxlength="10000" placeholder="Describe the result you want and how to check it.">${escapeHtml(data.request)}</textarea><div class="board-form-pair"><div><label for="board-backend">Agent</label><select id="board-backend" name="backend">${Object.entries(agentNames).map(([id, label]) => option(id, label, data.backend)).join('')}</select></div><div><label for="board-page">Related page <span class="field-optional">optional</span></label><select id="board-page" name="pageId">${option('', 'Project-wide', data.pageId)}${requestPages().map(page => option(page.id, page.name, data.pageId)).join('')}</select></div></div>`;
 }
 function requestContextMarkup(data) {
-  const open = Boolean(data.featureId || data.taskId);
+  const open = Boolean(board().linksOpen || data.featureId || data.taskId);
   return `<details class="board-request-context" ${open ? 'open' : ''}><summary>Link a feature or planned task</summary><div class="board-form-pair"><div>${featureOptions(data)}</div><div><label for="board-task">Planned task <span class="field-optional">optional</span></label><select id="board-task" name="taskId">${option('', 'No linked task', data.taskId)}${board().tasks.map(task => option(task.id, task.title, data.taskId)).join('')}</select></div></div></details>`;
 }
 function requestActionsMarkup(available) {
@@ -232,7 +282,7 @@ function updateReplyLabels(card) {
   const hint = document.getElementById('board-reply-hint');
   if (hint) hint.textContent = replyHint(card, note);
   const send = document.getElementById('board-reply-send');
-  if (send) send.textContent = replyLabel(card, note);
+  if (send) { send.textContent = replyLabel(card, note); send.disabled = replyDisabled(card, note); }
 }
 function openedDetailIndices(root) { return [...root.querySelectorAll('details')].map((node, index) => node.open ? index : -1).filter(index => index >= 0); }
 function restoreDetails(root, opened) { const details = root.querySelectorAll('details'); opened.forEach(index => { if (details[index]) details[index].open = true; }); }
@@ -275,7 +325,7 @@ function updateSurface(b) {
 async function loadTasks(b) {
   try {
     const workflow = await readJson(`/api/projects/${encodeURIComponent(b.key)}/workflow`);
-    if (current(b)) b.tasks = workflow.tasks ?? [];
+    if (current(b)) { b.tasks = workflow.tasks ?? []; b.plannedPages = workflow.plannedPages ?? []; }
   } catch { /* Requests can be used before a task plan exists. */ }
 }
 function loadFailed(b, error) { if (current(b)) b.error = error.message; }
@@ -310,8 +360,13 @@ async function refreshAfterMutation(b) {
 }
 
 function needsInitialLoad(b) { return !b.attempted && !b.loading; }
+function applyBoardDestination() {
+  if (!state.boardDestination) return;
+  Object.assign(board(), { selected: state.boardDestination, formOpen: false, attempted: false });
+}
 export function syncBoardState() {
   if (board().key !== state.project.id) state.board = freshBoard(state.project.id, state.boardDestination || '');
+  else applyBoardDestination();
   state.boardDestination = '';
   if (state.view !== 'board') { clearTimeout(poll); return; }
   if (needsInitialLoad(board())) void loadBoard(board(), true);
@@ -355,10 +410,10 @@ function inlineError(id, message) {
 
 function focus(id) { document.getElementById(id)?.focus({ preventScroll: true }); }
 
-export function openBoardRequest(pageId = '') {
+export function openBoardRequest(pageId = '', seed = {}) {
   const b = board();
   Object.assign(state, { view: 'board', browseOpen: false, message: '' });
-  if (!hasRequestDraft()) b.draft = { pageId };
+  if (!hasRequestDraft()) b.draft = { pageId, ...seed };
   Object.assign(b, { formOpen: true, selected: '', formError: '' });
   rememberSelection('');
   render();
@@ -441,9 +496,32 @@ function cancelRequest() {
   board().formOpen = false; board().draft = null; board().formError = '';
   render(); focus('board-heading');
 }
+async function inspectChanges() {
+  const id = board().selected;
+  await mutate('inspect', async b => { const review = await readJson(endpoint(b.key, cardPath(id, 'diff'))); if (current(b)) b.reviews[id] = { ...review, turn: selectedCard().turn }; });
+}
+async function integrateChanges() {
+  const card = selectedCard(), review = reviewedChanges(card);
+  if (!review?.integration.available) return;
+  await mutate('integrate', async b => { await post(b, cardPath(card.id, 'integrate'), { fingerprint: review.fingerprint }); if (current(b)) await refreshAfterMutation(b); });
+}
+async function saveSourceChanges() {
+  const card = selectedCard();
+  if (!card?.integration || card.integration.sourceSaved) return;
+  await mutate('save-source', async b => { await post(b, cardPath(card.id, 'save-source'), { integrationId: card.integration.id }); if (current(b)) await refreshAfterMutation(b); });
+}
+async function releaseSourceIntegration() {
+  const card = selectedCard();
+  if (!card?.integration || card.integration.sourceSaved) return;
+  await mutate('release-integration', async b => { await post(b, cardPath(card.id, 'release-integration'), { integrationId: card.integration.id }); if (current(b)) await refreshAfterMutation(b); });
+}
 const boardActions = {
   new: () => openBoardRequest(),
   refresh: () => loadBoard(board(), !board().data),
+  inspect: inspectChanges,
+  integrate: integrateChanges,
+  'save-source': saveSourceChanges,
+  'release-integration': releaseSourceIntegration,
   select: selectCard,
   close: closeCard,
   cancel: cancelRequest,
@@ -476,6 +554,7 @@ export function registerBoardEvents(app) {
     if (button) boardClick(button);
     if (event.target.closest('[data-action="request-page-change"]')) openBoardRequest(state.pageId);
   });
+  app.addEventListener('toggle', event => { if (event.target.classList?.contains('board-request-context')) board().linksOpen = event.target.open; }, true);
   app.addEventListener('input', handleBoardInput);
   app.addEventListener('change', handleBoardChange);
   app.addEventListener('submit', handleBoardSubmit);

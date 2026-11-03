@@ -18,6 +18,10 @@ import { syncQaAgentState } from './views/qa-agent.mjs';
 import { planMarkup, syncWorkflowState } from './views/plan.mjs';
 import { syncVisualState } from './views/visual.mjs';
 import { worksMarkup } from './views/works.mjs';
+import { discoveryMarkup, syncDiscoveryState } from './views/discovery.mjs';
+import { productMapMarkup, syncProductMapState } from './views/product-map.mjs';
+import { syncProjectWork } from './views/project-work.mjs';
+import { syncAnnotations } from './views/annotations.mjs';
 import { boardMarkup, syncBoardState } from './views/board.mjs';
 
 export const app = document.querySelector('#app');
@@ -43,6 +47,8 @@ const projectViews = {
   ...Object.fromEntries(docViewIds.map(id => [id, docsMarkup])),
   plan: planMarkup,
   board: boardMarkup,
+  discovery: discoveryMarkup,
+  map: productMapMarkup,
 };
 
 function projectViewMarkup() {
@@ -76,6 +82,14 @@ function replaceKeepingFocus(html) {
   if (focusedId) document.getElementById(focusedId)?.focus({ preventScroll: true });
 }
 
+function syncCardLocation(query) { if (state.view === 'board' && state.board?.selected) query.set('card', state.board.selected); else query.delete('card'); }
+function syncLocation() {
+  const query = new URLSearchParams(window.location.search);
+  query.set('project', state.project.id); query.set('view', state.view);
+  if (state.pageId && !isProjectView()) query.set('page', state.pageId); else query.delete('page');
+  syncCardLocation(query);
+  history.replaceState(null, '', `${window.location.pathname}?${query}`);
+}
 export function render() {
   if (!state.project && !state.projects.length) {
     app.innerHTML = `${welcomeMarkup()}<div class="save-message" role="status"></div>`;
@@ -92,6 +106,11 @@ export function render() {
   syncWorkflowState();
   syncCompetitorsState();
   syncBoardState();
+  syncDiscoveryState();
+  syncProductMapState();
+  syncProjectWork();
+  syncAnnotations();
+  syncLocation();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();
 }
@@ -100,7 +119,7 @@ export function showError(message) {
   app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
-const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions']);
+const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map']);
 
 function initialView(project, destination) {
   if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };

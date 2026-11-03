@@ -2,7 +2,7 @@
 
 <h1 align="center">dogfood</h1>
 
-<p align="center"><strong>A lightweight workspace for coding agents to plan, build and prove web projects.</strong> Keep a clear task plan, checks and page evidence in one place; and you see where quality stands, page by page, as the project moves: computer and phone screenshots and six plain answers per page, each backed by evidence you can open. QA becomes a streamlined process, so you finish projects faster.</p>
+<p align="center"><strong>Plan your app, direct your agents, and see what is actually proven.</strong> A local workspace for discovery, reviewed scope, native agent conversations, page feedback and evidence-backed acceptance.</p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
@@ -11,9 +11,23 @@
 
 Terminal controls for native requests and installation checks are in the [CLI guide](docs/cli.md). Run `dogfood doctor --project YOUR_PROJECT --require-agents` to verify the local request setup.
 
+## Start with an idea or an existing app
+
+Choose **New idea** to create a managed local Git workspace and enter Discovery. Work through the
+questions yourself or ask your native agent for the next material questions. Save the intended
+users, journey, boundaries, pages/features and required proof, then review the scope. A new project's
+first build requires real Vision/Plan documents, the current review and those documents in committed
+source. The explicit **Save reviewed scope baseline** action commits only unchanged managed drafts;
+it refuses unrelated or staged work. Later ordinary implementation edits do not revoke scope review.
+Existing apps can be connected without pretending they completed discovery.
+
+The **Product map** follows actual page → feature → task → request → evidence links. Optional saved
+Graphify context is read locally and bounded to files in linked task scope; stale graphs are labeled
+historical. It does not run extraction or invent code dependencies. See [Discovery and scope review](docs/discovery.md).
+
 ## Plan → build → verify → resume
 
-Install the CLI once with `npm link` from the Dogfood checkout, or invoke `node /absolute/path/to/dogfood/bin/dogfood.mjs` directly. Start a project before a website exists:
+Install the CLI once with `npm link` from the Dogfood checkout, or invoke `node /absolute/path/to/dogfood/bin/dogfood.mjs` directly. Connect an existing checkout before a website exists:
 
 ```sh
 cd /path/to/my-project
@@ -40,7 +54,7 @@ dogfood task accept booking --agent codex
 
 Checks run as explicit argument arrays in the registered Git checkout, without shell parsing. Receipts are bound to the plan and current source files; changes during or after verification require a new run. A linked `pageIds` list requires those pages to pass acceptance as well. Unnamed tasks receive stable `task-N` IDs. Dependencies and atomic claims keep agents on available work. Record a blocker or handoff with `task update --input changes.json`; `releaseOwner:true` releases your claim. An abandoned claim can be recovered explicitly with `releaseOwner:true` plus a `recoveryReason`; the recovery is recorded and clears its receipt. Checks can set `timeoutSeconds` (1–1800, default 300), and output is kept as bounded tails rather than stopping a noisy test.
 
-The **Plan** view shows current work, available work, blockers and receipts, with the milestone document folded below. A fresh agent starts with `context --json`; it does not need the earlier chat. Tasks live once in `data/workflows/`; Markdown holds product intent and design rather than a competing status ledger. `--input -` reads JSON from stdin, `schema TOOL` shows the exact contract, and `tool TOOL --input file.json` exposes every underlying MCP operation.
+The **Plan** view shows current work, available work, blockers and receipts, with the milestone document folded below. **Send to agent** links the selected task to a native request; **Work myself** claims it for you. Overview and `context --json` include pending requests and the next action alongside planned work and QA gaps, so a fresh session can resume without the earlier chat. Tasks live once in `data/workflows/`; Markdown holds product intent and design rather than a competing status ledger. `--input -` reads JSON from stdin, `schema TOOL` shows the exact contract, and `tool TOOL --input file.json` exposes every underlying MCP operation.
 
 Use `attach-url URL` once the app runs, then register its pages with the existing QA tools. `onboard` creates a new project; do not use it to replace a checkout-first plan.
 
@@ -63,25 +77,27 @@ Use the sidebar search to find a page by its name, group, route, page ID, someth
 
 ## Give an agent work from the board
 
-Open **Agent board** in any project. **New request** lets you choose Claude Code or Codex,
-describe the result you want, and optionally link the request to a page and feature.
-Save it for later, or explicitly choose **Create & start**.
+Open **Agent board**, choose Claude Code or Codex and describe the outcome. Link a planned task,
+page or feature, then save it for later or explicitly **Create & start**. Discovery and page-QA
+requests use the same durable conversations with distinct authority from implementation.
 
-The board uses [PAL](https://github.com/ali-abassi/pal) installed on your machine. `pal` must be on
-the server's PATH, and your chosen native agent must already be signed in. You can set
-`DOGFOOD_PAL_BIN` to the absolute executable path if needed. No provider key belongs in a card.
+The board uses [PAL](https://github.com/ali-abassi/pal) and the native agent's existing sign-in.
+Run `dogfood doctor --project YOUR_PROJECT --require-agents` to check local tooling and the running
+dispatcher. The native context includes the stable project ID, linked outcome/scope/checks and
+browser contract. Set the server's `DOGFOOD_BROWSER_SESSION` and `DOGFOOD_BROWSER_PROFILE` to the
+operator's existing preview; missing browser setup is reported rather than replaced with a new profile.
 
-Each request starts an isolated Git worktree from the project's committed checkout. Uncommitted
-files are not copied. **Send to agent** continues that card's conversation; **Note only** records
-feedback without starting work. Feedback sent during a turn is queued for the next turn.
-The session and worktree remain available if the Dogfood server restarts.
+Each request uses an isolated worktree from committed source. Explicit feedback continues the same
+session, notes do not launch work, and in-flight feedback waits for the next turn. **Inspect changes**
+shows bounded patches/new files and inert HTML snapshots. **Apply reviewed changes to source** stages
+that exact inspected change set against a clean matching base. **Save reviewed changes** makes an
+explicit local commit of the unchanged reviewed staging, ready for source checks and page QA.
+These actions preserve unrelated work and do not push or deploy. Native requests lack authority to approve or integrate their own work; recognized native contexts are refused by the operator tools. **Mark reviewed & done** only closes the request.
 
-Finished turns arrive in **Review**, with the agent's result and worktree. Marking a request done
-does not merge its branch, deploy an app, or accept its page QA. Review and integrate the change,
-then use the existing Plan checks and page acceptance gates. Errors and input requests appear in
-**Needs you**. Stop a running request before marking it done.
-
-See [the agent-board contract](docs/agent-board.md) for behavior, verification and boundaries.
+Page screenshots also support **Pin feedback**: the position, device, immutable screenshot revision,
+finding and native request stay connected. Resolve it with a fresh retest note; page acceptance is
+still separate. See [the agent-board contract](docs/agent-board.md).
+This is a trusted single-user local workbench. Native-context guards prevent accidental self-approval; they do not sandbox code running with the same OS user and local API access.
 
 ## With your coding agent
 
@@ -113,7 +129,7 @@ Add your app from the app's **Add an app** form, the CLI, or an MCP call:
 npm run onboard -- https://site.example
 ```
 
-Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registers them, and records a validated full-page desktop and mobile screenshot plus measured page facts. It can scan up to 50 pages. Install the browser once with `npm i -g agent-browser`. To scan signed-in pages, pass a Chrome profile such as `Default` with `npm run onboard -- https://site.example --profile Default` or the `browserProfile` field in the app or MCP tool. Add `--ai-review` (the checkbox in the app, or `confirmAiReviewUsage` in `dogfood_onboard_project`) to also run the AI check on every page, so each arrives with answers for Looks right, Clear purpose, and Easy to use, and suggestions for what people can do there; it costs under a tenth of a cent per page. Check every page again after a deploy with the overview's **Check all pages** button, `npm run scan -- <project-id>`, or `dogfood_scan_project`; each reports which pages look different since the previous check. A page counts as changed when its screenshot size changed or more than 0.5% of pixels differ (`changeThreshold` in `lib/diff.mjs`). Good answers with evidence older than the last visual change read Recheck until they are answered again; list page IDs to check only those pages.
+Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registers them, and records a validated full-page desktop and mobile screenshot plus measured page facts. It can scan up to 50 pages. Install the browser once with `npm i -g agent-browser`. To scan signed-in pages, pass a Chrome profile such as `Default` with `npm run onboard -- https://site.example --profile Default` or the `browserProfile` field in the app or MCP tool. Add `--ai-review` (the checkbox in the app, or `confirmAiReviewUsage` in `dogfood_onboard_project`) to also run the AI check on every page, so each arrives with answers for Looks right, Clear purpose, and Easy to use, and suggestions for what people can do there; it uses the configured paid provider and records usage/cost. Check every page again after a deploy with the overview's **Check all pages** button, `npm run scan -- <project-id>`, or `dogfood_scan_project`; each reports which pages look different since the previous check. A page counts as changed when its screenshot size changed or more than 0.5% of pixels differ (`changeThreshold` in `lib/diff.mjs`). Good answers with evidence older than the last visual change read Recheck until they are answered again; list page IDs to check only those pages.
 
 `npm run report -- <project-id> > report.md` writes a shareable Markdown summary: what needs work first, every page's six answers, open bugs, and what the evidence does not prove.
 
@@ -121,7 +137,7 @@ Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registe
 
 Upgrading from an earlier dogfood? Run `npm run migrate` once. It moves projects to the six answers and the current data version, keeps old verdicts that no longer count on record under `retiredChecks`, and leaves any outside-edit warning in place.
 
-Advanced: you can still create `data/projects/<id>.json` by hand using [`demo/projects/tidepool.json`](demo/projects/tidepool.json) as a manifest example, then validate it with `node scripts/check-projects.mjs`.
+Use CLI/MCP operations to register projects and record evidence. [`demo/projects/tidepool.json`](demo/projects/tidepool.json) documents the manifest format; do not manually edit live registry/workflow files.
 
 `data/` is git-ignored, so your projects, screenshots, runs, and reviews stay on your machine. Set `DOGFOOD_DATA` to keep them elsewhere, and `DOGFOOD_PORT` to change the port.
 
@@ -135,28 +151,44 @@ A page's report shows its full-page computer and phone screenshots in frames you
 
 ### The QA agent
 
-A page that is not complete offers **Ask the QA agent**. dogfood starts the command in `DOGFOOD_QA_AGENT` (set in the git-ignored `.env`) with a brief naming what the page still needs, how to record evidence through dogfood's tools, and the rules (never publish, pay, delete, change settings, or type a password). While it works the page shows its status and reloads its evidence. For example, `.env` might hold:
-
-```
-DOGFOOD_QA_AGENT=my-agent run --name qa-{page}-{run} --cwd {workdir} --background
-META_API_KEY=...
-```
-
-`{project}`, `{page}`, `{run}` and `{workdir}` are filled in; an agent runner can keep the agent working until `dogfood_complete` accepts the page. When a signed-in page's saved session expires, point the project's scans at a profile that is still signed in with `dogfood_set_browser_profile` rather than typing a password.
+**Ask the QA agent** opens a durable native `qa` request with the page's actual evidence gaps and
+selected browser contract. Follow its state, answer questions, stop or continue it from Agent board.
+QA records findings and evidence; it does not edit application source or accept tasks. A URL-only
+project uses a labeled audit workspace and does not claim to know the deployed source revision.
+`DOGFOOD_QA_BACKEND` can prefer `codex` or `claude`. Old custom `DOGFOOD_QA_AGENT` commands are no
+longer executed, and their launch receipts remain historical. No arbitrary runner command is needed.
 
 ### Competitors
 
-Each project keeps up to five competitors. Add one by its website and dogfood reads its key pages as a signed-out visitor (the landing page, then pricing, features, product and about pages before anything else), keeping full-page computer and phone screenshots, each page's title, description and headings, and its text. **Summarize with AI** sends that text (no screenshots) with the project's `vision.md` to DeepSeek (`deepseek-flash`) and records what they do, who it is for, pricing, how they sell, key features, and how they compare with the project. It costs well under a cent. Competitors live in `data/competitors/<project>.json`, and their screenshots under `data/captures/<project>/competitors/`.
+Each project keeps up to five competitors. Add one by its website and dogfood reads its key pages as a signed-out visitor (the landing page, then pricing, features, product and about pages before anything else), keeping full-page computer and phone screenshots, each page's title, description and headings, and its text. **Summarize with AI** sends that text (no screenshots) with the project's `vision.md` to DeepSeek (`deepseek-flash`) and records what they do, who it is for, pricing, how they sell, key features, and how they compare with the project. It uses the configured provider after an explicit summary action. Competitors live in `data/competitors/<project>.json`, and their screenshots under `data/captures/<project>/competitors/`.
 
 ### The AI check
 
-**Check with AI** on a page sends its computer and phone screenshots, with your project's design rules, to DeepSeek (`deepseek-flash`, which reads images). It scores Looks right, Clear purpose, and Easy to use from 1 to 10 with a reason each; 7 or above reads as Good, because below 7 the prompt means a visitor must guess or the page looks broken. It also suggests what people can do on the page, which you can add with one click. Put `DEEPSEEK_API_KEY=...` in a `.env` file at dogfood's root (git-ignored) or in the server's environment; the MCP server reads the same file. Each check costs under a tenth of a cent (about $0.0006 for both screenshots), recorded from DeepSeek's token counts and published prices, and is tied to both screenshots' hashes, so it stops counting when either screenshot changes.
+**Check with AI** sends available page captures and a compact visual contract to the configured
+DeepSeek provider. The contract includes design rules, available `design.json` brand context,
+page intent/features, actual device coverage and prompt/schema versions. Feedback describes visible
+problems and suggests user-facing capabilities; it cannot prove backend behavior or security.
+A partial desktop-only opinion is labeled partial and cannot supply cross-device Good answers.
+
+Set `DEEPSEEK_API_KEY` in the server environment or git-ignored `.env` when using this optional paid
+review. Usage and estimated cost are recorded with the result. Freshness binds the captures and the
+judgment contract: changed rules, brand context, device coverage or prompt version require recheck.
+On upgrade, older AI reviews remain readable but may become historical; rerunning a paid review is
+an explicit action. Human and agent verdicts remain separate evidence.
 
 ### Agents (MCP)
 
 Run `node mcp.mjs` as a dependency-free stdio MCP server so an agent can add apps, collect evidence, run tests, and see exactly what remains before a page is done. Register it with Claude Code using `claude mcp add --scope user dogfood -- node /absolute/path/to/dogfood/mcp.mjs`. An agent whose client has not loaded it yet can call any tool once from a shell: `node mcp.mjs dogfood_next '{"project":"my-app"}'`.
 
 Page-writing tools return that page's status, its six answers, and what it still needs, each naming the tool that resolves it; issue creation also returns the new issue ID. Project creation returns a compact project summary.
+
+Workflow tools include `dogfood_start_project`, `dogfood_project_readiness`, `dogfood_save_brief`,
+`dogfood_review_scope`, `dogfood_create_project_documents`, `dogfood_save_scope_baseline` and
+`dogfood_project_map`. Native conversations use `dogfood_agent_board`, `dogfood_agent_card`,
+`dogfood_agent_request`, `dogfood_agent_comment`, `dogfood_agent_changes` and `dogfood_agent_action`.
+Screenshot feedback uses `dogfood_annotations`, `dogfood_add_annotation`,
+`dogfood_annotation_request` and `dogfood_resolve_annotation`. Inspect exact schemas with
+`dogfood schema TOOL`; source-writing/review actions require the operator's explicit authorization.
 
 - `dogfood_projects` — list projects and completed page counts.
 - `dogfood_report` — a Markdown QA report: what needs attention, every page's gaps, open issues, and what is not proven.

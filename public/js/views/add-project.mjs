@@ -1,3 +1,4 @@
+import { newProjectMarkup } from './new-project.mjs';
 import { readJson } from '../api.mjs';
 import { isHttpUrl, escapeHtml, plainMessageMarkup, scanPosition } from '../format.mjs';
 import { state } from '../state.mjs';
@@ -5,11 +6,11 @@ import { loadProject, render } from '../app.mjs';
 
 const addProjectCopy = {
   welcome: { title: 'Plan, build, and check your app.', lede: 'Plan and build with your coding agent, then see whether your app is working on a computer and a phone. Keep the evidence here to pick up where you left off.' },
-  add: { title: 'Add an app', lede: 'Paste its address. dogfood finds its pages and takes screenshots of each one on a computer and a phone.' },
+  add: { title: 'Start a project', lede: 'Shape a new idea, or connect an app you already have.' },
 };
 
 // The sentence a person gives their coding agent; the skill in the repository does the rest.
-export const agentPrompt = 'Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md for my project. Read the current context, turn my goal into a plan with clear checks, build the next available task, and verify it with tests and page evidence. Record what is done, blocked, and next so another session can resume.';
+export const agentPrompt = 'Set up dogfood from https://github.com/ali-abassi/dogfood and follow its skills/dogfood/SKILL.md for my project. Read the project context first. For a new idea, complete discovery, write Vision and Plan, resolve material questions and record scope review before implementation. Build from the linked outcome, allowed scope and exact checks; verify the actual page and preserve the selected browser session. Record what is done, blocked, and next so another session can resume.';
 
 export const idleOnboarding = { job: '', running: false, total: null, scanned: 0, current: null, error: '' };
 
@@ -31,7 +32,7 @@ function addProjectHeadingMarkup(welcome, copy) {
 }
 
 function agentPromptMarkup() {
-  return `<section class="agent-prompt" aria-labelledby="agent-prompt-heading"><h2 id="agent-prompt-heading">With your coding agent</h2><p>Give your agent these instructions to plan, build, check, and resume your project.</p><div class="agent-prompt-box"><p data-agent-prompt>${escapeHtml(agentPrompt)}</p><button type="button" class="text-button" data-action="copy-agent-prompt">${state.copied ? 'Copied' : 'Copy'}</button></div></section><h2 class="add-here-heading">Have an app already?</h2>`;
+  return `<section class="agent-prompt" aria-labelledby="agent-prompt-heading"><h2 id="agent-prompt-heading">With your coding agent</h2><p>Give your agent these instructions to plan, build, check, and resume your project.</p><div class="agent-prompt-box"><p data-agent-prompt>${escapeHtml(agentPrompt)}</p><button type="button" class="text-button" data-action="copy-agent-prompt">${state.copied ? 'Copied' : 'Copy'}</button></div></section><h2 class="add-here-heading">Connect an existing app</h2>`;
 }
 
 // The address field names its error, so a screen reader announces why it was refused.
@@ -59,14 +60,17 @@ function backToOverviewMarkup(welcome) {
   return welcome ? '' : '<button type="button" class="back-button" data-action="cancel-add-project">‹ Overview</button>';
 }
 
+function entryHidden(mode, target) { return mode === target ? '' : 'hidden'; }
 export function addProjectFormMarkup(welcome) {
   const copy = addProjectCopy[welcome ? 'welcome' : 'add'];
   const disabled = state.onboarding.running ? 'disabled' : '';
   const cancel = welcome ? '' : `<button class="text-button" type="button" data-action="cancel-add-project" ${disabled}>Cancel</button>`;
   const draft = state.projectDraft;
+  const mode = state.projectEntry || 'idea';
   return `${backToOverviewMarkup(welcome)}<section class="add-project-panel content-panel" aria-label="Add an app">
     ${addProjectHeadingMarkup(welcome, copy)}
-    ${agentPromptMarkup()}
+    <div class="project-entry-switch" role="group" aria-label="Start project"><button type="button" class="text-button" data-project-entry="idea" aria-pressed="${mode === 'idea'}">New idea</button><button type="button" class="text-button" data-project-entry="existing" aria-pressed="${mode === 'existing'}">Existing app</button></div>
+    <div ${entryHidden(mode, 'idea')}>${newProjectMarkup()}</div><div ${entryHidden(mode, 'existing')}>${agentPromptMarkup()}
     <form id="add-project-form" novalidate>
       <fieldset ${disabled}>
         ${addressFieldMarkup(draft)}
@@ -74,7 +78,7 @@ export function addProjectFormMarkup(welcome) {
       </fieldset>
       ${onboardingNoticeMarkup()}
       <div class="form-actions"><button class="save-button" type="submit" ${disabled}>${onboardingButtonText()}</button>${cancel}</div>
-    </form>
+    </form></div>
   </section>`;
 }
 

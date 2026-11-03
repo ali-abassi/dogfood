@@ -1,3 +1,4 @@
+import { annotationImageMarkup, annotationsMarkup } from './annotations.mjs';
 import { escapeHtml, externalLinkMarkup, plainMessageMarkup, safeServedImagePath } from '../format.mjs';
 import { deviceNames, state } from '../state.mjs';
 import { backMarkup } from './answer.mjs';
@@ -16,7 +17,8 @@ function fullScreenshotMarkup(page, device) {
   const shot = shownShot(page, device);
   if (!shot) return missingScreenshotMarkup(page, device);
   const size = shot.width ? ` width="${escapeHtml(shot.width)}" height="${escapeHtml(shot.height)}"` : '';
-  return `<figure class="full-screen full-screen-${device}"><figcaption class="full-screen-caption"><span>${escapeHtml(deviceNames[device])} · ${escapeHtml(shot.caption)}</span><a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption><img data-screenshot data-screens-image src="${shot.src}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}></figure>`;
+  const image = `<img data-screenshot data-screens-image src="${shot.src}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}>`;
+  return `<figure class="full-screen full-screen-${device}"><figcaption class="full-screen-caption"><span>${escapeHtml(deviceNames[device])} · ${escapeHtml(shot.caption)}</span><a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption>${annotationImageMarkup(page, device, shot, image)}</figure>`;
 }
 
 function changeFigureMarkup(page, device, kind, path, caption) {
@@ -51,5 +53,5 @@ function changesMarkup(page) {
 
 export function screensMarkup(page) {
   const source = externalLinkMarkup(shownShot(page, state.screensDevice)?.sourceUrl, 'Open page ↗', 'link-button');
-  return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${changesMarkup(page)}</section>`;
+  return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${annotationsMarkup(page, state.screensDevice, shownShot(page, state.screensDevice))}${changesMarkup(page)}</section>`;
 }

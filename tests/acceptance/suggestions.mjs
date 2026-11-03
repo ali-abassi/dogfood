@@ -7,6 +7,7 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { visualContract, visualCoverage, visualPromptVersion } from '../../lib/visual-contract.mjs';
 
 const repo = fileURLToPath(new URL('../..', import.meta.url));
 const data = mkdtempSync(join(tmpdir(), 'dogfood-suggestions-'));
@@ -23,7 +24,7 @@ function seedReview(pageId, suggestions, stale = false) {
   const hash = device => (captures[device].sha256 ? { sha256: stale ? 'f'.repeat(64) : captures[device].sha256 } : null);
   const directory = join(data, 'visual-reviews/tidepool', pageId);
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, '2026-09-25T00-00-00.000Z-seed.json'), JSON.stringify({ promptVersion: 'page-answers-v4', captures: { desktop: hash('desktop'), mobile: hash('mobile') }, analyzedAt: '2026-09-25T00:00:00.000Z', analysis: { dimensions: { design: { score: 8, reason: 'One consistent style.' }, purpose: { score: 8, reason: 'The heading says what the page is for.' }, ease: { score: 8, reason: 'The main job is easy to find.' } }, suggestedFeatures: suggestions } }));
+  writeFileSync(join(directory, '2026-09-25T00-00-00.000Z-seed.json'), JSON.stringify({ promptVersion: visualPromptVersion, contract: visualContract(manifest, pageById(pageId)), coverage: visualCoverage(captures), captures: { desktop: hash('desktop'), mobile: hash('mobile') }, analyzedAt: '2026-09-25T00:00:00.000Z', analysis: { dimensions: { design: { score: 8, reason: 'One consistent style.' }, purpose: { score: 8, reason: 'The heading says what the page is for.' }, ease: { score: 8, reason: 'The main job is easy to find.' } }, suggestedFeatures: suggestions } }));
 }
 seedReview('home', [
   { name: 'Book a lesson button', expected: 'Opens the booking page.' },

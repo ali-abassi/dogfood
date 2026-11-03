@@ -40,7 +40,7 @@ function projectSuggestionMarkup(page, item, index) {
 }
 
 function suggestionPageMarkup(entry) {
-  const stale = entry.stale ? '<p class="stale-note">From an AI check of older screenshots</p>' : '';
+  const stale = entry.stale ? '<p class="stale-note">From an AI check of older screenshots or review rules</p>' : '';
   const boxes = entry.suggestions.map((item, index) => projectSuggestionMarkup(entry.page, item, index)).join('');
   return `<section class="suggestion-page-group content-panel" data-suggestion-page="${escapeHtml(entry.page)}"><h2>${escapeHtml(entry.name)} <small>${escapeHtml(entry.group)}</small></h2>${stale}<div class="suggested-list">${boxes}</div></section>`;
 }

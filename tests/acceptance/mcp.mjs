@@ -286,10 +286,14 @@ try {
   await call('dogfood_set_checklist', { project: 'shop', page: 'home', agent: 'proof', audit: scannedPage.audit });
   const finalPage = (await call('dogfood_page', { project: 'shop', page: 'home' })).json();
   await call('dogfood_record_verdicts', { project: 'shop', page: 'home', agent: 'proof', audit: auditPass(finalPage) });
-  const reviewedCaptures = JSON.parse(readFileSync(join(data, 'projects/shop.json'), 'utf8')).pages[0].captures;
+  const reviewedProject = store.readProject('shop');
+  const reviewedPage = reviewedProject.pages[0];
+  const reviewedCaptures = reviewedPage.captures;
+  const { visualContract, visualPromptVersion } = await import(join(repo, 'lib/visual-contract.mjs'));
+  const contract = visualContract(reviewedProject, reviewedPage);
   const reviews = join(data, 'visual-reviews/shop/home');
   (await import('node:fs')).mkdirSync(reviews, { recursive: true });
-  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-proof.json'), JSON.stringify({ captures: { desktop: { sha256: reviewedCaptures.desktop.sha256 }, mobile: { sha256: reviewedCaptures.mobile.sha256 } }, analysis: { dimensions: { design: { score: 8, reason: 'One consistent style.' }, purpose: { score: 8, reason: 'The heading says what the shop sells.' }, ease: { score: 8, reason: 'The Book button is easy to find.' } } }, analyzedAt: '2026-09-25T00:00:00.000Z' }));
+  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-proof.json'), JSON.stringify({ promptVersion: visualPromptVersion, contract, coverage: contract.coverage, captures: { desktop: { sha256: reviewedCaptures.desktop.sha256 }, mobile: { sha256: reviewedCaptures.mobile.sha256 } }, analysis: { dimensions: { design: { score: 8, reason: 'One consistent style.' }, purpose: { score: 8, reason: 'The heading says what the shop sells.' }, ease: { score: 8, reason: 'The Book button is easy to find.' } } }, analyzedAt: '2026-09-25T00:00:00.000Z' }));
 
   const done = await call('dogfood_complete', { project: 'shop', page: 'home' });
   check('complete accepts the page once every requirement has evidence', () => {

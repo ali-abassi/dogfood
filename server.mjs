@@ -18,6 +18,11 @@ import { qaAgentConfigured, qaAgentRuns, startQaAgent } from './lib/qa-agent.mjs
 import { addCompetitor, listCompetitors, removeCompetitor, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 import { workflow, addTask, claimTask, updateTask, verifyTask, acceptTask, context } from './lib/tasks.mjs';
+import { projectReadiness } from './lib/project-readiness.mjs';
+import { readinessRoutes } from './lib/readiness-tools.mjs';
+import { projectMapRoutes } from './lib/project-map.mjs';
+import { newProjectRoutes } from './lib/new-project.mjs';
+import { annotationRoutes } from './lib/annotations.mjs';
 import { agentBoardRoutes, startAgentBoardDispatcher } from './lib/agent-board.mjs';
 
 const publicDir = join(root, 'public');
@@ -142,7 +147,11 @@ const scanOptions = request => request.headers['content-type']?.startsWith('appl
 const routes = [
   ['GET', '/api/health', () => ({ app: 'dogfood', agentBoardDispatcher: dispatcherStarted, dataStoreIdentity: dataStoreIdentity() })],
   ...agentBoardRoutes(requestJson),
-  ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => workflow(id)],
+  ...readinessRoutes(requestJson),
+  ...projectMapRoutes(),
+  ...newProjectRoutes(requestJson),
+  ...annotationRoutes(requestJson),
+  ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => ({ ...workflow(id), plannedPages: projectReadiness(id).pages })],
   ['GET', '/api/projects/([a-z0-9-]+)/context', ([id]) => context(id)],
   ['POST', '/api/projects/([a-z0-9-]+)/tasks', async ([id], request) => addTask(id, await requestJson(request), person)],
   ['PATCH', taskPath, async ([id, task], request) => updateTask(id, task, await requestJson(request), person)],

@@ -210,7 +210,9 @@ try {
   settle();
   click('[data-action="add-project"]');
   settle();
-  check('Add project opens a form asking only for the URL, with optional name and signed-in profile', () => {
+  click('[data-project-entry="existing"]');
+  settle();
+  check('Existing app opens a form asking only for the URL, with optional name and signed-in profile', () => {
     assert.equal(page(`document.querySelector('#add-project-form input[type="url"]')?.required`), true);
     assert.equal(page(`Boolean(document.querySelector('#add-project-form input[name="name"]'))`), true);
     assert.equal(page(`Boolean(document.querySelector('#add-project-form input[name="browserProfile"]'))`), true);
@@ -257,6 +259,8 @@ try {
   const emptyUrl = await startServer(empty);
   browser('set', 'viewport', '1440', '900');
   browser('open', emptyUrl);
+  settle();
+  click('[data-project-entry="existing"]');
   settle();
   check('with no projects yet, the app opens on Add project instead of an error', () => {
     assert.equal(page(`Boolean(document.querySelector('#add-project-form input[type="url"]'))`), true);

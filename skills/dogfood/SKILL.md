@@ -21,29 +21,85 @@ dogfood context --project my-app --json
 
 Initialization is idempotent for the same project and checkout. No running website, browser, model API, or agent runner is needed to plan. Verification needs a Git checkout with a commit so receipts can bind to its source. Initialize Git if that is part of the authorized new-project work; preserve existing history.
 
-Always read `context` first when continuing. It identifies the next available task, current owners, blockers, documents, and handoff. Read the project's current vision, design, plan and decisions when relevant. Do not claim somebody else's work. Release your own claim with a useful handoff before another agent takes it.
+Always read `context` first when continuing. It identifies the next available task, current owners, blockers, documents, handoff, pending agent requests and a typed `nextAction` across scope, work and review. Read the project's current vision, design, plan and decisions when relevant. Do not claim somebody else's work. Release your own claim with a useful handoff before another agent takes it.
 
 MCP equivalents are `dogfood_init`, `dogfood_context`, `dogfood_tasks`, `dogfood_next_task`, `dogfood_add_task`, `dogfood_claim_task`, `dogfood_update_task`, `dogfood_verify_task`, and `dogfood_accept_task`. Inspect exact arguments with `dogfood schema TOOL`. Existing `dogfood_next` lists page QA gaps, not build tasks. Use `dogfood tool TOOL --input args.json` for any underlying operation; `--input -` reads JSON from stdin. Shell/MCP errors do not prove that a write happened; reread the resulting state.
+
+## Discovery before a new build
+
+For a new idea use `dogfood_start_project` (or **New idea → Start discovery**). It creates a managed
+local Git workspace without launching an agent. Read `dogfood_project_readiness`; save the idea,
+actor, problem, desired outcome, complete journey, constraints, exclusions, failure/recovery states,
+proof and planned pages/features through `dogfood_save_brief`. For an existing brief pass its current
+`revision` as `input.expectedRevision`; a stale write is rejected.
+
+Ask the next three to five dependency-ordered questions that can change scope, with a recommended
+answer and tradeoff. Skip known answers. Distinguish user decisions, evidence and assumptions;
+record decisions and unresolved material questions. Do not start a new project's implementation
+while material questions remain open. A new build needs complete scope, actual Vision/Plan documents,
+an attributed review of their current contract, and those reviewed documents in committed source.
+Changed scope or document contents require review again; ordinary implementation changes do not.
+
+The operator explicitly creates missing source drafts with `dogfood_create_project_documents`,
+reviews the exact `contractHash` with `dogfood_review_scope`, and can save only unchanged managed
+drafts with `dogfood_save_scope_baseline`. Existing files, unrelated work and staged changes are
+protected. **Native request agents may propose brief changes but have no authority to create source documents through these tools, self-approve scope or commit a baseline.** Draft in the assigned isolated
+checkout and return changes for explicit review. `DOGFOOD_NATIVE_REQUEST` marks that runtime;
+`DOGFOOD_PROJECT` only selects the registered project.
+
+An existing import remains usable and explicitly says discovery is not certified. Never label it
+interviewed or scope-reviewed without the actual receipt. Read `docs/discovery.md` in the Dogfood checkout for the full contract. Use `dogfood_project_map` to trace actual planned and
+registered pages → features → tasks → requests → QA evidence. Saved Graphify references are bounded
+to linked task scope and labeled historical when stale; they are not runtime dependency proof.
 
 ## Plan the smallest complete outcome
 
 ### Requests and feedback from the Agent board
 
-The same controls are available from the terminal: `dogfood board list`, `show CARD`, `create --input request.json`, `start CARD`, `comment CARD --input comment.json --send` (or `--note`), `changes CARD`, `stop CARD`, `discard-feedback CARD`, `done CARD` and `reopen CARD`. Supply `--project ID` outside the registered checkout. Creation saves by default; `--start` explicitly launches it. Run `dogfood doctor --project ID --require-agents` to check native sign-in, PAL and the running dispatcher. Read `docs/cli.md` in the Dogfood checkout for examples and readiness boundaries.
+The same controls are available from the terminal: `dogfood board list`, `show CARD`, `create --input request.json`, `start CARD`, `comment CARD --input comment.json --send` (or `--note`), `changes CARD`, `stop CARD`, `discard-feedback CARD`, `done CARD` and `reopen CARD`. Operator source actions are `integrate CARD --input reviewed.json` and `save-source CARD --input integration.json`; use only an inspected fingerprint and the latest integration receipt ID. Supply `--project ID` outside the registered checkout. Creation saves by default; `--start` explicitly launches it. Run `dogfood doctor --project ID --require-agents` to check native sign-in, PAL and the running dispatcher. Read `docs/cli.md` in the Dogfood checkout for examples and readiness boundaries.
 
 People can create project requests in Agent board and explicitly start Claude Code or Codex through
 their local PAL installation. Requests may link a page, feature or existing planned task. Read them
-with `dogfood_agent_board` or one `dogfood_agent_card`; `dogfood_agent_changes` reads their worktree change summary. `dogfood_agent_action` runs, stops, closes, reopens or discards queued feedback on a card; inspect its schema for action values.
+with `dogfood_agent_board` or one `dogfood_agent_card`; `dogfood_agent_changes` reads bounded patches/new-file contents and their inspected fingerprint. `dogfood_agent_action` runs, stops, closes, reopens, discards feedback or performs explicit operator source actions; inspect its schema for action values.
 `dogfood_agent_request` saves for later unless `start:true`; `dogfood_agent_comment` requires an
 explicit `send` choice. Sending or starting delegates work and needs the user's task authorization.
 Notes do not start work. A long-running board dispatcher belongs to the local web server; a one-shot
 MCP call is not a durable queue worker.
+
+Request `intent` is `build`, `discovery` or `qa`. A build follows the linked outcome/scope/checks;
+discovery asks questions and proposes scope; QA inspects without application source edits. URL-only
+QA uses a labeled audit workspace and cannot claim a deployed source revision. Native context gives
+the stable project ID, explicit context command, full linked expectations or an exact read path,
+source revision and browser contract. Never infer a missing task link from a similar name or the
+only task; ask before dependent edits.
+
+Reuse the operator's designated browser session/profile across pages and widths. Snapshot, interact,
+re-snapshot and independently verify. Do not create another session, close the selected preview,
+change accounts or stop services. Missing browser/authentication is setup-required. A DOM assertion
+proves that exact fact; inspect the rendered result before claiming visual quality.
+
+Finish with a concise outcome and a fenced `dogfood-result` JSON block using the supplied schema:
+status `ready_for_review` or `needs_input`, summary, specific decision, exact checks/results/evidence,
+preview URL when available and unverified items. Keep preparation chatter in the transcript. These
+checks are agent-reported until backed by independent receipts. Preserve NEEDS_INPUT for a required
+question; do not guess an answer to keep work moving.
 
 The board owns conversations and isolated native sessions. Keep planned-task claims, verification
 receipts and page acceptance in their existing tools. An agent's finished turn returns to Review;
 it never proves the app works, merges a branch, deploys or accepts QA. Review source and user-visible
 outcomes before integrating returned work. Preserve the request's worktree and conversation so a
 person can send further feedback through the same card.
+
+The operator can Inspect changes, Apply the exact reviewed change set to clean matching source
+(staging only), then Save reviewed changes as a local commit. Concurrent or unrelated edits are
+preserved and can block that action. Neither action accepts a task/page, pushes or deploys. A native request must not apply or save source, including another card's source. Operator tools guard recognized native contexts against accidental self-approval; they do not sandbox same-user local code. Do not bypass the authority contract through another local interface or a different actor label. Read the resulting revision
+and continuation receipt; if work changed concurrently, start a fresh request from saved source.
+
+For a page problem, `dogfood_add_annotation` records a pin on the exact current screenshot hash,
+position and device, retaining immutable image evidence and an open finding. Create its linked
+request with `dogfood_annotation_request`; it saves by default. Resolve with
+`dogfood_resolve_annotation` only after a fresh retest note. Older pins remain historical after a
+new capture, and pin resolution does not accept QA or close the agent request.
 
 Keep intent in `vision.md`, visual direction in `design.html`/`design.md`, and milestones in `plan.md`. Dogfood's structured tasks are the task-status source of truth; don't maintain another checkbox ledger independently.
 
@@ -70,7 +126,7 @@ dogfood next --project my-app --json
 dogfood task claim booking --project my-app --agent codex
 ```
 
-Use your stable agent name. Checks are argv arrays executed directly in the registered checkout; quotes and shell operators aren't parsed. Configure deliberate native test commands, not deployment, purchase or destructive commands. Register pages once an app exists, then link UI tasks to them with `task update` before acceptance. Checks alone cannot accept a task with linked pages that haven't passed page acceptance.
+Use your stable agent name. Checks are argv arrays executed directly in the registered checkout; quotes and shell operators aren't parsed. Configure deliberate native test commands, not deployment, purchase or destructive commands. Use the planned page IDs from Discovery to link work before the app exists. Register matching QA pages once it runs. A planned link is not proof: task acceptance still requires actual current page QA, and checks alone cannot accept an unregistered or unaccepted linked page.
 
 ## Build, verify, accept
 
@@ -118,3 +174,16 @@ Only an explicit `--live-url` scan uses deployment-receipt acceptance. Configure
 Declare role-restricted pages with `requiredRole`, `roleProof:{selector,expectedText}` and, if needed, named `fixture` prerequisites via `dogfood_register_page`. The scan verifies visible role proof on desktop and phone. A wrong role returns setup-required rather than recording a misleading not-found page. Configure local fixture commands with `dogfood_set_fixture_setup` as argv arrays, never shell strings or credentials. Explicitly opt in with `dogfood scan --fixtures NAME` (comma-separated or repeated). Requested fixture setup runs once per scan invocation; each page still validates its prerequisites. Fixture execution is bounded and refused on live scans; select the needed real profile for live checks.
 
 Persistent MCP connections advertise tool-list changes and load fresh implementations per request. An old server that predates this implementation needs one restart to install it; subsequent saved schema changes notify clients with `notifications/tools/list_changed`. CLI calls always load the current source.
+
+## Visual opinion and durable QA
+
+**Ask the QA agent** uses a native `qa` request on the board; legacy custom `DOGFOOD_QA_AGENT`
+commands are not executed. A completed audit may contain failures. Task/page acceptance stays
+separate, and a URL-only audit never establishes the application's source revision.
+
+**Check with AI** is optional provider-backed visual feedback. Its freshness includes capture hashes,
+actual device coverage, normalized design rules, available brand/page context and prompt/schema
+version. Historical reviews remain readable when that contract changes; a new paid call is explicit.
+Review only supplied devices. Missing mobile evidence remains not reviewed and cannot support a
+cross-device Good answer. A screenshot opinion never proves behavior, security, speed or release
+readiness. Attribute observed evidence and unverified items instead of promoting a model score.

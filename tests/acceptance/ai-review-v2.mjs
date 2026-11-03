@@ -56,7 +56,7 @@ try {
   const outbound = [];
   globalThis.fetch = async (_url, options) => {
     outbound.push(JSON.parse(options.body));
-    return new Response(JSON.stringify({ id: 'fixture', model: 'deepseek-flash', choices: [{ message: { content: JSON.stringify(analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 300, cost: 0.002 } }), { status: 200 });
+    return new Response(JSON.stringify({ id: 'fixture', model: 'deepseek-flash', choices: [{ message: { content: JSON.stringify(outbound.length === 2 ? { ...analysis, dimensions: { ...analysis.dimensions, design: { score: 8, reason: 'The desktop has a consistent style.' }, ease: { score: 8, reason: 'The class picker is visible.' } }, evidence: [{ location: 'desktop top', observation: 'The heading is clear.' }, { location: 'desktop middle', observation: 'The classes are visible.' }] } : analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 300, cost: 0.002 } }), { status: 200 });
   };
   let bothResult;
   let desktopOnly;
@@ -83,7 +83,7 @@ try {
   });
   check('the saved review records both screenshots and the current prompt', () => {
     const { review } = bothResult;
-    assert.equal(review.promptVersion, 'page-answers-v5');
+    assert.equal(review.promptVersion, 'page-answers-v6');
     assert.equal(review.captures.desktop.sha256, book.captures.desktop.sha256);
     assert.equal(review.captures.mobile.sha256, book.captures.mobile.sha256);
     assert.equal(desktopOnly.review.captures.mobile, null);
@@ -127,7 +127,7 @@ try {
     const project = await (await fetch(`${url}/api/projects/tidepool`)).json();
     check('a current review answers what nobody has judged, and says it was the AI', () => {
       const purpose = project.pages.find(item => item.id === 'book').progress.answers.find(item => item.id === 'purpose');
-      assert.deepEqual([purpose.status, purpose.parts[0].source, purpose.summary], ['pass', 'ai', analysis.dimensions.purpose.reason]);
+      assert.deepEqual([purpose.status, purpose.parts[0].source, purpose.summary], ['pass', 'ai', `AI visual opinion: ${analysis.dimensions.purpose.reason}`]);
     });
     const foreign = await fetch(`${url}/api/projects/tidepool/pages/book/features`, { method: 'POST', headers: { Origin: 'https://evil.example', 'Content-Type': 'application/json' }, body: JSON.stringify({ features: [suggestions[2]] }) });
     check('the add-features API refuses cross-origin requests', () => assert.equal(foreign.status, 403));

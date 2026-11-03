@@ -39,6 +39,9 @@ const help = `dogfood — plan, build, verify, and resume a web project
   dogfood board done CARD
   dogfood board reopen CARD
   dogfood board discard-feedback CARD
+  dogfood board integrate CARD --input reviewed.json
+  dogfood board save-source CARD --input integration.json
+  dogfood board release-integration CARD --input integration.json
   dogfood tool TOOL --input args.json
   dogfood schema [TOOL]
   dogfood skill
@@ -177,7 +180,7 @@ function boardCommand([action = 'list', card, ...extra], values) {
 }
 
 function validateBoardAction(action) {
-  if (!['list', 'show', 'changes', 'create', 'comment', 'start', 'run', 'stop', 'done', 'complete', 'reopen', 'discard-feedback'].includes(action)) throw new Error(`Unknown board action: ${action}. Run dogfood --help.`);
+  if (!['list', 'show', 'changes', 'create', 'comment', 'start', 'run', 'stop', 'done', 'complete', 'reopen', 'discard-feedback', 'integrate', 'save-source', 'release-integration'].includes(action)) throw new Error(`Unknown board action: ${action}. Run dogfood --help.`);
 }
 
 function validateBoardPositionals(action, card) {
@@ -195,7 +198,14 @@ function boardCardCommand(action, project, card, values) {
   if (action === 'show') return boardTool('dogfood_agent_card', { project, card });
   if (action === 'changes') return boardTool('dogfood_agent_changes', { project, card });
   if (action === 'comment') return boardComment(project, card, values);
+  if (['integrate', 'save-source', 'release-integration'].includes(action)) return boardSourceAction(action, project, card, values);
   return boardAction(project, card, action);
+}
+function boardSourceAction(action, project, card, values) {
+  const input = inputJson(values);
+  const key = action === 'integrate' ? 'fingerprint' : 'integrationId';
+  if (Object.keys(input).some(name => name !== key)) throw new Error(`Reviewed input contains only ${key}.`);
+  return boardTool('dogfood_agent_action', { project, card, action, [key]: input[key] });
 }
 
 const commands = {

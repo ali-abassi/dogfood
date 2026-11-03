@@ -68,7 +68,7 @@ test('visual review judges both screenshots, suggests features, and becomes stal
     assert.equal(content[2].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
     assert.equal(content[3].text, 'Mobile screenshot (390 × 844):');
     assert.equal(content[4].image_url.url, `data:image/png;base64,${png.toString('base64')}`);
-    assert.equal(result.review.promptVersion, 'page-answers-v5');
+    assert.equal(result.review.promptVersion, 'page-answers-v6');
     assert.equal(result.review.analysis.clarityRating, undefined, 'no overall score');
     assert.deepEqual(result.review.analysis.suggestedFeatures, analysis.suggestedFeatures);
     assert.ok(result.review.usage.costUsd > 0, 'cost is worked out from the tokens');
@@ -96,11 +96,14 @@ test('a blocked mobile capture sends only the desktop screenshot and records a n
   const root = mkdtempSync(join(tmpdir(), 'qa-visual-mobile-blocked-'));
   const captures = fixtureCaptures(root);
   captures.mobile = { state: 'blocked', reason: 'The page needs a signed-in session on mobile.' };
-  const provider = stubProvider(analysis);
+  const desktopAnalysis = { ...analysis, dimensions: { ...analysis.dimensions, design: { score: 8, reason: 'The desktop style is consistent.' }, ease: { score: 8, reason: 'Search is at the desktop top.' } }, evidence: [{ location: 'desktop top', observation: 'The Gallery heading is visible.' }, { location: 'desktop middle', observation: 'The page shows a card grid.' }] };
+  const provider = stubProvider(desktopAnalysis);
   try {
     const result = await runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures });
     assert.equal(provider.outbound().messages[0].content.length, 3);
     assert.equal(result.review.captures.mobile, null);
+    assert.deepEqual(result.review.coverage, { reviewedDevices: ['desktop'], notReviewedDevices: ['mobile'], complete: false });
+    assert.match(provider.outbound().messages[0].content[0].text, /Not reviewed: mobile/);
     assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).stale, false);
   } finally {
     restoreProvider(provider);
@@ -208,4 +211,96 @@ test('an answer that breaks the schema gets one more try, and the good second an
     globalThis.fetch = oldFetch;
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+test('review freshness includes the judgment contract, brand and available devices', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'qa-visual-contract-'));
+  const captures = fixtureCaptures(root);
+  const checkout = join(root, 'checkout');
+  mkdirSync(checkout);
+  writeFileSync(join(checkout, 'design.json'), JSON.stringify({ brand: { idea: 'Quiet blue' } }));
+  const project = { id: 'fixture', guidelines: ['One primary action'], source: { checkout } };
+  const page = { id: 'gallery', name: 'Gallery', captures, features: [{ name: 'Search', expected: 'Results match the query.' }] };
+  const provider = stubProvider(analysis);
+  try {
+    const result = await runVisualReview(root, project, page);
+    const fresh = context => latestVisualReview(root, 'fixture', 'gallery', captures, context);
+    assert.equal(fresh({ project, page }).stale, false);
+    assert.match(provider.outbound().messages[0].content[0].text, /Quiet blue/);
+    assert.equal(fresh({ project: { ...project, guidelines: ['Two primary actions'] }, page }).stale, true);
+    assert.equal(fresh({ project, page: { ...page, audience: 'Experienced editors' } }).stale, true);
+    writeFileSync(join(checkout, 'design.json'), JSON.stringify({ brand: { idea: 'High contrast black' } }));
+    assert.equal(fresh({ project, page }).stale, true);
+    const file = join(root, 'visual-reviews', 'fixture', 'gallery', readdirSync(join(root, 'visual-reviews', 'fixture', 'gallery'))[0]);
+    writeFileSync(file, JSON.stringify({ ...result.review, promptVersion: 'retired-rubric' }));
+    assert.equal(fresh({ project, page }).stale, true);
+  } finally { restoreProvider(provider); rmSync(root, { recursive: true, force: true }); }
+});
+
+test('a desktop-only review rejects invented phone evidence and cannot make cross-device Good', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'qa-visual-unsupported-device-'));
+  const captures = fixtureCaptures(root);
+  captures.mobile = { state: 'blocked', reason: 'No mobile image' };
+  const provider = stubProvider(analysis);
+  try {
+    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures }), /mobile|both devices/);
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).review, null);
+    const { pageAnswers } = await import('../lib/answers.mjs');
+    const page = { id: 'gallery', name: 'Gallery', checks: Object.fromEntries(['design', 'purpose', 'ease'].map(name => [name, { status: 'untested' }])), scan: null, features: [], findings: [], qa: { tests: [] }, audit: { security: [], scraping: [], seo: [], accessibility: [] } };
+    page.captures = captures;
+    const answers = pageAnswers(page, { dimensions: analysis.dimensions, at: 'now', coverage: { reviewedDevices: ['desktop'], notReviewedDevices: ['mobile'], complete: false } });
+    assert.equal(answers.find(item => item.id === 'design').status, 'partial');
+    assert.match(answers.find(item => item.id === 'design').summary, /Not reviewed: mobile/);
+  } finally { restoreProvider(provider); rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test('an in-flight brand change cannot relabel an opinion with a contract the provider never saw', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'qa-visual-contract-race-'));
+  const captures = fixtureCaptures(root), checkout = join(root, 'checkout');mkdirSync(checkout);
+  const file = join(checkout, 'design.json');writeFileSync(file, JSON.stringify({ brand: { idea: 'Original brand' } }));
+  const project = { id: 'fixture', source: { checkout } }, page = { id: 'gallery', name: 'Gallery', captures };
+  const provider = stubProvider(analysis), initialFetch = globalThis.fetch;
+  globalThis.fetch = async (...args) => {
+    const response = await initialFetch(...args);
+    writeFileSync(file, JSON.stringify({ brand: { idea: 'Changed while review was running' } }));
+    return response;
+  };
+  try {
+    const result = await runVisualReview(root, project, page);
+    assert.match(result.review.contract.brand.contract, /Original brand/);
+    assert.doesNotMatch(result.review.contract.brand.contract, /Changed while/);
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures, { project, page }).stale, true);
+  } finally { restoreProvider(provider);rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test('a desktop contact-page review accepts phone-number content without inventing mobile evidence', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'qa-visual-phone-number-'));
+  const captures = fixtureCaptures(root);
+  captures.mobile = { state: 'blocked', reason: 'No mobile capture available.' };
+  const contact = {
+    pagePurpose: 'Help visitors find the office phone number.',
+    primaryAction: 'Call the phone number shown in the contact details.',
+    dimensions: {
+      design: { score: 8, reason: 'The phone number is clearly separated from the postal address.' },
+      purpose: { score: 8, reason: 'The heading explains how to contact the mobile repair service.' },
+      ease: { score: 8, reason: 'The phone number is easy to find on the desktop page.' },
+    },
+    evidence: [
+      { location: 'desktop top', observation: 'The Contact heading names the mobile repair service.' },
+      { location: 'desktop middle', observation: 'The phone number appears beside the address.' },
+    ],
+    improvements: ['Give the phone number a clearer action label.'],
+    suggestedFeatures: [{ name: 'Find the office phone number', expected: 'Visitors can identify the correct phone number.' }],
+  };
+  const provider = stubProvider(contact);
+  try {
+    const result = await runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Contact', captures });
+    assert.equal(result.review.analysis.pagePurpose, contact.pagePurpose);
+    assert.deepEqual(result.review.analysis.evidence, contact.evidence);
+    assert.deepEqual(result.review.coverage.reviewedDevices, ['desktop']);
+    assert.equal(result.review.coverage.complete, false);
+  } finally { restoreProvider(provider);rmSync(root, { recursive: true, force: true }); }
 });

@@ -49,7 +49,7 @@ function receiptNoteMarkup(receipt) {
 
 function availableTaskActions(task) {
   const options = [];
-  if (canStart(task)) options.push(['claim', 'Start work']);
+  if (canStart(task)) options.push(['claim', 'Work myself']);
   if (canVerify(task)) options.push(['verify', 'Run checks']);
   if (canAccept(task)) options.push(['accept', 'Accept task']);
   return options;
@@ -69,7 +69,7 @@ function taskActionsMarkup(task) {
   if (task.owner && task.owner !== 'person') return recoveryMarkup(task);
   const busy = Boolean(state.workflow.action);
   const actions = availableTaskActions(task).map(option => taskActionButton(option, task, busy)).join('');
-  return `<div class="form-actions">${actions}<button type="button" class="text-button" data-action="edit-task" data-task-id="${escapeHtml(task.id)}" ${busy ? 'disabled' : ''}>Edit</button></div>`;
+  return `<div class="form-actions"><button type="button" class="text-button" data-send-task="${escapeHtml(task.id)}">Send to agent</button>${actions}<button type="button" class="text-button" data-action="edit-task" data-task-id="${escapeHtml(task.id)}" ${busy ? 'disabled' : ''}>Edit</button></div>`;
 }
 
 function recoveryMarkup(task) {
@@ -95,7 +95,7 @@ function latestRecoveryMarkup(task) {
 }
 
 function namedPageIds(ids) {
-  return ids.map(id => state.project.pages.find(page => page.id === id)?.name || id);
+  return ids.map(id => plannedAndRegisteredPages().find(page => page.id === id)?.name || id);
 }
 
 function namedTaskIds(ids, tasks) {
@@ -107,9 +107,11 @@ function taskChecksMarkup(task) {
   return checks ? `<div class="task-checks"><strong>Completion checks</strong><ul>${checks}</ul></div>` : '';
 }
 
+function plannedAndRegisteredPages() { const planned = state.workflow.data?.plannedPages || []; return [...state.project.pages, ...planned.filter(page => !state.project.pages.some(item => item.id === page.id))]; }
 function checkedPagesMarkup(task) {
-  if (!state.project.pages.length) return '';
-  return `<fieldset class="task-pages"><legend>Related pages <span class="field-optional">optional</span></legend>${state.project.pages.map(page => `<label><input type="checkbox" name="pageIds" value="${escapeHtml(page.id)}" ${task.pageIds.includes(page.id) ? 'checked' : ''}>${escapeHtml(page.name)}</label>`).join('')}</fieldset>`;
+  const pages = plannedAndRegisteredPages();
+  if (!pages.length) return '';
+  return `<fieldset class="task-pages"><legend>Related pages <span class="field-optional">optional</span></legend>${pages.map(page => `<label><input type="checkbox" name="pageIds" value="${escapeHtml(page.id)}" ${task.pageIds.includes(page.id) ? 'checked' : ''}>${escapeHtml(page.name)}</label>`).join('')}</fieldset>`;
 }
 
 const blankTask = { id: '', title: '', outcome: '', checks: [], scope: [], look: '', pageIds: [], status: 'todo', blocker: '', handoff: '', owner: '' };

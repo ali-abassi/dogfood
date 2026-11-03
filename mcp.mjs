@@ -2,6 +2,10 @@ import './lib/env.mjs';
 import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readinessTools } from './lib/readiness-tools.mjs';
+import { projectMapTools } from './lib/project-map.mjs';
+import { newProjectTools } from './lib/new-project.mjs';
+import { annotationTools } from './lib/annotations.mjs';
 import { workflowTools } from './lib/workflow-tools.mjs';
 import { agentBoardTools } from './lib/agent-board-tools.mjs';
 import { readFileSync, realpathSync } from 'node:fs';
@@ -570,7 +574,7 @@ const definitions = [
 ];
 
 definitions.push(...workflowTools);
-definitions.push(...agentBoardTools);
+definitions.push(...agentBoardTools, ...readinessTools, ...projectMapTools, ...newProjectTools, ...annotationTools);
 
 const toolList = definitions.map(({ run, ...tool }) => tool);
 const tools = new Map(definitions.map(definition => [definition.name, definition]));

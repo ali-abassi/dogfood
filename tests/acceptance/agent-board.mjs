@@ -33,6 +33,7 @@ if(cmd==='start'){
  const m=JSON.parse(fs.readFileSync(file));
  if(cmd==='status')console.log(JSON.stringify(m));
  else if(cmd==='read')console.log(JSON.stringify({session:name,status:m.status,turn:m.turns.at(-1),reply:m.reply}));
+ else if(cmd==='say'){const n=m.turns.length+1;m.status='running';m.turns.push({n,status:'running'});fs.writeFileSync(file,JSON.stringify(m));console.log(JSON.stringify({session:name,turn:n,status:'running'}));}
  else if(cmd==='stop'){m.status='stopped';fs.writeFileSync(file,JSON.stringify(m));}
  else process.exit(1);
 }
@@ -60,10 +61,11 @@ async function boardCard() {
   const response = await fetch(`${server.url}/api/projects/tidepool/board`);
   return (await response.json()).cards[0];
 }
-function finishProvider() {
+function finishProvider(content = '<h1>Reviewed fixture</h1>') {
+  writeFileSync(join(created.checkout, 'index.html'), content);
   const file = join(data, `${created.session}.json`);
   const meta = JSON.parse(readFileSync(file, 'utf8'));
-  meta.status = 'done'; meta.turns[0].status = 'done';
+  meta.status = 'done'; meta.turns.at(-1).status = 'done';
   meta.reply = '## Result\nA fixture result ready for review.\n\n<img src=x onerror="window.boardInjected=true">';
   writeFileSync(file, JSON.stringify(meta));
 }
@@ -99,6 +101,38 @@ try {
     assert.equal(page('window.boardInjected===true'), false);
     assert.equal(page('document.querySelector(".board-thread img")===null'), true);
   });
+  await check('inspect, preview, apply and save reach the actual source through the browser', async () => {
+    click('[data-board-action="inspect"]');
+    await until(() => page('!!document.querySelector("[data-board-action=integrate]")'));
+    assert.match(page('document.querySelector(".review-file").textContent'), /Reviewed fixture/);
+    assert.equal(page('document.querySelector(".review-preview iframe").getAttribute("sandbox")'), '');
+    click('[data-board-action="integrate"]');
+    await until(() => page('!!document.querySelector("[data-board-action=save-source]")'));
+    assert.equal(readFileSync(join(checkout, 'index.html'), 'utf8'), '<h1>Reviewed fixture</h1>');
+    click('[data-board-action="save-source"]');
+    await until(() => page('!document.querySelector("[data-board-action=save-source]") && /Changes saved/.test(document.querySelector(".integration-receipt")?.textContent || "")'));
+    assert.equal(execFileSync('git', ['-C', checkout, 'status', '--porcelain'], {encoding:'utf8'}).trim(), '');
+    assert.equal(execFileSync('git', ['-C', checkout, 'show', 'HEAD:index.html'], {encoding:'utf8'}), '<h1>Reviewed fixture</h1>');
+    assert.equal(page('document.querySelector("#board-reply").value'), 'Keep my reply while the result arrives.');
+  });
+  await check('the same conversation can inspect, apply and save a later changed turn', async () => {
+    browser('fill', '#board-reply', 'Refine the fixture heading in a second turn.');
+    click('#board-comment-form button[type="submit"]');
+    await until(async () => (await boardCard()).status === 'running');
+    created = await boardCard();
+    await until(() => JSON.parse(readFileSync(join(data, `${created.session}.json`), 'utf8')).turns.length === 2);
+    finishProvider('<h1>Second reviewed fixture</h1>');
+    await until(() => page('!!document.querySelector("[data-board-action=complete]")'));
+    click('[data-board-action="inspect"]');
+    await until(() => page('!!document.querySelector("[data-board-action=integrate]")'));
+    click('[data-board-action="integrate"]');
+    await until(() => page('!!document.querySelector("[data-board-action=save-source]")'));
+    click('[data-board-action="save-source"]');
+    await until(() => page('!document.querySelector("[data-board-action=save-source]") && /Changes saved/.test(document.querySelector(".integration-receipt")?.textContent || "")'));
+    assert.equal(execFileSync('git', ['-C', checkout, 'show', 'HEAD:index.html'], {encoding:'utf8'}), '<h1>Second reviewed fixture</h1>');
+    assert.equal(execFileSync('git', ['-C', checkout, 'status', '--porcelain'], {encoding:'utf8'}).trim(), '');
+    browser('fill', '#board-reply', 'Keep my reply while the result arrives.');
+  });
   await check('a note stays a note and only explicit review completion moves the card to Done', async () => {
     browser('check', '#board-comment-form input[name="note"]');
     click('#board-comment-form button[type="submit"]');
@@ -106,7 +140,7 @@ try {
     assert.equal((await boardCard()).status, 'review');
     click('[data-board-action="complete"]');
     await until(async () => (await boardCard()).status === 'done');
-    assert.equal((await boardCard()).comments.filter(item => item.by === 'agent').length, 1);
+    assert.equal((await boardCard()).comments.filter(item => item.by === 'agent').length, 2);
   });
   await check('the selected conversation survives reload and narrow screens do not overflow', async () => {
     browser('reload');

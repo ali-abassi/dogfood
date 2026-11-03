@@ -10,6 +10,7 @@ const data = mkdtempSync(join(tmpdir(), 'dogfood-completion-'));
 process.env.DOGFOOD_DATA = data;
 const store = await import('../lib/store.mjs');
 const scanner = await import('../lib/scanner.mjs');
+const { visualContract, visualPromptVersion, visualCoverage } = await import('../lib/visual-contract.mjs');
 const { pagesGate } = await import('../lib/completion.mjs');
 const { checkoutRevision } = await import('../lib/revision.mjs');
 after(() => rmSync(data, { recursive: true, force: true }));
@@ -123,7 +124,7 @@ test('a page moves from registered to complete only when all six answers are ans
   const reviews = join(data, 'visual-reviews/shop/home');
   mkdirSync(reviews, { recursive: true });
   const reviewed = store.readProject('shop').pages[0].captures;
-  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-a.json'), JSON.stringify({ captures: { desktop: { sha256: reviewed.desktop.sha256 }, mobile: { sha256: reviewed.mobile.sha256 } }, analysis: { dimensions: { design: { score: 8.5, reason: 'One consistent style on both screens.' }, purpose: { score: 4, reason: 'Nothing says what the shop sells.' }, ease: { score: 8, reason: 'The Shop button is easy to find.' } } }, analyzedAt: '2026-09-25T00:00:00.000Z' }));
+  writeFileSync(join(reviews, '2026-09-25T00-00-00.000Z-a.json'), JSON.stringify({ promptVersion: visualPromptVersion, contract: visualContract(store.readProject('shop'), store.readProject('shop').pages[0]), coverage: visualCoverage(reviewed), captures: { desktop: { sha256: reviewed.desktop.sha256 }, mobile: { sha256: reviewed.mobile.sha256 } }, analysis: { dimensions: { design: { score: 8.5, reason: 'One consistent style on both screens.' }, purpose: { score: 4, reason: 'Nothing says what the shop sells.' }, ease: { score: 8, reason: 'The Shop button is easy to find.' } } }, analyzedAt: '2026-09-25T00:00:00.000Z' }));
   assert.deepEqual([answer('design').status, answer('design').parts[0].source], ['pass', 'ai'], 'the AI review answers what nobody has judged');
   assert.equal(answer('purpose').parts[0].source, 'verdict', 'a verdict outranks the AI review');
   assert.deepEqual([answer('works').status, answer('works').summary], ['needs_work', '1 open bug: Hero overlaps']);

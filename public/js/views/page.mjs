@@ -27,6 +27,8 @@ export function pageOptionsMarkup(pages) {
 
 // Line icons at the text's weight, drawn on a 16-point grid.
 const navIcons = {
+  discovery: '<path d="M3 3h10v8H7l-4 3z"/><path d="M6 6h4M6 8h3"/>',
+  map: '<rect x="1.5" y="5" width="4" height="5" rx="1"/><rect x="10.5" y="1.5" width="4" height="4" rx="1"/><rect x="10.5" y="10.5" width="4" height="4" rx="1"/><path d="M5.5 7.5h3V3.5h2M8.5 7.5v5h2"/>',
   competitors: '<circle cx="5.8" cy="6" r="2.3"/><circle cx="11" cy="6.8" r="1.9"/><path d="M1.8 13.2c.4-2.3 2-3.6 4-3.6s3.6 1.3 4 3.6"/><path d="M10.4 10.1c1.9-.3 3.4.8 3.8 3.1"/>',
   overview: '<rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1.2"/><rect x="9" y="9" width="4.5" height="4.5" rx="1.2"/>',
   vision: '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2.2"/>',
@@ -36,7 +38,7 @@ const navIcons = {
   features: '<path d="M8 2.5l5.5 3L8 8.5l-5.5-3z"/><path d="M2.5 8.2L8 11.2l5.5-3M2.5 10.9L8 13.9l5.5-3"/>',
 };
 
-const projectViews = [['overview', 'Overview'], ['vision', 'Vision'], ['guide', 'Design'], ['board', 'Agent board'], ['plan', 'Plan'], ['features', 'Features'], ['competitors', 'Competitors']];
+const projectViews = [['overview', 'Overview'], ['discovery', 'Discovery'], ['map', 'Product map'], ['vision', 'Vision'], ['guide', 'Design'], ['board', 'Agent board'], ['plan', 'Plan'], ['features', 'Features'], ['competitors', 'Competitors']];
 
 function navIconMarkup(view) {
   return `<svg class="nav-icon" viewBox="0 0 16 16" aria-hidden="true">${navIcons[view]}</svg>`;

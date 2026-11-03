@@ -371,6 +371,8 @@ try {
     assert.equal(count('[data-action="copy-agent-prompt"]'), 1);
     assert.equal(count('#product-url'), 1);
   });
+  browser('click', '[data-project-entry="existing"]');
+  settle();
   await check('AP-2 an invalid address is explained without starting', async () => {
     browser('fill', '#product-url', 'not a web address');
     browser('click', '#add-project-form button[type="submit"]');

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -25,14 +25,14 @@ if (cmd === 'start') {
   if (fs.existsSync(path.join(home, 'fail-start'))) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 150); console.error('Sign in to the selected agent before starting.'); process.exit(1); }
   if (fs.existsSync(file)) { console.error('session already exists'); process.exit(1); }
   const cwd = path.join(home, name); cp.execFileSync('git', ['-C', option('-C'), 'worktree', 'add', cwd, option('--worktree')], {stdio:'ignore'});
-  const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd, name, prompt, args});
+  const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd, name, prompt, args, projectId:process.env.DOGFOOD_PROJECT});
   save({name,cwd,status:'running',turns:[{n:1,status:'running'}]}); console.log(JSON.stringify({session:name,turn:1,status:'running'}));
 } else {
   if (!fs.existsSync(file)) { console.error('session does not exist'); process.exit(1); }
   const meta = JSON.parse(fs.readFileSync(file,'utf8'));
   if (cmd === 'say') {
     if (meta.status === 'running') { console.error('already running'); process.exit(1); }
-    const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd,name,prompt});
+    const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd,name,prompt,projectId:process.env.DOGFOOD_PROJECT});
     meta.turns.push({n:meta.turns.length+1,status:'running'}); meta.status='running'; save(meta);
     console.log(JSON.stringify({session:name,turn:meta.turns.length,status:'running'}));
   } else if (cmd === 'status') console.log(JSON.stringify(meta));
@@ -43,6 +43,7 @@ if (cmd === 'start') {
 `, { mode: 0o700 });
 const store = await import('../lib/store.mjs');
 const board = await import('../lib/agent-board.mjs');
+const { saveProjectBrief } = await import('../lib/project-readiness.mjs');
 store.createProject({ id: 'shop', name: 'Shop', checkout });
 store.registerPage('shop', { id: 'home', name: 'Home', group: 'Public', route: '/', features: [{ id: 'save', name: 'Save' }] });
 after(() => rmSync(data, { recursive: true, force: true }));
@@ -76,6 +77,7 @@ test('a request launches once, returns changes for review, and its queued feedba
   board.runAgentCard('shop', created.id); board.runAgentCard('shop', created.id);
   await until(() => card(created.id).status === 'running' && card(created.id).checkout);
   assert.equal(calls().filter(call => call.name === created.session && call.cmd === 'start').length, 1);
+  assert.equal(calls().find(call => call.name === created.session && call.cmd === 'start').projectId, 'shop');
   const original = card(created.id);
   assert.notEqual(original.checkout, checkout); assert.match(original.branch, /^dogfood\//);
   board.commentAgentCard('shop', created.id, { text: 'Use hello instead.', send: true });
@@ -86,6 +88,7 @@ test('a request launches once, returns changes for review, and its queued feedba
   finish(created.id);
   await until(() => calls().filter(call => call.name === created.session && call.cmd === 'say').length === 1 && card(created.id).pendingCount === 0);
   const sent = calls().find(call => call.name === created.session && call.cmd === 'say');
+  assert.equal(sent.projectId, 'shop');
   assert.ok(sent.prompt.indexOf('Use hello') < sent.prompt.indexOf('Keep the existing'));
   assert.equal(card(created.id).pendingCount, 0);
   finish(created.id, 'Both feedback points applied. Local check passed.');
@@ -229,4 +232,118 @@ test('explicit discard preserves queued comment history and permits closing an a
   const retained = discarded.comments.find(entry => entry.text.startsWith('A request I will abandon'));
   assert.ok(retained.discardedAt);
   assert.equal(board.completeAgentCard('shop', created.id).status, 'done');
+});
+
+test('a new project cannot dispatch build work before reviewed scope, while discovery remains available', async () => {
+  store.createProject({ id: 'new-shop', name: 'New Shop', checkout });
+  saveProjectBrief('new-shop', { mode: 'new' }, 'fixture');
+  const build = board.createAgentCard('new-shop', input({ start: true }));
+  await board.dispatchAgentBoard('new-shop');
+  const rejected = board.agentBoard('new-shop').cards.find(item => item.id === build.id);
+  assert.equal(rejected.status, 'attention'); assert.match(rejected.error, /Discovery|scope/);
+  assert.equal(calls().filter(call => call.name === build.session).length, 0);
+  const discovery = board.createAgentCard('new-shop', input({ intent: 'discovery', start: true }));
+  await board.dispatchAgentBoard('new-shop');
+  const running = board.agentBoard('new-shop').cards.find(item => item.id === discovery.id);
+  assert.equal(running.status, 'running'); assert.ok(running.checkout);
+  const call = calls().find(call => call.name === discovery.session);
+  assert.match(call.prompt, /This is discovery, not implementation/); assert.equal(call.projectId, 'new-shop');
+  board.stopAgentCard('new-shop', discovery.id); await board.dispatchAgentBoard('new-shop');
+});
+
+test('concurrent retries create one durable request per screenshot annotation', async () => {
+  const annotationId = '55168e0d-7ad5-4e0f-9a7e-27b3055670f0';
+  const value = input({ pageId: 'home', annotationId });
+  assert.throws(() => board.createAgentCard('shop', input({ annotationId: 'not-a-uuid' })), /UUID/);
+  const script = `import {createAgentCard} from ${JSON.stringify(new URL('../lib/agent-board.mjs', import.meta.url).href)};createAgentCard('shop',${JSON.stringify(value)});`;
+  await Promise.all([inOtherProcess(script), inOtherProcess(script)]);
+  const linked = board.agentBoard('shop').cards.filter(card => card.annotationId === annotationId);
+  assert.equal(linked.length, 1); assert.equal(board.createAgentCard('shop', value).id, linked[0].id);
+  assert.throws(() => board.createAgentCard('shop', { ...value, pageId: '' }), /another page/);
+});
+
+test('URL-only QA uses a marked audit workspace without inventing application source or enabling integration', async () => {
+  store.createProject({ id: 'url-only', name: 'URL-only fixture', url: 'https://example.invalid' });
+  store.registerPage('url-only', { id: 'home', name: 'Home', route: '/', group: 'Public', features: [] });
+  const original = store.readProject('url-only').source;
+  const workspace = join(data, 'qa-workspaces', 'url-only');
+  assert.throws(() => board.createAgentCard('url-only', input({ start: true })), /Attach a local Git checkout/);
+  assert.throws(() => board.createAgentCard('url-only', input({ intent: 'discovery', start: true })), /Attach a local Git checkout/);
+  const saved = board.createAgentCard('url-only', input({ intent: 'qa', pageId: 'home' }));
+  assert.equal(existsSync(workspace), false);
+  board.runAgentCard('url-only', saved.id); await board.dispatchAgentBoard('url-only');
+  const running = board.agentBoard('url-only').cards.find(card => card.id === saved.id);
+  assert.equal(running.status, 'running'); assert.equal(running.sourceKind, 'audit-workspace');
+  assert.deepEqual(store.readProject('url-only').source, original);
+  assert.match(readFileSync(join(workspace, 'README.md'), 'utf8'), /not the application's source/);
+  const launched = calls().find(call => call.name === running.session);
+  assert.equal(launched.projectId, 'url-only'); assert.match(launched.prompt, /managed URL-only audit workspace/);
+  const metaFile = join(sessions, `${running.session}.json`), meta = JSON.parse(readFileSync(metaFile));
+  meta.status = 'done'; meta.turns.at(-1).status = 'done'; meta.reply = 'URL audit complete. Application source remains unknown.';
+  writeFileSync(metaFile, JSON.stringify(meta)); await board.dispatchAgentBoard('url-only');
+  assert.equal(board.agentBoard('url-only').cards.find(card => card.id === saved.id).status, 'review');
+  const diff = board.agentCardDiff('url-only', saved.id);
+  assert.equal(diff.integration.available, false); assert.match(diff.integration.reason, /audit results only/);
+  assert.throws(() => board.integrateAgentCard('url-only', saved.id, { fingerprint: 'anything' }), /Attach a source checkout/);
+  assert.deepEqual(store.readProject('url-only').source, original);
+});
+
+test('applied source must be saved before feedback or another run, then the same session can apply and save its next turn', async () => {
+  const created = board.createAgentCard('shop', input({ start: true }));
+  await until(() => card(created.id).status === 'running' && card(created.id).checkout);
+  writeFileSync(join(card(created.id).checkout, 'app.txt'), 'first reviewed turn\n');
+  finish(created.id, 'First reviewed turn complete.'); await until(() => card(created.id).status === 'review');
+  let snapshot = board.agentCardDiff('shop', created.id);
+  let applied = board.integrateAgentCard('shop', created.id, { fingerprint: snapshot.fingerprint });
+  assert.throws(() => board.commentAgentCard('shop', created.id, { text: 'Do not deliver this yet.', send: true }), /Save reviewed changes first/);
+  assert.throws(() => board.runAgentCard('shop', created.id), /Save reviewed changes first/);
+  const noted = board.commentAgentCard('shop', created.id, { text: 'Retain this as a note.', send: false });
+  assert.equal(noted.pendingCount, 0); assert.equal(noted.queued, false);
+  assert.equal(noted.comments.some(entry => entry.text === 'Do not deliver this yet.'), false);
+  const boardFile = join(data, 'agent-board', 'shop.json'), document = JSON.parse(readFileSync(boardFile));
+  Object.assign(document.cards.find(item => item.id === created.id), { status: 'todo', queued: true });
+  writeFileSync(boardFile, JSON.stringify(document));
+  await board.dispatchAgentBoard('shop');
+  assert.match(card(created.id).error, /Save reviewed changes first/);
+  assert.equal(calls().filter(call => call.name === created.session && call.cmd === 'say').length, 0);
+  assert.equal(readFileSync(join(checkout, 'app.txt'), 'utf8'), 'first reviewed turn\n');
+  let saved = board.saveAgentCardSource('shop', created.id, { integrationId: applied.integration.id });
+  assert.equal(saved.integration.continuationReady, true);
+  const firstBase = saved.baseRevision;
+  board.commentAgentCard('shop', created.id, { text: 'Now make the second reviewed turn.', send: true });
+  await until(() => card(created.id).status === 'running' && card(created.id).pendingCount === 0);
+  assert.equal(calls().filter(call => call.name === created.session && call.cmd === 'say').length, 1);
+  writeFileSync(join(saved.checkout, 'app.txt'), 'second reviewed turn\n');
+  finish(created.id, 'Second reviewed turn complete.'); await until(() => card(created.id).status === 'review');
+  snapshot = board.agentCardDiff('shop', created.id);
+  applied = board.integrateAgentCard('shop', created.id, { fingerprint: snapshot.fingerprint });
+  saved = board.saveAgentCardSource('shop', created.id, { integrationId: applied.integration.id });
+  assert.equal(saved.integration.continuationReady, true); assert.notEqual(saved.baseRevision, firstBase);
+  assert.equal(readFileSync(join(checkout, 'app.txt'), 'utf8'), 'second reviewed turn\n');
+  assert.equal(readFileSync(join(saved.checkout, 'app.txt'), 'utf8'), 'second reviewed turn\n');
+  assert.ok(saved.comments.some(entry => entry.text === 'Retain this as a note.'));
+  assert.equal(saved.turn, 2); assert.equal(saved.status, 'review');
+});
+
+test('an operator can release externally abandoned staging and continue the preserved request session', async () => {
+  const created = board.createAgentCard('shop', input({ start: true }));
+  await until(() => card(created.id).status === 'running' && card(created.id).checkout);
+  writeFileSync(join(card(created.id).checkout, 'app.txt'), 'preserved abandoned review\n');
+  finish(created.id, 'Ready for review.'); await until(() => card(created.id).status === 'review');
+  const review = board.agentCardDiff('shop', created.id);
+  const applied = board.integrateAgentCard('shop', created.id, { fingerprint: review.fingerprint });
+  git('restore', '--source=HEAD', '--staged', '--worktree', '--', 'app.txt');
+  const released = board.releaseAgentCardIntegration('shop', created.id, { integrationId: applied.integration.id });
+  assert.equal(released.integration, null); assert.equal(released.integrationHistory.at(-1).released, true);
+  assert.equal(readFileSync(join(released.checkout, 'app.txt'), 'utf8'), 'preserved abandoned review\n');
+  board.commentAgentCard('shop', created.id, { text: 'Continue from the preserved worktree.', send: true });
+  await until(() => card(created.id).status === 'running' && card(created.id).pendingCount === 0);
+  assert.equal(calls().filter(call => call.name === created.session && call.cmd === 'say').length, 1);
+  writeFileSync(join(released.checkout, 'app.txt'), 'followup after release\n');
+  finish(created.id, 'Followup after release complete.'); await until(() => card(created.id).status === 'review');
+  const nextReview = board.agentCardDiff('shop', created.id);
+  const nextApplied = board.integrateAgentCard('shop', created.id, { fingerprint: nextReview.fingerprint });
+  const saved = board.saveAgentCardSource('shop', created.id, { integrationId: nextApplied.integration.id });
+  assert.equal(saved.integration.continuationReady, true); assert.equal(saved.turn, 2);
+  assert.equal(readFileSync(join(checkout, 'app.txt'), 'utf8'), 'followup after release\n');
 });
