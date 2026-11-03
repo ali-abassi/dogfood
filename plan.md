@@ -38,3 +38,10 @@ Scope: plain Node modules, JSON workflow data, existing browser and MCP tools. N
    Check: `node --test scripts/search.test.mjs`, `node tests/acceptance/search.mjs`, `npm test`, `npm run check`, `npm run lint`.
    Visible: at 1280 and 390, reordered words locate a page, routes and open bug IDs work, an unmatched query explains the empty result, typing retains focus/caret, and choosing a result opens its report without sideways scrolling.
    Scope: pure sidebar matching, its accessible label and independent regressions. Preserve filters, order, blog-menu policy and QA semantics; no dependency or server changes. Select source through a fixed Hill Climber experiment with a separate private panel.
+
+
+## 2026-11-03 — brand and terminal controls
+
+Outcome: the selected dog logo, calm shared working screens, and one usable native request loop from dashboard, CLI and MCP. Scope: public assets/styles, board/page views, CLI, doctor, board tools and health endpoint. Decisions: preserve the stack, native accounts, isolated worktrees and separate QA acceptance.
+
+Check: `npm test`, `npm run check`, `npm run lint`, `node tests/acceptance/mcp.mjs`, and `DOGFOOD_BROWSER_SESSION=dogfood-discussion node tests/acceptance/agent-board.mjs`. At 1280 and 390 wide, inspect empty/populated board, request form, conversation, Overview, Plan and report in light/dark; verify the selected logo, readable hierarchy, keyboard controls, preserved drafts and no horizontal page overflow. Prove a terminal request reaches a real native agent and returns a reviewable result. Ship through the existing local runtime and keep installation pointers current.

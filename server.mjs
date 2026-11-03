@@ -1,4 +1,5 @@
 import './lib/env.mjs';
+import { dataStoreIdentity } from './lib/store-identity.mjs';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -26,6 +27,7 @@ const localOrigins = new Set([...localHosts].map(host => `http://${host}`));
 // Edits made in the app are attributed to the person using it; agents write through the MCP server.
 const person = 'person';
 const jobs = new Map();
+let dispatcherStarted = false;
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
@@ -138,6 +140,7 @@ function addPageFeatures(projectId, pageId, input, by) {
 const taskPath = '/api/projects/([a-z0-9-]+)/tasks/([a-z0-9-]+)';
 const scanOptions = request => request.headers['content-type']?.startsWith('application/json') ? requestJson(request) : {};
 const routes = [
+  ['GET', '/api/health', () => ({ app: 'dogfood', agentBoardDispatcher: dispatcherStarted, dataStoreIdentity: dataStoreIdentity() })],
   ...agentBoardRoutes(requestJson),
   ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => workflow(id)],
   ['GET', '/api/projects/([a-z0-9-]+)/context', ([id]) => context(id)],
@@ -239,5 +242,6 @@ function handle(request, response) {
 
 createServer(handle).listen(port, '127.0.0.1', () => {
   startAgentBoardDispatcher();
+  dispatcherStarted = true;
   console.log(`dogfood: http://127.0.0.1:${port} · data: ${relative(root, dataDir) || '.'}`);
 });

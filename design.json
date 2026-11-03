@@ -9,12 +9,12 @@
     ]
   },
   "brand": {
-    "idea": "A checkmark above a bowl: the work has been tried, not merely described.",
-    "clearSpace": "Keep at least one quarter of the tile width clear around the mark.",
-    "minSize": "24px in navigation; 40px on first run.",
+    "idea": "A friendly front-facing dog with folded ears: a distinctive original mark for a workbench where software gets tried.",
+    "clearSpace": "Keep at least one quarter of the symbol width clear around the blue tile.",
+    "minSize": "16px favicon; 32px navigation mark; 40px on first run.",
     "dont": [
-      "Stretch the tile or redraw the checkmark.",
-      "Use the logo gradient as a page background.",
+      "Stretch the tile, alter the face proportions or add decorative effects.",
+      "Use the brand blue as a page background.",
       "Replace real status with the brand mark."
     ]
   },
@@ -22,7 +22,7 @@
     "colors": [
       {
         "name": "Canvas",
-        "hex": "#f5f5f7",
+        "hex": "#fafafb",
         "role": "Quiet workspace background"
       },
       {
@@ -74,17 +74,27 @@
         "name": "Red",
         "hex": "#c40012",
         "role": "Failures and destructive confirmation"
+      },
+      {
+        "name": "Sidebar",
+        "hex": "#f2f3f5",
+        "role": "Quiet navigation surface"
+      },
+      {
+        "name": "Logo blue",
+        "hex": "#0b5ad5",
+        "role": "Selected dog mark tile; UI actions retain semantic blue"
       }
     ],
     "colorsDark": [
       {
         "name": "Canvas",
-        "hex": "#1e1e20",
+        "hex": "#191b1f",
         "role": "Workspace background"
       },
       {
         "name": "Group",
-        "hex": "#2c2c2e",
+        "hex": "#272a30",
         "role": "Grouped content"
       },
       {
@@ -104,7 +114,7 @@
       },
       {
         "name": "Separator",
-        "hex": "#3a3a3c",
+        "hex": "#393c43",
         "role": "Related-row dividers"
       },
       {
@@ -131,6 +141,11 @@
         "name": "Red",
         "hex": "#ff817a",
         "role": "Failures"
+      },
+      {
+        "name": "Sidebar",
+        "hex": "#202227",
+        "role": "Quiet navigation surface"
       }
     ],
     "spacing": [
@@ -195,7 +210,7 @@
   "components": [
     {
       "name": "Navigation",
-      "rule": "Project picker, section list, then searchable page evidence. Preserve native controls."
+      "rule": "32px dog mark, restrained wordmark, project picker and neutral section icons; blue identifies selection and primary actions."
     },
     {
       "name": "Project selector",
@@ -219,7 +234,7 @@
     },
     {
       "name": "Agent board",
-      "rule": "Project-scoped lanes show requests by actual execution state. One request thread keeps human feedback, agent results and linked page context together. A finished turn enters Review; Done is an explicit person action and never substitutes for QA acceptance."
+      "rule": "Flat divided lanes and readable request cards reflect actual execution state. Threads use a 76ch reading measure. A finished turn enters Review; Done never substitutes for QA acceptance."
     }
   ],
   "voice": {

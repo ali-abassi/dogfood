@@ -14,7 +14,7 @@ import { runNamedTool, toolDefinitions } from '../mcp.mjs';
 const help = `dogfood — plan, build, verify, and resume a web project
 
   dogfood init --checkout . [--id my-app] [--name "My App"] [--url URL]
-  dogfood doctor [--project ID]
+  dogfood doctor [--project ID] [--require-agents]
   dogfood context [--project ID] --json
   dogfood next [--project ID] --json
   dogfood task list [--project ID]
@@ -29,6 +29,16 @@ const help = `dogfood — plan, build, verify, and resume a web project
   dogfood accept-measured PAGE --agent NAME
   dogfood deployed --url URL [--revision SHA] --agent NAME
   dogfood report [--project ID]
+  dogfood board [list] [--project ID]
+  dogfood board show CARD
+  dogfood board changes CARD
+  dogfood board create --input request.json [--start]
+  dogfood board comment CARD --input comment.json [--send | --note]
+  dogfood board start CARD
+  dogfood board stop CARD
+  dogfood board done CARD
+  dogfood board reopen CARD
+  dogfood board discard-feedback CARD
   dogfood tool TOOL --input args.json
   dogfood schema [TOOL]
   dogfood skill
@@ -37,10 +47,13 @@ Project defaults to the current checkout or DOGFOOD_PROJECT.
 --input - reads JSON from stdin. --json prints compact JSON.
 Checks are explicit argv arrays: ["npm","test"], never parsed as shell.
 Audit completion and acceptance are separate. gate --accept requires acceptance.
+Board requests save for later unless start is explicit. Comments require send or note.
+Keep the Dogfood web server running for results and queued feedback; doctor checks readiness.
 `;
 
 const options = Object.fromEntries(['project', 'input', 'checkout', 'id', 'name', 'url', 'environment', 'agent', 'revision', 'live-url', 'browser-profile', 'required-role'].map(name => [name, { type: 'string' }]));
 Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' }, 'serves-checkout': { type: 'boolean' }, verbose: { type: 'boolean' }, fixtures: { type: 'string', multiple: true } });
+for (const name of ['start', 'send', 'note', 'require-agents']) options[name] = { type: 'boolean' };
 
 function inputJson(values) {
   if (!values.input) throw new Error('Provide --input FILE, or --input - for JSON from stdin.');
@@ -108,12 +121,90 @@ function schema(name) {
   return tool;
 }
 
+function explicitSend(input, values) {
+  validateSendFlags(values);
+  if (values.send) return true;
+  if (values.note) return false;
+  if (typeof input.send !== 'boolean') throw new Error('Choose --send or --note, or provide an explicit send boolean in the input.');
+  return input.send;
+}
+
+function validateSendFlags(values) {
+  if (values.send && values.note) throw new Error('Choose --send or --note, not both.');
+}
+
+async function boardTool(name, input, execution = false) {
+  const result = await runNamedTool(name, input);
+  if (execution && actionFailed(result, input.action === 'stop')) process.exitCode = 1;
+  return result;
+}
+
+function actionFailed(result, stopping) {
+  return Boolean(result.error) && (stopping ? result.stopRequested : result.status === 'attention');
+}
+
+function boardCreate(project, values) {
+  const input = inputJson(values);
+  if (values.start !== undefined) input.start = values.start;
+  return boardTool('dogfood_agent_request', { ...input, project }, input.start === true);
+}
+
+function boardComment(project, card, values) {
+  const input = inputJson(values);
+  const send = explicitSend(input, values);
+  return boardTool('dogfood_agent_comment', { ...input, project, card, send }, send);
+}
+
+function cardRequired(card) {
+  if (!card) throw new Error('Provide a request card ID. Run dogfood board list to see requests.');
+  return card;
+}
+
+function boardAction(project, card, action) {
+  const aliases = { start: 'run', done: 'complete' };
+  const selected = aliases[action] || action;
+  return boardTool('dogfood_agent_action', { project, card, action: selected }, ['run', 'stop'].includes(selected));
+}
+
+function boardCommand([action = 'list', card, ...extra], values) {
+  if (extra.length) throw new Error('Unexpected board arguments. Use --input FILE for requests and comments.');
+  validateBoardAction(action);
+  validateBoardPositionals(action, card);
+  const project = projectId(values);
+  if (action === 'list') return boardTool('dogfood_agent_board', { project });
+  if (action === 'create') return boardCreate(project, values);
+  return boardCardCommand(action, project, cardRequired(card), values);
+}
+
+function validateBoardAction(action) {
+  if (!['list', 'show', 'changes', 'create', 'comment', 'start', 'run', 'stop', 'done', 'complete', 'reopen', 'discard-feedback'].includes(action)) throw new Error(`Unknown board action: ${action}. Run dogfood --help.`);
+}
+
+function validateBoardPositionals(action, card) {
+  if (card && ['list', 'create'].includes(action)) throw new Error('Unexpected card ID for this board command.');
+}
+
+async function diagnose(args, values) {
+  const project = values.project ?? process.env.DOGFOOD_PROJECT ?? projectFromCheckout();
+  const result = await doctor(project);
+  if (values['require-agents'] && !result.readiness.agentRequests) process.exitCode = 1;
+  return result;
+}
+
+function boardCardCommand(action, project, card, values) {
+  if (action === 'show') return boardTool('dogfood_agent_card', { project, card });
+  if (action === 'changes') return boardTool('dogfood_agent_changes', { project, card });
+  if (action === 'comment') return boardComment(project, card, values);
+  return boardAction(project, card, action);
+}
+
 const commands = {
   init: async (args, values) => initialized(await runNamedTool('dogfood_init', { ...values, servesCheckout: values['serves-checkout'], checkout: resolve(values.checkout ?? '.') })),
-  doctor: (args, values) => doctor(values.project ?? projectFromCheckout()),
+  doctor: diagnose,
   context: (args, values) => runNamedTool('dogfood_context', { project: projectId(values) }),
   next: (args, values) => runNamedTool('dogfood_next_task', { project: projectId(values) }),
   task: taskCommand,
+  board: boardCommand,
   verify: (args, values) => taskCommand(['verify', ...args], values),
   'attach-url': (args, values) => runNamedTool('dogfood_attach_url', { project: projectId(values), url: args[0] ?? values.url, servesCheckout: values['serves-checkout'] }),
   gate,

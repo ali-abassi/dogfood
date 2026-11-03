@@ -57,3 +57,12 @@ The first follow-up CI run exposed fixed-delay and offscreen-click assumptions i
 ## 2026-09-29 — review toolbar alignment
 
 Corrected the Open page link’s vertical alignment with adjacent review actions using the shared link-button style. Desktop, phone and wrapped-toolbar evidence and final release status are recorded in `data/reviews/toolbar-alignment-2026-09-29/release.json`.
+
+
+## 2026-11-03 — brand and CLI refinement
+
+Implemented Ali's selected front-facing dog logo, a lighter shared app shell, flat board lanes, readable conversations and mobile branding. Added direct board CLI controls, complete MCP card/actions and truthful native readiness diagnostics.
+
+Candidate validation: 182 native tests, syntax/data check, ESLint, 37 MCP protocol checks and six existing-session browser regressions passed. Desktop 1280 and phone 390 review covers light/dark board, conversation, Overview, Plan and report; no page overflow or axe violations. Axe leaves symbol-only status marks for manual contrast review; measured composed-color ratios are at least 4.52:1 in light and 5.00:1 in dark. A real CLI request reached Claude Code, created the exact requested fixture file in an isolated worktree, returned to Review and was explicitly closed from the CLI. The existing real Codex board proof remains recorded separately.
+
+Independent Opus review passed after correcting data-store readiness and CLI lifecycle findings. Final source, installation checks, current QA and runtime release evidence are kept in local data/reviews/design-cli-20261103/release.json. This release targets the established local dashboard on port 4322. Unrelated page QA remains due for review where fingerprints have changed.

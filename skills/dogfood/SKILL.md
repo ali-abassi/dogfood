@@ -29,9 +29,11 @@ MCP equivalents are `dogfood_init`, `dogfood_context`, `dogfood_tasks`, `dogfood
 
 ### Requests and feedback from the Agent board
 
+The same controls are available from the terminal: `dogfood board list`, `show CARD`, `create --input request.json`, `start CARD`, `comment CARD --input comment.json --send` (or `--note`), `changes CARD`, `stop CARD`, `discard-feedback CARD`, `done CARD` and `reopen CARD`. Supply `--project ID` outside the registered checkout. Creation saves by default; `--start` explicitly launches it. Run `dogfood doctor --project ID --require-agents` to check native sign-in, PAL and the running dispatcher. Read `docs/cli.md` in the Dogfood checkout for examples and readiness boundaries.
+
 People can create project requests in Agent board and explicitly start Claude Code or Codex through
 their local PAL installation. Requests may link a page, feature or existing planned task. Read them
-with `dogfood_agent_board`; `dogfood_agent_changes` reads their worktree change summary.
+with `dogfood_agent_board` or one `dogfood_agent_card`; `dogfood_agent_changes` reads their worktree change summary. `dogfood_agent_action` runs, stops, closes, reopens or discards queued feedback on a card; inspect its schema for action values.
 `dogfood_agent_request` saves for later unless `start:true`; `dogfood_agent_comment` requires an
 explicit `send` choice. Sending or starting delegates work and needs the user's task authorization.
 Notes do not start work. A long-running board dispatcher belongs to the local web server; a one-shot

@@ -58,7 +58,7 @@ function projectPickerMarkup() {
 export function sidebarMarkup() {
   const pages = menuPages();
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project">
-      <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="28" height="28"><strong>dogfood</strong><button type="button" class="add-project-button" data-action="add-project" aria-label="Add an app" title="Add an app">+</button><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
+      <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="32" height="32"><strong>dogfood</strong><button type="button" class="add-project-button" data-action="add-project" aria-label="Add an app" title="Add an app">+</button><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
       ${projectPickerMarkup()}
       <nav class="page-list" aria-label="Project">
         <div class="project-nav">${projectNavMarkup()}</div>
@@ -118,5 +118,5 @@ export function pageHeaderMarkup(page) {
 
 // Pages is the phone's way into the sidebar; on a computer the sidebar is always there.
 export function toolbarMarkup() {
-  return '<div class="toolbar"><button type="button" class="page-menu-toggle" data-action="open-pages">Menu</button></div>';
+  return '<div class="toolbar"><span class="toolbar-brand"><img src="/logo.svg" alt="" width="24" height="24"><strong>dogfood</strong></span><button type="button" class="page-menu-toggle" data-action="open-pages">Menu</button></div>';
 }

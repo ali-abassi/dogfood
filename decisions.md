@@ -62,3 +62,12 @@ Review advised against an all-facts fallback for arbitrary custom questions: it 
 ## 2026-09-29 — review toolbar alignment
 
 Give shared link-style controls inline flex alignment so anchors and buttons center their text in the same minimum-height box. The report’s Open page label sat about five pixels above its neighboring buttons despite matching outer boxes. Check text geometry, phone wrapping and keyboard focus when reviewing mixed controls. The actual accepted-state check also found Good text at 4.39:1; mixing its green slightly toward the theme ink brings the small label above 4.5:1 without changing the semantic palette.
+
+
+## 2026-11-03 — selected dog mark and native request setup
+
+Ali selected logo direction 1: the front-facing folded-ear dog on a flat blue tile. Use the actual selected vector for the shared navigation, mobile toolbar, favicon and brand guide. Keep system typography and functional blue. After rendered review, lighten the canvas/navigation, remove heavy lane fills, and constrain request conversations to a readable measure. Preserve existing status meaning, data and page/task acceptance.
+
+Expose board operations through the existing CLI/MCP implementation rather than introducing a second runner. Save requests by default; require explicit start/send and retain notes. Doctor separates installation, local sign-in and dispatcher reachability, with an explicit agent readiness exit gate. Keep the existing global executable and MCP pointers; sync maintained skills without changing account configuration. Real CLI proof uses a disposable fixture and isolated native worktree. See docs/cli.md and docs/design/design-cli-2026-11-03.md.
+
+Doctor must verify the same canonical data store as the server before calling native requests ready. A project ID can exist in different stores, so a reachable board alone is insufficient. Compare a local store identity without exposing authentication output. Terminal close/reopen actions must not dispatch unrelated queued work; an unconfirmed stop is a failed command.

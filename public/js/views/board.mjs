@@ -196,10 +196,14 @@ function loadErrorMarkup() {
   const error = board().error;
   return `<div id="board-load-error" class="form-error" role="alert" ${error ? '' : 'hidden'}>${escapeHtml(error)} ${error ? '<button type="button" class="text-button" data-board-action="refresh">Try again</button>' : ''}</div>`;
 }
+function emptyBoardMarkup() {
+  if (!board().data || cards().length || board().formOpen) return '';
+  return '<section class="board-empty-state" aria-labelledby="board-empty-heading"><h2 id="board-empty-heading">Your next change starts here</h2><p>Create a request for Claude Code or Codex. Follow its progress, answer questions, and review the result in one place.</p></section>';
+}
 function boardLoadingMarkup() { return !board().data ? '<p class="muted" role="status" id="board-loading">Loading requests…</p>' : ''; }
 export function boardMarkup() {
   const data = board().data;
-  return `<div class="agent-board" data-ui>${boardHeadingMarkup()}${loadErrorMarkup()}${requestFormMarkup()}${boardLoadingMarkup()}<div id="board-lanes" class="board-lanes" role="region" aria-label="Agent requests" ${data ? '' : 'hidden'}>${data ? lanesMarkup() : ''}</div><div id="board-detail-host">${detailMarkup(selectedCard())}</div></div>`;
+  return `<div class="agent-board" data-ui>${boardHeadingMarkup()}${loadErrorMarkup()}${requestFormMarkup()}${boardLoadingMarkup()}<div id="board-empty-host">${emptyBoardMarkup()}</div><div id="board-lanes" class="board-lanes" role="region" aria-label="Agent requests" ${data ? '' : 'hidden'}>${data ? lanesMarkup() : ''}</div><div id="board-detail-host">${detailMarkup(selectedCard())}</div></div>`;
 }
 
 function rememberSelection(id) {
@@ -255,6 +259,8 @@ function updateBoardDataNodes() {
   const root = document.querySelector('#board-lanes');
   if (root) { root.innerHTML = lanesMarkup(); root.hidden = false; }
   document.querySelector('#board-loading')?.remove();
+  const empty = document.getElementById('board-empty-host');
+  if (empty) empty.innerHTML = emptyBoardMarkup();
   updateRunnerAvailability();
   updateSelectedDetail();
   updateBoardErrorNode();

@@ -9,6 +9,8 @@
   <img src="docs/screenshot-light.png" alt="dogfood's overview of the Tidepool demo: one sentence saying how many pages are good, then every page with six marks for its six answers">
 </picture>
 
+Terminal controls for native requests and installation checks are in the [CLI guide](docs/cli.md). Run `dogfood doctor --project YOUR_PROJECT --require-agents` to verify the local request setup.
+
 ## Plan → build → verify → resume
 
 Install the CLI once with `npm link` from the Dogfood checkout, or invoke `node /absolute/path/to/dogfood/bin/dogfood.mjs` directly. Start a project before a website exists:
