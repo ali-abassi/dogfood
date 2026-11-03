@@ -63,6 +63,34 @@ async function checkSearch(width, height) {
   await check(`${name}: routes and feature words locate a page together`, () => {
     assert.deepEqual(search('membership /landing'), ['home']);
   });
+  await check(`${name}: a delayed work-status refresh preserves the live search field and its results`, () => {
+    evaluate(`(async () => {
+      const {state} = await import('/js/state.mjs');
+      const {syncProjectWork} = await import('/js/views/project-work.mjs');
+      state.projectWork.at = 0;
+      const original = window.fetch;
+      window.fetch = async (...args) => {
+        const response = await original(...args);
+        if (String(args[0]).endsWith('/context')) {
+          window.fetch = original;
+          await new Promise(resolve => { window.releaseWorkResponse = resolve; });
+        }
+        return response;
+      };
+      window.liveSearchNode = document.querySelector('#page-search');
+      window.liveWorkState = state.projectWork;
+      syncProjectWork();
+      return true;
+    })()`);
+    browser('wait', '--fn', 'typeof window.releaseWorkResponse === "function"');
+    assert.deepEqual(search('tp-001'), ['book']);
+    evaluate('(window.releaseWorkResponse(),true)');
+    browser('wait', '--fn', 'window.liveWorkState.loading === false');
+    assert.equal(evaluate('document.querySelector("#page-search") === window.liveSearchNode'), true);
+    assert.equal(evaluate('document.querySelector("#page-search").value'), 'tp-001');
+    assert.equal(evaluate('document.activeElement.id'), 'page-search');
+    assert.deepEqual(sidebarIds(), ['book']);
+  });
   await check(`${name}: open bug identifiers work and resolved bugs do not`, () => {
     assert.deepEqual(search('tp-001'), ['book']);
     assert.deepEqual(search('tp-archived'), []);

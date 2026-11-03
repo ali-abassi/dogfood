@@ -1,11 +1,19 @@
 import { state } from '../state.mjs';
 import { readJson } from '../api.mjs';
 import { escapeHtml } from '../format.mjs';
-import { loadProject, render } from '../app.mjs';
+import { loadProject } from '../app.mjs';
 import { openBoardRequest } from './board.mjs';
 let timer;
 function local() { return state.projectWork ??= { key: '', data: null, loading: false, error: '', at: 0 }; }
-function finishRefresh(current, key) { current.loading = false; current.at = Date.now(); if (state.view === 'overview' && state.project.id === key) render(); }
+function restoreDisclosure() { const details = document.querySelector('.project-current-work details'); if (details) details.open = true; }
+function refreshPanel() {
+  const panel = document.querySelector('.project-current-work');
+  if (!panel || panel.contains(document.activeElement)) return;
+  const expanded = panel.querySelector('details')?.open;
+  panel.outerHTML = projectWorkMarkup();
+  if (expanded) restoreDisclosure();
+}
+function finishRefresh(current, key) { current.loading = false; current.at = Date.now(); if (state.view === 'overview' && state.project.id === key) refreshPanel(); }
 async function refresh(key) {
   const current = local(); current.loading = true;
   try { const data = await readJson(`/api/projects/${encodeURIComponent(key)}/context`); if (current.key === key) { current.data = data; current.error = ''; } }
@@ -27,7 +35,7 @@ function actionMarkup(action) {
 function goalMarkup(readiness) { if (!readiness.answers.success) return ''; return `<details class="project-outcome"><summary>Project outcome and proof</summary><p>${escapeHtml(readiness.answers.success)}</p><p class="field-hint">${escapeHtml(readiness.answers.proof || 'Define the evidence in Discovery.')}</p></details>`; }
 export function projectWorkMarkup() {
   const value = local();
-  if (!value.data) return value.error ? `<p class="form-error">Couldn’t read current work: ${escapeHtml(value.error)}</p>` : '<p class="muted" role="status">Reading current work…</p>';
+  if (!value.data) return `<section class="project-current-work">${value.error ? `<p class="form-error">Couldn’t read current work: ${escapeHtml(value.error)}</p>` : '<p class="muted" role="status">Reading current work…</p>'}</section>`;
   const { requests, summary, readiness, nextAction } = value.data, counts = requests.summary;
   return `<section class="content-panel project-current-work" aria-label="What needs you next"><p class="eyebrow">What needs you next</p>${actionMarkup(nextAction)}<p class="work-counts">${counts.running} working · ${counts.attention} need you · ${counts.review} results to review · ${summary.accepted} tasks accepted</p><p class="field-hint">${escapeHtml(readiness.label)}</p>${goalMarkup(readiness)}</section>`;
 }
