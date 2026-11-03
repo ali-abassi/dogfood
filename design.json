@@ -216,6 +216,10 @@
     {
       "name": "Documents",
       "rule": "Readable text and a real sandboxed brand guide with a full-page escape."
+    },
+    {
+      "name": "Agent board",
+      "rule": "Project-scoped lanes show requests by actual execution state. One request thread keeps human feedback, agent results and linked page context together. A finished turn enters Review; Done is an explicit person action and never substitutes for QA acceptance."
     }
   ],
   "voice": {

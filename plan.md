@@ -1,5 +1,11 @@
 # Plan
 
+10. Give agents work and feedback from the project board.
+    Outcome: a person creates a linked request, starts Claude Code or Codex, continues the same conversation, and reviews its result in Dogfood.
+    Check: `node --test scripts/agent-board.test.mjs` and `npm run check`; real two-turn native-agent proof and rendered request/thread checks recorded in progress.md.
+    Visible: at 1280 and 390, truthful lane counts, usable request and comment forms, linked page context, preserved drafts, actionable failures, and explicit Review versus Done.
+    Scope: board persistence/dispatch, native runner adapter, project navigation, page request entry, documentation and focused verification. Existing task and page acceptance do not change.
+
 1. Start before an app exists: checkout-first setup, CLI and environment diagnosis.
    Check: `node --test scripts/cli.test.mjs`
 2. Work through bounded outcomes: dependencies, atomic ownership, native check receipts, explicit recovery and durable handoff.

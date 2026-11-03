@@ -17,6 +17,7 @@ import { qaAgentConfigured, qaAgentRuns, startQaAgent } from './lib/qa-agent.mjs
 import { addCompetitor, listCompetitors, removeCompetitor, scanCompetitor, summarizeCompetitor } from './lib/competitors.mjs';
 import { runTests, testOverview } from './lib/test-runs.mjs';
 import { workflow, addTask, claimTask, updateTask, verifyTask, acceptTask, context } from './lib/tasks.mjs';
+import { agentBoardRoutes, startAgentBoardDispatcher } from './lib/agent-board.mjs';
 
 const publicDir = join(root, 'public');
 const port = Number(process.env.DOGFOOD_PORT || 4321);
@@ -137,6 +138,7 @@ function addPageFeatures(projectId, pageId, input, by) {
 const taskPath = '/api/projects/([a-z0-9-]+)/tasks/([a-z0-9-]+)';
 const scanOptions = request => request.headers['content-type']?.startsWith('application/json') ? requestJson(request) : {};
 const routes = [
+  ...agentBoardRoutes(requestJson),
   ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => workflow(id)],
   ['GET', '/api/projects/([a-z0-9-]+)/context', ([id]) => context(id)],
   ['POST', '/api/projects/([a-z0-9-]+)/tasks', async ([id], request) => addTask(id, await requestJson(request), person)],
@@ -236,5 +238,6 @@ function handle(request, response) {
 }
 
 createServer(handle).listen(port, '127.0.0.1', () => {
+  startAgentBoardDispatcher();
   console.log(`dogfood: http://127.0.0.1:${port} · data: ${relative(root, dataDir) || '.'}`);
 });

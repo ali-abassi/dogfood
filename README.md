@@ -59,6 +59,28 @@ Each answer is **Good**, **Needs work**, **Partly checked**, **Not checked**, **
 
 Use the sidebar search to find a page by its name, group, route, page ID, something you can do there, or an open bug's ID or title. Words can appear in any order: `invoice download` finds a page with “Download invoice.” Case, extra whitespace and accents don't prevent matches. Every word must match the same page; punctuation stays literal, and resolved bugs are excluded. The selected filter and sort still apply.
 
+## Give an agent work from the board
+
+Open **Agent board** in any project. **New request** lets you choose Claude Code or Codex,
+describe the result you want, and optionally link the request to a page and feature.
+Save it for later, or explicitly choose **Create & start**.
+
+The board uses [PAL](https://github.com/ali-abassi/pal) installed on your machine. `pal` must be on
+the server's PATH, and your chosen native agent must already be signed in. You can set
+`DOGFOOD_PAL_BIN` to the absolute executable path if needed. No provider key belongs in a card.
+
+Each request starts an isolated Git worktree from the project's committed checkout. Uncommitted
+files are not copied. **Send to agent** continues that card's conversation; **Note only** records
+feedback without starting work. Feedback sent during a turn is queued for the next turn.
+The session and worktree remain available if the Dogfood server restarts.
+
+Finished turns arrive in **Review**, with the agent's result and worktree. Marking a request done
+does not merge its branch, deploy an app, or accept its page QA. Review and integrate the change,
+then use the existing Plan checks and page acceptance gates. Errors and input requests appear in
+**Needs you**. Stop a running request before marking it done.
+
+See [the agent-board contract](docs/agent-board.md) for behavior, verification and boundaries.
+
 ## With your coding agent
 
 Give your agent (Claude Code, Codex, Cursor, or any agent that can run a shell) this sentence:

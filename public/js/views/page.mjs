@@ -31,11 +31,12 @@ const navIcons = {
   overview: '<rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1.2"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1.2"/><rect x="9" y="9" width="4.5" height="4.5" rx="1.2"/>',
   vision: '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2.2"/>',
   guide: '<path d="M8 2.5a5.5 5.5 0 1 0 0 11c1 0 1.3-.8.9-1.5-.5-.8 0-1.8 1-1.8h1.2a2.4 2.4 0 0 0 2.4-2.4C13.5 4.7 11 2.5 8 2.5z"/><circle cx="5.3" cy="7" r=".6"/><circle cx="7.6" cy="5" r=".6"/><circle cx="10.4" cy="5.8" r=".6"/>',
+  board: '<rect x="2" y="2.5" width="3" height="11" rx=".7"/><rect x="6.5" y="2.5" width="3" height="7.5" rx=".7"/><rect x="11" y="2.5" width="3" height="5" rx=".7"/>',
   plan: '<path d="M6.5 4h7M6.5 8h7M6.5 12h7"/><path d="M2.5 4l.9.9L5 3.3M2.5 8l.9.9L5 7.3M2.5 12l.9.9L5 11.3"/>',
   features: '<path d="M8 2.5l5.5 3L8 8.5l-5.5-3z"/><path d="M2.5 8.2L8 11.2l5.5-3M2.5 10.9L8 13.9l5.5-3"/>',
 };
 
-const projectViews = [['overview', 'Overview'], ['vision', 'Vision'], ['guide', 'Design'], ['plan', 'Plan'], ['features', 'Features'], ['competitors', 'Competitors']];
+const projectViews = [['overview', 'Overview'], ['vision', 'Vision'], ['guide', 'Design'], ['board', 'Agent board'], ['plan', 'Plan'], ['features', 'Features'], ['competitors', 'Competitors']];
 
 function navIconMarkup(view) {
   return `<svg class="nav-icon" viewBox="0 0 16 16" aria-hidden="true">${navIcons[view]}</svg>`;
@@ -112,7 +113,7 @@ function acceptanceMarkup(page) {
 
 export function pageHeaderMarkup(page) {
   const open = externalLinkMarkup(page.captures.desktop.sourceUrl, 'Open page ↗', 'link-button');
-  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${acceptanceMarkup(page)}${checkAgainMarkup(page)}${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${scanErrorMarkup(page)}${removePageMarkup(page)}`;
+  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${acceptanceMarkup(page)}${checkAgainMarkup(page)}<button type="button" class="link-button" data-action="request-page-change">Request a change</button>${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${scanErrorMarkup(page)}${removePageMarkup(page)}`;
 }
 
 // Pages is the phone's way into the sidebar; on a computer the sidebar is always there.

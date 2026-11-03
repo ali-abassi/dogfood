@@ -1,5 +1,26 @@
 # Progress
 
+## 2026-11-03 — agent requests and feedback
+
+Implemented the project Agent board: five execution lanes, Claude Code/Codex selection,
+optional page/feature/task links, durable isolated native sessions, ordered followups,
+notes, stop/retry, lossless feedback discard, results/change summaries and explicit review.
+Existing task and page QA acceptance remain separate. The primary action is New request;
+mobile puts the selected conversation first and compacts empty lanes.
+
+Evidence: 177 native tests, syntax checks, complexity lint and 37 MCP protocol checks pass.
+Six browser checks cover the request loop, draft retention through result updates, safe result
+rendering, notes, explicit completion, reload/mobile and hidden-draft navigation. Actual Codex
+completed two turns in one card/session and changed the disposable fixture as requested;
+actual Claude Code completed a separate requested change. Independent Opus review passed
+after stop/result recovery and hidden-draft fixes. The rendered phone board has zero axe
+violations. Local receipts are in `data/reviews/agent-board-20261103/`.
+
+Release target: the existing local app at http://127.0.0.1:4322. Requests leave source changes
+in their worktree for review; finishing a request never merges, deploys or accepts QA.
+Discovery interviews, Graphify/product maps, screenshot-position annotations and ongoing
+KPI goals are later milestones, outside this release.
+
 ## 2026-10-01 — Hill Climber page search
 
 Hill Climber generated three real GPT-6.1 Sol candidates and selected the smallest patch. Development search outcomes improved from 19/34 to 34/34; a separate private panel improved from 18/39 to 39/39 with every compatibility gate passing. The selected matcher searches page identifiers, routes, feature names and open bug IDs/titles using every query word, independent of order, case or accents. Resolved bug text and explanatory prose stay excluded; filters, ordering and QA rules retain their existing behavior. No dependency or server change was needed.

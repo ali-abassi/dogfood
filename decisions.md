@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-11-03 — agent requests in the project workbench
+
+- Ali authorized a kanban that sends work and feedback to Claude Code or Codex. Implement one complete request/conversation/review loop first; keep the broader discovery/map/annotation/goal work as later scope.
+- Reuse local PAL native sessions instead of adding provider API credentials or a second conversation runtime. Start an isolated worktree at the registered checkout's committed revision; expose the worktree and session in card details.
+- Keep implementation plans and QA acceptance authoritative. Board requests may link them but never silently claim, verify, accept, merge or deploy them.
+- Independent review found stop/result races and hidden-draft loss. Keep every unread native result retryable, retain discarded-feedback history, and guard all unsent drafts before navigation. On phones the selected conversation leads; empty lanes use compact headers.
+- Preserve the current brand and native UI. Surface state, conversation and page context before additional dashboards or decorative progress metrics.
+- Reconcile the local and published histories by a merge that preserves both histories and retains the published portability changes; never force-push.
+
 ## 2026-10-01 — improve Dogfood with Hill Climber
 
 - Target an observed discovery failure: “coverage inspect” could not find Overview's “Inspect page coverage and acceptance” feature. Routes and open bug identifiers were also absent from the matcher. Improving this existing control avoids adding another screen or search system.

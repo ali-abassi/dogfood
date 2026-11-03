@@ -16,6 +16,7 @@ import { runQa } from './views/tests.mjs';
 import { addSuggestedFeatures, runVisualReview, updateSuggestedButton } from './views/visual.mjs';
 import { acceptMeasured } from './views/measured.mjs';
 import { addThing } from './views/works.mjs';
+import { closeBoardEditors, discardBoardDrafts, hasBoardDrafts, registerBoardEvents, reviewBoardDraft } from './views/board.mjs';
 
 async function scanActivePage() {
   const page = activePage();
@@ -98,8 +99,9 @@ function closePages() {
   document.querySelector('.page-menu-toggle')?.focus();
 }
 
-const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form, #task-form, #task-recovery-form';
+const editorSelector = '#answer-form, #questions-form, #things-form, #add-thing-form, #finding-form, #resolution-form, #remove-page-form, #task-form, #task-recovery-form, #board-request-form, #board-comment-form';
 let keyboardInput = false;
+let boardNavigation;
 
 // Programmatic focus is for keyboard users; after a mouse click it would leave a stray ring.
 function restoreFocus(selector) {
@@ -107,12 +109,14 @@ function restoreFocus(selector) {
 }
 
 function closeEditors() {
+  closeBoardEditors();
   Object.assign(state, { answerEditing: false, questionsEditing: false, thingsEditing: false, addingThing: false, findingForm: null, removingPage: null });
   Object.assign(state.workflow, { formOpen: false, editing: '', recovering: '', draft: null, formError: '' });
 }
 
 // An unchanged editor closes quietly; one with changes asks to save or discard at the form itself.
-function blockOpenFormNavigation() {
+function blockOpenFormNavigation(continueNavigation) {
+  if (hasBoardDrafts()) { showBoardDraftPrompt(continueNavigation); return true; }
   const form = document.querySelector(editorSelector);
   if (!form) return false;
   if (form.dataset.dirty !== 'true') {
@@ -123,6 +127,27 @@ function blockOpenFormNavigation() {
   showUnsavedPrompt(form);
   return true;
 }
+
+function showBoardDraftPrompt(continueNavigation) {
+  boardNavigation = continueNavigation;
+  const host = document.querySelector('.page-workspace');
+  if (!host || host.querySelector('#board-unsaved-prompt')) return;
+  host.insertAdjacentHTML('afterbegin', '<div id="board-unsaved-prompt" class="unsaved-prompt" role="alert"><span>You have unsent agent requests or replies.</span><button type="button" class="text-button" data-action="review-board-draft">Review draft</button><button type="button" class="text-button" data-action="keep-board-editing">Keep editing</button><button type="button" class="text-button" data-action="discard-board-drafts">Discard drafts</button></div>');
+  host.querySelector('#board-unsaved-prompt').scrollIntoView({ block: 'nearest' });
+}
+function keepBoardEditing() {
+  boardNavigation = null;
+  document.getElementById('board-unsaved-prompt')?.remove();
+}
+function discardBoardAndNavigate() {
+  const next = boardNavigation;
+  boardNavigation = null;
+  discardBoardDrafts();
+  document.getElementById('board-unsaved-prompt')?.remove();
+  render();
+  next?.();
+}
+function openUnsentBoardDraft() { keepBoardEditing(); reviewBoardDraft(); }
 
 function showUnsavedPrompt(form) {
   if (!form.querySelector('.unsaved-prompt')) {
@@ -234,6 +259,9 @@ const buttonActions = new Map([
   ['cancel-remove-page', () => { if (promptIfChanged()) return; state.removingPage = null; render(); restoreFocus('[data-action="remove-page"]'); }],
   ['cancel-add-project', () => { state.view = 'overview'; render(); }],
   ['discard-changes', discardChanges],
+  ['review-board-draft', openUnsentBoardDraft],
+  ['keep-board-editing', keepBoardEditing],
+  ['discard-board-drafts', discardBoardAndNavigate],
   ['open-competitor', button => { Object.assign(state.competitors, { open: button.dataset.competitorId, removing: '', error: '' }); render(); window.scrollTo(0, 0); restoreFocus('#competitor-heading'); }],
   ['close-competitor', () => { const id = state.competitors.open; Object.assign(state.competitors, { open: '', removing: '', error: '' }); render(); restoreFocus(`[data-competitor-id="${id}"]`); }],
   ['scan-competitor', rescanOpenCompetitor],
@@ -274,7 +302,7 @@ function handleNavigationButton(button) {
 }
 
 function handleButton(button) {
-  if (navigationRequested(button) && blockOpenFormNavigation()) return;
+  if (navigationRequested(button) && blockOpenFormNavigation(() => handleNavigationButton(button))) return;
   if (handleNavigationButton(button)) return;
   buttonActions.get(button.dataset.action)?.(button);
 }
@@ -284,9 +312,11 @@ function renderSidebarPageList() {
   if (list) list.innerHTML = pageOptionsMarkup(menuPages());
 }
 
+function selectProject(id) { loadProject(id).then(() => restoreFocus('#project-select'), error => showError(error.message)); }
 function handleProjectSelection(select) {
-  if (blockOpenFormNavigation()) { select.value = state.project.id; return; }
-  loadProject(select.value).then(() => restoreFocus('#project-select'), error => showError(error.message));
+  const id = select.value;
+  if (blockOpenFormNavigation(() => selectProject(id))) { select.value = state.project.id; return; }
+  selectProject(id);
 }
 
 function handlePageSort(select) {
@@ -332,6 +362,7 @@ function handleBugButton(button) {
 }
 
 export function registerEvents() {
+  registerBoardEvents(app);
   app.addEventListener('toggle', event => {
     if (event.target.id === 'onboarding-options') state.projectDraft.optionsOpen = event.target.open;
   }, true);

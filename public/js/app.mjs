@@ -18,6 +18,7 @@ import { syncQaAgentState } from './views/qa-agent.mjs';
 import { planMarkup, syncWorkflowState } from './views/plan.mjs';
 import { syncVisualState } from './views/visual.mjs';
 import { worksMarkup } from './views/works.mjs';
+import { boardMarkup, syncBoardState } from './views/board.mjs';
 
 export const app = document.querySelector('#app');
 
@@ -41,6 +42,7 @@ const projectViews = {
   'add-project': () => addProjectFormMarkup(false),
   ...Object.fromEntries(docViewIds.map(id => [id, docsMarkup])),
   plan: planMarkup,
+  board: boardMarkup,
 };
 
 function projectViewMarkup() {
@@ -89,6 +91,7 @@ export function render() {
   syncDocsState();
   syncWorkflowState();
   syncCompetitorsState();
+  syncBoardState();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();
 }
@@ -97,7 +100,7 @@ export function showError(message) {
   app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
-const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'features', 'competitors', 'add-project', 'suggestions']);
+const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions']);
 
 function initialView(project, destination) {
   if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };
@@ -108,6 +111,7 @@ function initialView(project, destination) {
 export async function loadProject(id, destination = {}) {
   state.project = await readJson(`/api/projects/${encodeURIComponent(id)}`);
   rememberProject(id);
+  state.boardDestination = destination.cardId || '';
   Object.assign(state, initialView(state.project, destination));
   state.query = '';
   state.filter = 'all';
@@ -127,7 +131,7 @@ function initialDestination() {
   const query = new URLSearchParams(window.location.search);
   const linkedProject = state.projects.find(project => project.id === query.get('project'));
   const projectId = linkedProject?.id ?? rememberedProjectId() ?? state.projects[0].id;
-  const destination = linkedProject ? { view: query.get('view'), pageId: query.get('page') } : {};
+  const destination = linkedProject ? { view: query.get('view'), pageId: query.get('page'), cardId: query.get('card') } : {};
   return { projectId, destination };
 }
 

@@ -9,3 +9,5 @@
 - **Agent-selected working policy:** A page's plan, run evidence, human review, and overall verdict stay distinct. Case counts never become a page score. A perfect score requires fresh evidence for every declared critical gate.
 - **User-stated, 2026-09-29:** Dogfood is the lightweight system for a coding agent to plan, build, QA and continue a web project end to end. Supporting CLI and skills must work before an app exists and leave a useful handoff for the next session. The dashboard makes that work and its evidence easy for a person to inspect.
 - **Non-goals:** dogfood does not claim a screenshot proves behavior, that local fixtures prove a deployed integration, or that a public page can be made impossible to copy. It is a local tool, not a hosted service.
+
+- **User-stated, 2026-11-03:** Dogfood should carry a project from a detailed discovery interview and reviewed scope through a page/feature map, building, direct feedback and a truthful status dashboard. The first implementation is a simple kanban interface that sends requests and followups to Claude Code or Codex and brings their results back for review. Existing QA acceptance remains evidence-based.

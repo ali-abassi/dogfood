@@ -27,6 +27,22 @@ MCP equivalents are `dogfood_init`, `dogfood_context`, `dogfood_tasks`, `dogfood
 
 ## Plan the smallest complete outcome
 
+### Requests and feedback from the Agent board
+
+People can create project requests in Agent board and explicitly start Claude Code or Codex through
+their local PAL installation. Requests may link a page, feature or existing planned task. Read them
+with `dogfood_agent_board`; `dogfood_agent_changes` reads their worktree change summary.
+`dogfood_agent_request` saves for later unless `start:true`; `dogfood_agent_comment` requires an
+explicit `send` choice. Sending or starting delegates work and needs the user's task authorization.
+Notes do not start work. A long-running board dispatcher belongs to the local web server; a one-shot
+MCP call is not a durable queue worker.
+
+The board owns conversations and isolated native sessions. Keep planned-task claims, verification
+receipts and page acceptance in their existing tools. An agent's finished turn returns to Review;
+it never proves the app works, merges a branch, deploys or accepts QA. Review source and user-visible
+outcomes before integrating returned work. Preserve the request's worktree and conversation so a
+person can send further feedback through the same card.
+
 Keep intent in `vision.md`, visual direction in `design.html`/`design.md`, and milestones in `plan.md`. Dogfood's structured tasks are the task-status source of truth; don't maintain another checkbox ledger independently.
 
 Turn each outcome into a bounded task. Specify scope, dependencies, the native commands that prove it (optional `timeoutSeconds` from 1 to 1800, default 300), and related pages plus visible criteria for UI work. A task can describe a journey across several pages. Avoid tasks that just say “improve quality” or checks that merely exit 0.
