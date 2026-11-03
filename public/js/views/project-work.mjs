@@ -30,7 +30,7 @@ export function syncProjectWork() {
 }
 function actionMarkup(action) {
   if (!action) return '<p>No pending task or agent decision. Review your page evidence below.</p>';
-  return `<h2>${escapeHtml(action.title)}</h2>${action.summary ? `<p>${escapeHtml(action.summary)}</p>` : ''}<button type="button" class="save-button" data-work-link="${escapeHtml(action.url)}">${action.kind === 'review_request' ? 'Review result' : 'Continue'}</button>`;
+  return `<h2>${escapeHtml(action.title)}</h2>${action.summary ? `<p>${escapeHtml(action.summary)}</p>` : ''}<button type="button" class="text-button" data-work-link="${escapeHtml(action.url)}">${action.kind === 'review_request' ? 'Review result' : 'Continue'}</button>`;
 }
 function goalMarkup(readiness) { if (!readiness.answers.success) return ''; return `<details class="project-outcome"><summary>Project outcome and proof</summary><p>${escapeHtml(readiness.answers.success)}</p><p class="field-hint">${escapeHtml(readiness.answers.proof || 'Define the evidence in Discovery.')}</p></details>`; }
 export function projectWorkMarkup() {
