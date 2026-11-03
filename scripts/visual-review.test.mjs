@@ -15,7 +15,7 @@ const analysis = {
     ease: { score: 8, reason: 'Search sits at the top on both screens.' },
   },
   evidence: [
-    { location: 'desktop top', observation: 'The heading says Inspo.' },
+    { location: 'desktop top', observation: 'The heading says Gallery.' },
     { location: 'mobile middle', observation: 'The page shows a card grid.' },
   ],
   improvements: ['Make the archive purpose more specific.'],
@@ -27,12 +27,12 @@ const analysis = {
 
 function fixtureCaptures(root) {
   mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
-  writeFileSync(join(root, 'captures', 'fixture', 'inspo.png'), png);
-  writeFileSync(join(root, 'captures', 'fixture', 'inspo-mobile.png'), png);
-  const sourceUrl = 'https://example.com/#/inspo';
+  writeFileSync(join(root, 'captures', 'fixture', 'gallery.png'), png);
+  writeFileSync(join(root, 'captures', 'fixture', 'gallery-mobile.png'), png);
+  const sourceUrl = 'https://example.com/#/gallery';
   return {
-    desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo.png', sourceUrl },
-    mobile: { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo-mobile.png', sourceUrl },
+    desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/gallery.png', sourceUrl },
+    mobile: { state: 'rendered', fullPage: true, path: '/captures/fixture/gallery-mobile.png', sourceUrl },
   };
 }
 
@@ -57,7 +57,7 @@ function restoreProvider({ oldKey, oldFetch }) {
 test('visual review judges both screenshots, suggests features, and becomes stale when either changes', async () => {
   const root = mkdtempSync(join(tmpdir(), 'qa-visual-'));
   const captures = fixtureCaptures(root);
-  const page = { id: 'inspo', name: 'Inspo', captures };
+  const page = { id: 'gallery', name: 'Gallery', captures };
   const provider = stubProvider(analysis);
   try {
     const result = await runVisualReview(root, { id: 'fixture', guidelines: ['One blue button per screen.'] }, page);
@@ -78,13 +78,13 @@ test('visual review judges both screenshots, suggests features, and becomes stal
     assert.ok(result.review.captures.desktop.sha256);
     assert.ok(result.review.captures.mobile.sha256);
     assert.equal(result.review.capture, undefined);
-    assert.equal(latestVisualReview(root, 'fixture', 'inspo', captures).stale, false);
-    writeFileSync(join(root, 'captures', 'fixture', 'inspo-mobile.png'), Buffer.concat([png, Buffer.from('changed')]));
-    assert.equal(latestVisualReview(root, 'fixture', 'inspo', captures).stale, true);
-    writeFileSync(join(root, 'captures', 'fixture', 'inspo-mobile.png'), png);
-    writeFileSync(join(root, 'captures', 'fixture', 'inspo.png'), Buffer.concat([png, Buffer.from('changed')]));
-    assert.equal(latestVisualReview(root, 'fixture', 'inspo', captures).stale, true);
-    const directory = join(root, 'visual-reviews', 'fixture', 'inspo');
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).stale, false);
+    writeFileSync(join(root, 'captures', 'fixture', 'gallery-mobile.png'), Buffer.concat([png, Buffer.from('changed')]));
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).stale, true);
+    writeFileSync(join(root, 'captures', 'fixture', 'gallery-mobile.png'), png);
+    writeFileSync(join(root, 'captures', 'fixture', 'gallery.png'), Buffer.concat([png, Buffer.from('changed')]));
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).stale, true);
+    const directory = join(root, 'visual-reviews', 'fixture', 'gallery');
     assert.doesNotMatch(readFileSync(join(directory, readdirSync(directory)[0]), 'utf8'), /fixture-key/);
   } finally {
     restoreProvider(provider);
@@ -98,10 +98,10 @@ test('a blocked mobile capture sends only the desktop screenshot and records a n
   captures.mobile = { state: 'blocked', reason: 'The page needs a signed-in session on mobile.' };
   const provider = stubProvider(analysis);
   try {
-    const result = await runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', captures });
+    const result = await runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures });
     assert.equal(provider.outbound().messages[0].content.length, 3);
     assert.equal(result.review.captures.mobile, null);
-    assert.equal(latestVisualReview(root, 'fixture', 'inspo', captures).stale, false);
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).stale, false);
   } finally {
     restoreProvider(provider);
     rmSync(root, { recursive: true, force: true });
@@ -136,14 +136,14 @@ test('provider failure keeps an attempt receipt without creating a review', asyn
   const oldKey = process.env.DEEPSEEK_API_KEY;
   const oldFetch = globalThis.fetch;
   mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
-  writeFileSync(join(root, 'captures', 'fixture', 'inspo.png'), png);
+  writeFileSync(join(root, 'captures', 'fixture', 'gallery.png'), png);
   process.env.DEEPSEEK_API_KEY = 'fixture-key';
   globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'Provider unavailable' } }), { status: 503 });
   try {
-    const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo.png', sourceUrl: 'https://example.com/#/inspo' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
-    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', captures }), /Provider unavailable/);
-    assert.equal(latestVisualReview(root, 'fixture', 'inspo', captures).review, null);
-    const directory = join(root, 'visual-reviews', 'fixture', 'inspo', 'failed-attempts');
+    const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/gallery.png', sourceUrl: 'https://example.com/#/gallery' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
+    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures }), /Provider unavailable/);
+    assert.equal(latestVisualReview(root, 'fixture', 'gallery', captures).review, null);
+    const directory = join(root, 'visual-reviews', 'fixture', 'gallery', 'failed-attempts');
     const receipt = JSON.parse(readFileSync(join(directory, readdirSync(directory)[0]), 'utf8'));
     assert.equal(receipt.response.error.message, 'Provider unavailable');
     assert.doesNotMatch(JSON.stringify(receipt), /fixture-key/);
@@ -160,12 +160,12 @@ test('an answer the provider cut short says so instead of failing to parse', asy
   const oldKey = process.env.DEEPSEEK_API_KEY;
   const oldFetch = globalThis.fetch;
   mkdirSync(join(root, 'captures', 'fixture'), { recursive: true });
-  writeFileSync(join(root, 'captures', 'fixture', 'inspo.png'), png);
+  writeFileSync(join(root, 'captures', 'fixture', 'gallery.png'), png);
   process.env.DEEPSEEK_API_KEY = 'fixture-key';
   globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'insufficient_system_resource', message: { content: '{\n  "pagePurpose": "This page allows' } }] }), { status: 200 });
   try {
-    const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/inspo.png', sourceUrl: 'https://example.com/' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
-    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', captures }), /ran out of capacity partway through/);
+    const captures = { desktop: { state: 'rendered', fullPage: true, path: '/captures/fixture/gallery.png', sourceUrl: 'https://example.com/' }, mobile: { state: 'blocked', reason: 'Not captured yet.' } };
+    await assert.rejects(runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures }), /ran out of capacity partway through/);
   } finally {
     globalThis.fetch = oldFetch;
     if (oldKey === undefined) delete process.env.DEEPSEEK_API_KEY;
@@ -201,7 +201,7 @@ test('an answer that breaks the schema gets one more try, and the good second an
   globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(replies[calls++]) } }], usage: { prompt_tokens: 10, completion_tokens: 10 } }), { status: 200 });
   process.env.DEEPSEEK_API_KEY = 'fixture-key';
   try {
-    const result = await runVisualReview(root, { id: 'fixture' }, { id: 'inspo', name: 'Inspo', captures });
+    const result = await runVisualReview(root, { id: 'fixture' }, { id: 'gallery', name: 'Gallery', captures });
     assert.equal(calls, 2);
     assert.deepEqual(result.review.analysis.evidence, analysis.evidence);
   } finally {

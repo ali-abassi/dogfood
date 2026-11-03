@@ -48,7 +48,7 @@ The release recheck keeps screenshot age on its own unclipped line; the report a
 
 ## 2026-09-29 — custom audit reuse
 
-Astra advised against an all-facts fallback for arbitrary custom questions: it could not observe an unspecified external condition, missed load time, and treated unknown null links as measured. Keep explicit reviewer-selected dependencies and narrow canonical defaults. Make missing dependencies visible in MCP/API acknowledgements and the question view; add measured load-time dependencies and fail closed on unknown links/timing. A rewritten question drops prior dependencies unless its reviewer explicitly selects them again; Good answers alone need the reuse warning. Freshly review the twelve affected legacy rows with their actual evidence; preserve their attribution on later unchanged scans.
+Review advised against an all-facts fallback for arbitrary custom questions: it could not observe an unspecified external condition, missed load time, and treated unknown null links as measured. Keep explicit reviewer-selected dependencies and narrow canonical defaults. Make missing dependencies visible in MCP/API acknowledgements and the question view; add measured load-time dependencies and fail closed on unknown links/timing. A rewritten question drops prior dependencies unless its reviewer explicitly selects them again; Good answers alone need the reuse warning. Freshly review the twelve affected legacy rows with their actual evidence; preserve their attribution on later unchanged scans.
 
 ## 2026-09-29 — review toolbar alignment
 

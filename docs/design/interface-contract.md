@@ -76,7 +76,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - OV-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
   - OV-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
   - OV-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/overview.md`
-- **Independent reviewer:** dogfood-rv-overview (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-overview (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Page report (screenshots and six answers)
@@ -136,7 +136,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - PR-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
   - PR-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
   - PR-6 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/report.md`
-- **Independent reviewer:** dogfood-rv-report (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-report (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Answer detail (Looks right, Clear purpose, Easy to use, Safe, Fast & findable)
@@ -194,7 +194,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - AD-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
   - AD-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
   - AD-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/answer.md`
-- **Independent reviewer:** dogfood-rv-answer (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-answer (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Works as expected (things you can do, bugs, errors)
@@ -252,7 +252,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - WK-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
   - WK-4 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
   - WK-5 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/works.md`
-- **Independent reviewer:** dogfood-rv-works (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-works (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Screenshots (full page and what changed)
@@ -306,7 +306,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - SC-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/screens.md`
   - SC-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/screens.md`
   - SC-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/screens.md`
-- **Independent reviewer:** dogfood-rv-screens (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-screens (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Add project and welcome
@@ -360,7 +360,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - AP-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/add-project.md`
   - AP-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/add-project.md`
   - AP-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/add-project.md`
-- **Independent reviewer:** dogfood-rv-add-project (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-add-project (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Suggested things to check (project-wide)
@@ -414,7 +414,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - SG-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/suggestions.md`
   - SG-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/suggestions.md`
   - SG-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/suggestions.md`
-- **Independent reviewer:** dogfood-rv-suggestions (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-suggestions (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Surface: Navigation (sidebar and phone Pages sheet)
@@ -468,7 +468,7 @@ Required reviewer assignments: one independent reviewer, on a different model fr
   - NV-1 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/navigation.md`
   - NV-2 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/navigation.md`
   - NV-3 — PASS — observed by the independent reviewer and run by tests/acceptance `design-evidence/reviews/navigation.md`
-- **Independent reviewer:** dogfood-rv-navigation (Muse Spark 1.3, a different model from the implementer, Claude Opus 5.5)
+- **Independent reviewer:** dogfood-rv-navigation (a different model from the implementer)
 - **Verdict:** Pass
 
 ## Completion packet

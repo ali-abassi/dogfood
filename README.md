@@ -93,7 +93,7 @@ Onboarding finds same-site pages from rendered links and `/sitemap.xml`, registe
 
 `npm run report -- <project-id> > report.md` writes a shareable Markdown summary: what needs work first, every page's six answers, open bugs, and what the evidence does not prove.
 
-`npm run gate -- <project-id> [page-id ...]` applies the same completion gate as `dogfood_complete` from the command line: it exits 0 only when every named page (or every page) is complete, 1 with each page's missing evidence when one is not, and 2 for an unknown project or page. Other tools can require page QA with it; PAL's `--dogfood PROJECT[:PAGES]` runs it after every worker turn.
+`npm run gate -- <project-id> [page-id ...]` applies the same completion gate as `dogfood_complete` from the command line: it exits 0 only when every named page (or every page) is complete, 1 with each page's missing evidence when one is not, and 2 for an unknown project or page. Other tools can require page QA with it; an agent runner can run it after every worker turn.
 
 Upgrading from an earlier dogfood? Run `npm run migrate` once. It moves projects to the six answers and the current data version, keeps old verdicts that no longer count on record under `retiredChecks`, and leaves any outside-edit warning in place.
 
@@ -111,14 +111,14 @@ A page's report shows its full-page computer and phone screenshots in frames you
 
 ### The QA agent
 
-A page that is not complete offers **Ask the QA agent**. dogfood starts the command in `DOGFOOD_QA_AGENT` (set in the git-ignored `.env`) with a brief naming what the page still needs, how to record evidence through dogfood's tools, and the rules (never publish, pay, delete, change settings, or type a password). While it works the page shows its status and reloads its evidence. With PAL (an agent session runner) and Muse Code, `.env` holds:
+A page that is not complete offers **Ask the QA agent**. dogfood starts the command in `DOGFOOD_QA_AGENT` (set in the git-ignored `.env`) with a brief naming what the page still needs, how to record evidence through dogfood's tools, and the rules (never publish, pay, delete, change settings, or type a password). While it works the page shows its status and reloads its evidence. For example, `.env` might hold:
 
 ```
-DOGFOOD_QA_AGENT=pal start muse --route muse-spark-max -n qa-{page}-{run} -C {workdir} --dogfood {project}:{page} --repair 2 --bg
+DOGFOOD_QA_AGENT=my-agent run --name qa-{page}-{run} --cwd {workdir} --background
 META_API_KEY=...
 ```
 
-`{project}`, `{page}`, `{run}` and `{workdir}` are filled in; PAL's `--dogfood` gate keeps the agent working until `dogfood_complete` accepts the page. When a signed-in page's saved session expires, point the project's scans at a profile that is still signed in with `dogfood_set_browser_profile` rather than typing a password.
+`{project}`, `{page}`, `{run}` and `{workdir}` are filled in; an agent runner can keep the agent working until `dogfood_complete` accepts the page. When a signed-in page's saved session expires, point the project's scans at a profile that is still signed in with `dogfood_set_browser_profile` rather than typing a password.
 
 ### Competitors
 

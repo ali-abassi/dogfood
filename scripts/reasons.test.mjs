@@ -15,7 +15,7 @@ test('evidence paths and file names disappear without leaving holes', () => {
     'Schedule next step and Recent work show what to do and what was made.',
   );
   assert.equal(
-    shortReason('Current local signed-in page scan: /Users/aliabassi/dogfood/data/captures/shop/home.png.'),
+    shortReason('Current local signed-in page scan: /home/user/dogfood/data/captures/shop/home.png.'),
     'Current local signed-in page scan.',
   );
   assert.equal(
