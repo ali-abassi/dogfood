@@ -909,7 +909,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .discovery-page { padding: 16px 0; border-bottom: 1px solid var(--separator); }
 .discovery-page h3 { margin-top: 0; }
 .discovery-review li { margin: 8px 0; }
-.discovery-agent { padding: 20px 0; }
+.discovery-agent { padding: 20px; }
+.discovery-agent select { margin: 0 8px; }
 .product-map-page { margin: 24px 0; padding: 24px; }
 .product-map-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; }
 .product-map-columns > * { min-width: 0; }
