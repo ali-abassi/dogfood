@@ -168,3 +168,15 @@ If source was changed outside Dogfood, finish or preserve local edits until sour
 with its latest `integrationId`. This releases only the application record and preserves its history
 and the agent worktree. If source moved on, start a fresh request before integrating further changes. `save-source` can recognize an exact external reviewed commit instead;
 unrelated commits or local changes are refused.
+
+For Codex, forward Dogfood's native context into its MCP child. In the existing
+`[mcp_servers.dogfood]` entry in `~/.codex/config.toml`, add:
+
+```toml
+env_vars = ["DOGFOOD_PROJECT", "DOGFOOD_NATIVE_REQUEST", "DOGFOOD_DATA", "DOGFOOD_BROWSER_SESSION", "DOGFOOD_BROWSER_PROFILE"]
+```
+
+These are context-variable names, not credentials. Without forwarding, a Codex MCP child can
+lose the native-request marker even while its shell sees it. Worktree detection remains a
+fallback. Start the next native turn after changing configuration; an already-running MCP
+process keeps its original environment.
