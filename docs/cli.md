@@ -28,6 +28,13 @@ URLs and redirects. It never probes the project's application URL as if it were 
 CLI and server must use the same `DOGFOOD_DATA`; symbolic links to the same folder match.
 If an older running server lacks the health/data-store check, restart it after updating.
 
+For browser checks, set `DOGFOOD_BROWSER_SESSION` to reuse a designated existing
+`agent-browser` session. Dogfood preserves that session after success, failure and shutdown;
+it does not load `DOGFOOD_BROWSER_STATE` into it. The selected browser profile still applies. Scans navigate and resize this session, leaving it
+on the last checked page at that page’s final device size.
+Without a named session, Dogfood creates and closes its own temporary scan session, including
+on failure; saved-state setup applies only to that owned session.
+
 ## Discovery and the project map
 
 Use **New idea → Start discovery** in the app to create a managed local Git workspace, or call
