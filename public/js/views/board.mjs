@@ -2,9 +2,10 @@ import { readJson } from '../api.mjs';
 import { dateLabel, escapeHtml, markdownMarkup } from '../format.mjs';
 import { state } from '../state.mjs';
 import { render } from '../app.mjs';
+import { deliveryBadge, deliveryMarkup, readyWorkMarkup, queueMarkup, contractMarkup } from './board-work.mjs';
 
 // Requests are conversations about work; Done here does not accept a task or page's QA.
-const lanes = [['todo', 'To do'], ['running', 'Working'], ['attention', 'Needs you'], ['review', 'Review'], ['done', 'Done']];
+const lanes = [['todo', 'To do'], ['running', 'Working'], ['attention', 'Needs you'], ['review', 'Review'], ['done', 'Closed']];
 const intentNames = { build: 'Build or change', discovery: 'Explore the idea', qa: 'Review and test' };
 const intentHints = { build: 'Make a scoped change in an isolated checkout. Include the outcome, limits and how to verify it.', discovery: 'Ask questions and propose scope before building. The agent cannot approve its own plan.', qa: 'Inspect the app and record evidence and findings. This request does not apply source changes.' };
 const laneHints = { todo: 'Saved or queued', running: 'Agent turn in progress', attention: 'Answer or fix setup', review: 'Inspect the result', done: 'Conversation closed' };
@@ -12,7 +13,7 @@ const agentNames = { codex: 'Codex', claude: 'Claude Code' };
 let poll;
 
 function freshBoard(key = '', selected = '') {
-  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, note: {}, formError: '' };
+  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, note: {}, formError: '', search: '', filter: 'all', queue: null, queueError: '', queueOpen: false, qaBackend: 'codex' };
 }
 
 function board() { return state.board ??= freshBoard(); }
@@ -25,12 +26,29 @@ function active(b) { return current(b) && state.view === 'board'; }
 function agentName(backend) { return agentNames[backend] || backend; }
 function disabled() { return board().action ? 'disabled' : ''; }
 function count(status) { return cards().filter(card => card.status === status).length; }
+function matchesFilter(card) {
+  const filter = board().filter;
+  if (filter === 'all') return true;
+  return filter === 'active' ? card.status !== 'done' : card.status === filter;
+}
+function matchesSearch(card) {
+  const text = [card.title, card.request, card.summary, card.delivery?.task?.title, agentName(card.backend)].join(' ');
+  return text.toLowerCase().includes(board().search.toLowerCase().trim());
+}
+function cardPriority(card) { return card.delivery?.task?.priority ?? 2; }
+function byPriority(a, b) { return cardPriority(a) - cardPriority(b) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt); }
+function visibleCards() { return cards().filter(matchesFilter).filter(matchesSearch).sort(byPriority); }
 
+function executionSummary() {
+  const running = cards().filter(card => card.status === 'running');
+  const unknown = running.filter(card => card.execution?.state === 'unknown').length;
+  const fetching = running.filter(card => card.execution?.state === 'fetching_result').length;
+  return [`${running.length - unknown - fetching} working`, unknown ? `${unknown} status unavailable` : '', fetching ? `${fetching} fetching result` : ''].filter(Boolean);
+}
 function summary() {
   if (!cards().length) return 'Give an agent a request, then follow the work here.';
   const attention = count('attention');
-  const review = count('review');
-  return `${count('running')} working · ${attention} ${attention === 1 ? 'needs' : 'need'} you · ${review} ready for review`;
+  return [...executionSummary(), `${attention} ${attention === 1 ? 'needs' : 'need'} you`, `${count('review')} ready for review`].join(' · ');
 }
 
 function requestPages() { const planned = board().plannedPages || []; return [...state.project.pages, ...planned.filter(page => !state.project.pages.some(item => item.id === page.id))]; }
@@ -40,29 +58,34 @@ function pageLink(page) {
   return `<button type="button" class="link-button" data-page="${escapeHtml(page.id)}">${escapeHtml(page.name)}</button>`;
 }
 
-function commentPreview(card) { return (card.comments?.at(-1)?.text || card.request).slice(0, 280); }
+function cleanBrief(text) { return text.replace(/^Dogfood full-page QA request · v1\s*/, ''); }
+function requestText(card) { return cleanBrief(card.request); }
+function commentPreview(card) { return (card.comments?.at(-1)?.text || requestText(card)).slice(0, 280); }
 function attentionPreview(card) { return card.error || card.outcome?.decision || card.summary || commentPreview(card); }
-function cardPreview(card) { if (card.status === 'attention') return attentionPreview(card); if (card.summary) return card.summary; if (card.error) return card.error; return commentPreview(card); }
+function cardPreview(card) { if (card.status === 'attention') return attentionPreview(card); if (card.summary) return cleanBrief(card.summary); if (card.error) return card.error; return commentPreview(card); }
 function cardPageName(card) {
   const page = linkForPage(card.pageId);
   return page ? `<span>${escapeHtml(page.name)}</span>` : '';
 }
 function cardMarkup(card) {
   const selected = board().selected === card.id;
-  return `<li><button type="button" aria-label="${escapeHtml(card.title)} · ${escapeHtml(cardStateLabel(card))} · ${escapeHtml(agentName(card.backend))}" class="board-card ${selected ? 'selected' : ''}" data-board-action="select" data-card-id="${escapeHtml(card.id)}" aria-pressed="${selected}"><strong>${escapeHtml(card.title)}</strong><span class="board-card-preview">${escapeHtml(cardPreview(card))}</span><span class="board-card-meta"><span>${escapeHtml(agentName(card.backend))}</span><span>${escapeHtml(cardStateLabel(card))}</span>${cardPageName(card)}</span></button></li>`;
+  return `<li><button type="button" aria-label="${escapeHtml(card.title)} · ${escapeHtml(cardStateLabel(card))} · ${escapeHtml(agentName(card.backend))}" class="board-card ${selected ? 'selected' : ''}" data-board-action="select" data-card-id="${escapeHtml(card.id)}" aria-pressed="${selected}"><strong>${escapeHtml(card.title)}</strong><span class="board-card-preview">${escapeHtml(cardPreview(card))}</span><span class="board-card-meta"><span>${escapeHtml(agentName(card.backend))}</span><span>${escapeHtml(cardStateLabel(card))}</span>${cardPageName(card)}</span>${deliveryBadge(card)}<time class="board-card-time" datetime="${escapeHtml(card.updatedAt)}">Updated ${escapeHtml(dateLabel(card.updatedAt))}</time></button></li>`;
 }
 
 function lanesMarkup() {
-  return lanes.map(([status, label]) => `<section class="board-lane" aria-labelledby="board-lane-${status}"><div class="board-lane-heading"><h2 id="board-lane-${status}"><span class="board-state-dot board-state-${status}" aria-hidden="true"></span>${label}</h2><span class="board-lane-count">${count(status)}</span></div><p class="board-lane-hint">${laneHints[status]}</p><ul>${cards().filter(card => card.status === status).map(cardMarkup).join('')}</ul>${count(status) ? '' : '<p class="board-lane-empty">No requests</p>'}</section>`).join('');
+  return lanes.map(([status, label]) => `<section class="board-lane" aria-labelledby="board-lane-${status}"><div class="board-lane-heading"><h2 id="board-lane-${status}"><span class="board-state-dot board-state-${status}" aria-hidden="true"></span>${label}</h2><span class="board-lane-count">${visibleCards().filter(card => card.status === status).length}</span></div><p class="board-lane-hint">${laneHints[status]}</p><ul>${visibleCards().filter(card => card.status === status).map(cardMarkup).join('')}</ul>${visibleCards().some(card => card.status === status) ? '' : '<p class="board-lane-empty">No requests</p>'}</section>`).join('');
 }
 
 function statusLabel(status) { return lanes.find(([value]) => value === status)?.[1] || status; }
 function cardStateLabel(card) {
   if (card.stopRequested) return 'Stopping';
   if (card.starting) return 'Starting';
+  return observedStateLabel(card);
+}
+function observedStateLabel(card) {
+  if (card.execution?.label) return card.execution.label;
   if (card.status === 'running') return 'Working';
-  if (card.queued) return 'Queued';
-  return statusLabel(card.status);
+  return card.queued ? 'Queued' : statusLabel(card.status);
 }
 function statusMarkup(card) {
   const label = cardStateLabel(card);
@@ -75,7 +98,7 @@ function actionButton(action, label, primary = false) {
 
 const statusActions = {
   running: () => actionButton('stop', 'Stop agent'),
-  todo: () => actionButton('run', 'Start agent', true),
+  todo: card => card.delivery?.launch?.allowed === false ? `<p class="field-hint">${escapeHtml(card.delivery.launch.reason)}</p>` : actionButton('run', 'Start agent', true),
   done: () => actionButton('reopen', 'Reopen request'),
   attention: attentionActions,
   review: reviewActions,
@@ -91,9 +114,9 @@ function needsAnswer(card) { return !card.error && Boolean(card.outcome?.decisio
 function attentionPrimary(card) { return needsAnswer(card) ? actionButton('reply', 'Answer agent') : actionButton('run', hasRun(card) ? 'Retry agent' : 'Start agent'); }
 function attentionActions(card) {
   const retry = idleCard(card) && !card.queued ? attentionPrimary(card) : '';
-  return `${retry}${finishAction(card, 'Mark done')}`;
+  return `${retry}${finishAction(card, 'Close request')}`;
 }
-function reviewActions(card) { return finishAction(card, 'Mark reviewed & done'); }
+function reviewActions(card) { return finishAction(card, 'Close reviewed request'); }
 function waitingToStart(card) { return card.status !== 'running' && (card.queued || card.starting); }
 function queuedAction(card) { return actionButton('stop', card.starting ? 'Stop starting agent' : 'Cancel queued start'); }
 function cardIntentName(card) { return intentNames[card.intent || 'build']; }
@@ -226,9 +249,9 @@ function runDetailsMarkup(card) {
   return `<details class="board-run-details"><summary>Agent session & worktree</summary><dl>${card.session ? `<dt>Session</dt><dd><code>${escapeHtml(card.session)}</code></dd>` : ''}${card.checkout ? `<dt>Worktree</dt><dd><code>${escapeHtml(card.checkout)}</code></dd>` : ''}</dl></details>`;
 }
 function cardErrorMarkup(card) { return card.error ? `<p class="board-error form-error" role="alert">${escapeHtml(card.error)}</p>` : ''; }
-function reviewNoteMarkup(card) { return card.status === 'review' ? '<p class="board-review-note">The agent finished its turn. Review its changes and checks before marking this request done. Page and task acceptance are tracked separately.</p>' : ''; }
+function reviewNoteMarkup(card) { return card.status === 'review' ? '<p class="board-review-note">The agent finished its turn. Review its changes and checks before closing the conversation. Delivery verification above tracks the linked task and pages.</p>' : ''; }
 function detailContentMarkup(card) {
-  return `<div class="board-detail-top"><div>${statusMarkup(card)}<h2 id="board-request-heading" tabindex="-1">${escapeHtml(card.title)}</h2></div><button type="button" class="text-button" data-board-action="close" aria-label="Close request">Close</button></div>${contextMarkup(card)}<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(card.request)}</p></div>${cardErrorMarkup(card)}<div class="board-detail-actions">${cardActions(card)}</div>${reviewNoteMarkup(card)}${outcomeMarkup(card)}${changedFilesMarkup(card)}${commentsMarkup(card)}`;
+  return `<div class="board-detail-top"><div>${statusMarkup(card)}<h2 id="board-request-heading" tabindex="-1">${escapeHtml(card.title)}</h2></div><button type="button" class="text-button" data-board-action="close" aria-label="Close request">Close</button></div>${contextMarkup(card)}${deliveryMarkup(card, Boolean(board().action))}<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(requestText(card))}</p></div>${cardErrorMarkup(card)}<div class="board-detail-actions">${cardActions(card)}</div>${reviewNoteMarkup(card)}${outcomeMarkup(card)}${changedFilesMarkup(card)}${commentsMarkup(card)}`;
 }
 function detailMarkup(card) {
   if (!card) return '';
@@ -236,17 +259,17 @@ function detailMarkup(card) {
 }
 
 function option(value, label, selected) { return `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`; }
-function draftValues() { return { title: '', request: '', backend: 'codex', intent: 'build', pageId: '', featureId: '', taskId: '', ...board().draft }; }
+function draftValues() { return { title: '', request: '', backend: 'codex', intent: 'build', pageId: '', featureId: '', taskId: '', doneWhen: '', constraints: '', ...board().draft }; }
 
 function featureOptions(data) {
   const page = linkForPage(data.pageId);
   return `<label for="board-feature">Feature <span class="field-optional">optional</span></label><select id="board-feature" name="featureId" ${page ? '' : 'disabled'}>${option('', page ? 'Whole page' : 'Choose a page first', data.featureId)}${(page?.features ?? []).map(feature => option(feature.id, feature.name, data.featureId)).join('')}</select>`;
 }
 
-function hasRequestDraft() { return Boolean(board().draft?.title || board().draft?.request); }
+function hasRequestDraft() { const draft = board().draft || {}; return ['title', 'request', 'doneWhen', 'constraints'].some(key => Boolean(draft[key])); }
 function runnerAvailable(backend) { return board().data?.agents?.find(agent => agent.id === backend)?.available === true; }
 function requestFieldsMarkup(data) {
-  return `<label for="board-intent">Type of work</label><select id="board-intent" name="intent" aria-describedby="board-intent-hint">${Object.entries(intentNames).map(([id, label]) => option(id, label, data.intent)).join('')}</select><p id="board-intent-hint" class="field-hint">${intentHints[data.intent]}</p><label for="board-title">Title</label><input id="board-title" name="title" required maxlength="160" value="${escapeHtml(data.title)}" placeholder="What needs to change?"><label for="board-request">What should the agent do?</label><textarea id="board-request" name="request" rows="4" required maxlength="10000" placeholder="Describe the result you want and how to check it.">${escapeHtml(data.request)}</textarea><div class="board-form-pair"><div><label for="board-backend">Agent</label><select id="board-backend" name="backend">${Object.entries(agentNames).map(([id, label]) => option(id, label, data.backend)).join('')}</select></div><div><label for="board-page">Related page <span class="field-optional">optional</span></label><select id="board-page" name="pageId">${option('', 'Project-wide', data.pageId)}${requestPages().map(page => option(page.id, page.name, data.pageId)).join('')}</select></div></div>`;
+  return `<label for="board-intent">Type of work</label><select id="board-intent" name="intent" aria-describedby="board-intent-hint">${Object.entries(intentNames).map(([id, label]) => option(id, label, data.intent)).join('')}</select><p id="board-intent-hint" class="field-hint">${intentHints[data.intent]}</p><label for="board-title">Title</label><input id="board-title" name="title" required maxlength="160" value="${escapeHtml(data.title)}" placeholder="What needs to change?"><label for="board-request">What should the agent do?</label><textarea id="board-request" name="request" rows="4" required maxlength="10000" placeholder="Describe the result you want and how to check it.">${escapeHtml(data.request)}</textarea><label for="board-done-when">Done when <span class="field-optional">expected result and proof</span></label><textarea id="board-done-when" name="doneWhen" rows="2" maxlength="2000" placeholder="What must work, and what evidence should the agent return?">${escapeHtml(data.doneWhen)}</textarea><label for="board-constraints">Boundaries <span class="field-optional">optional</span></label><input id="board-constraints" name="constraints" maxlength="1000" value="${escapeHtml(data.constraints)}" placeholder="What must the agent preserve or leave alone?"><div class="board-form-pair"><div><label for="board-backend">Agent</label><select id="board-backend" name="backend">${Object.entries(agentNames).map(([id, label]) => option(id, label, data.backend)).join('')}</select></div><div><label for="board-page">Related page <span class="field-optional">optional</span></label><select id="board-page" name="pageId">${option('', 'Project-wide', data.pageId)}${requestPages().map(page => option(page.id, page.name, data.pageId)).join('')}</select></div></div>`;
 }
 function requestContextMarkup(data) {
   const open = Boolean(board().linksOpen || data.featureId || data.taskId);
@@ -260,7 +283,7 @@ function requestFormMarkup() {
   if (!board().formOpen) return '';
   const data = draftValues();
   const available = runnerAvailable(data.backend);
-  return `<form id="board-request-form" class="board-request-form content-panel" data-dirty="${hasRequestDraft()}"><div class="panel-heading"><h2>New request</h2></div>${requestFieldsMarkup(data)}${requestContextMarkup(data)}<p id="board-agent-unavailable" class="board-reply-hint" ${available ? 'hidden' : ''}>PAL is unavailable. Install PAL and sign in to your agent, then start this saved request.</p>${formErrorMarkup('board-request-error')}<p class="field-hint">Starting uses your local agent account and a separate checkout. You review the returned work before it enters project source.</p>${requestActionsMarkup(available)}</form>`;
+  return `<form id="board-request-form" class="board-request-form content-panel" data-dirty="${hasRequestDraft()}"><div class="panel-heading"><h2>New request</h2></div>${requestFieldsMarkup(data)}${requestContextMarkup(data)}${contractMarkup(board().tasks.find(task => task.id === data.taskId))}<p id="board-agent-unavailable" class="board-reply-hint" ${available ? 'hidden' : ''}>PAL is unavailable. Install PAL and sign in to your agent, then start this saved request.</p>${formErrorMarkup('board-request-error')}<p class="field-hint">Starting uses your local agent account and a separate checkout. You review the returned work before it enters project source.</p>${requestActionsMarkup(available)}</form>`;
 }
 function boardHeadingMarkup() {
   const buttonClass = board().selected ? 'text-button' : 'save-button';
@@ -276,9 +299,48 @@ function emptyBoardMarkup() {
   return '<section class="board-empty-state" aria-labelledby="board-empty-heading"><h2 id="board-empty-heading">No requests yet</h2><p>Send a task from Plan or create a request here. Choose the type of work; the agent returns its result for your review.</p></section>';
 }
 function boardLoadingMarkup() { return !board().data ? '<p class="muted" role="status" id="board-loading">Loading requests…</p>' : ''; }
+function noMatches() { return cards().length > 0 && visibleCards().length === 0; }
 export function boardMarkup() {
   const data = board().data;
-  return `<div class="agent-board" data-ui>${boardHeadingMarkup()}${loadErrorMarkup()}${requestFormMarkup()}${boardLoadingMarkup()}<div id="board-empty-host">${emptyBoardMarkup()}</div><div id="board-lanes" class="board-lanes" role="region" aria-label="Agent requests" ${data ? '' : 'hidden'}>${data ? lanesMarkup() : ''}</div><div id="board-detail-host">${detailMarkup(selectedCard())}</div></div>`;
+  return `<div class="agent-board ${board().selected ? 'has-selection' : ''}" data-ui>${boardHeadingMarkup()}${loadErrorMarkup()}${requestFormMarkup()}${boardLoadingMarkup()}<div id="board-ready-host">${readyWorkMarkup(data)}</div>${workQueuePanel()}${toolbarMarkup()}<div id="board-empty-host">${emptyBoardMarkup()}</div><div class="board-workspace"><div id="board-lanes" class="board-lanes" role="region" aria-label="Agent requests" ${data ? '' : 'hidden'}>${data ? lanesMarkup() : ''}</div><p id="board-filter-empty" class="muted" ${noMatches() ? '' : 'hidden'}>No requests match these filters.</p><div id="board-detail-host">${detailMarkup(selectedCard())}</div></div></div>`;
+}
+
+
+function toolbarMarkup() {
+  return `<div class="board-toolbar"><label for="board-search" class="sr-only">Search requests</label><input id="board-search" type="search" placeholder="Search requests…" value="${escapeHtml(board().search)}"><label for="board-filter" class="sr-only">Filter requests</label><select id="board-filter">${[['all','All requests'],['active','Open requests'],['attention','Needs you'],['review','Ready for review'],['done','Closed requests']].map(([value,label]) => option(value,label,board().filter)).join('')}</select></div>`;
+}
+function workQueuePanel() {
+  const total = board().queue?.summary?.needsReview;
+  return `<details id="board-work-queue" class="board-work-queue" ${board().queueOpen ? 'open' : ''}><summary>QA coverage${Number.isInteger(total) ? ` · ${total} pages need attention` : ''}</summary><div id="board-work-queue-body">${queueMarkup(board().queue, board().queueError, Boolean(board().action), board().qaBackend)}</div></details>`;
+}
+async function loadQueue(b) {
+  try { const data = await readJson(`/api/projects/${encodeURIComponent(b.key)}/work-queue`); if (current(b)) { b.queue = data; b.queueError = ''; } }
+  catch (error) { if (current(b)) b.queueError = error.message; }
+}
+async function refreshQueue() {
+  const b = board();
+  await loadQueue(b);
+  if (!active(b)) return;
+  const root = document.getElementById('board-work-queue-body');
+  if (root) root.innerHTML = queueMarkup(b.queue, b.queueError, Boolean(b.action), b.qaBackend);
+  const summary = document.querySelector('#board-work-queue > summary');
+  if (summary) summary.textContent = `QA coverage${b.queue ? ` · ${b.queue.summary.needsReview} pages need attention` : ''}`;
+}
+function prepareTask(id) {
+  const task = board().tasks.find(item => item.id === id);
+  if (!task) return;
+  openBoardRequest(task.pageIds?.[0] || '', { taskId: task.id, title: task.title, request: task.outcome, doneWhen: task.look || '', intent: 'build' });
+}
+async function prepareReview(pageId) {
+  const backend = document.getElementById('board-qa-backend')?.value || 'codex';
+  await mutate('queue-review', async b => {
+    const saved = await readJson(`/api/projects/${encodeURIComponent(b.key)}/work-queue/${encodeURIComponent(pageId)}/request`, { method: 'POST', body: JSON.stringify({ backend }) });
+    if (!current(b)) return;
+    b.selected = saved.request.id; b.formOpen = false; b.queueOpen = false;
+    rememberSelection(b.selected);
+    await refreshAfterMutation(b);
+    await loadQueue(b);
+  });
 }
 
 function rememberSelection(id) {
@@ -301,7 +363,7 @@ function updateRunnerAvailability() {
   const note = document.getElementById('board-agent-unavailable');
   if (note) note.hidden = available;
 }
-function editingBoard(b) { return b.formOpen || Boolean(b.replies[b.selected]) || document.activeElement?.closest('#board-comment-form'); }
+function editingBoard(b) { return b.formOpen || Boolean(b.replies[b.selected]) || document.activeElement?.closest('.board-toolbar, #board-comment-form, #board-work-queue'); }
 function updateReplyLabels(card) {
   const note = Boolean(board().note[card.id]);
   const hint = document.getElementById('board-reply-hint');
@@ -341,8 +403,15 @@ function updateBoardErrorNode() {
   root.hidden = !board().error;
   root.textContent = board().error;
 }
+function updateBoardExtras() {
+  const ready = document.getElementById('board-ready-host');
+  if (ready) { const opened = detailStates(ready); ready.innerHTML = readyWorkMarkup(board().data); restoreDetails(ready, opened); }
+  const filtered = document.getElementById('board-filter-empty');
+  if (filtered) filtered.hidden = !noMatches();
+}
 function updateBoardDataNodes() {
   const root = document.querySelector('#board-lanes');
+  updateBoardExtras();
   if (root) { root.innerHTML = lanesMarkup(); root.hidden = false; }
   document.querySelector('#board-loading')?.remove();
   const empty = document.getElementById('board-empty-host');
@@ -376,7 +445,8 @@ async function readBoard(b, first) {
     const data = await readJson(endpoint(b.key));
     if (!current(b)) return;
     if (!b.refreshRequested) { b.data = data; b.error = ''; }
-    if (first) await loadTasks(b);
+    await loadTasks(b);
+    if (first) await loadQueue(b);
   } catch (error) { loadFailed(b, error); }
   finally { loadFinished(b); }
 }
@@ -426,7 +496,7 @@ export function reviewBoardDraft() {
   focus(b.formOpen ? 'board-title' : 'board-reply');
 }
 
-function draftHasText(values) { return Boolean(values.title || values.request || values.text); }
+function draftHasText(values) { return Boolean(values.title || values.request || values.text || values.doneWhen || values.constraints); }
 function rememberReply(form, values) {
   board().replies[form.dataset.cardId] = values.text || '';
   board().note[form.dataset.cardId] = values.note === 'on';
@@ -484,11 +554,17 @@ function savedRequest(b, saved) {
   b.formOpen = false; b.draft = null;
   rememberSelection(b.selected);
 }
+function requestInput(draft, submitter) {
+  const { doneWhen, constraints, ...fields } = draft;
+  const sections = [['Done when', doneWhen], ['Boundaries', constraints]].filter(([,text]) => text?.trim()).map(([label,text]) => `${label}:\n${text.trim()}`);
+  return { ...fields, request: [fields.request.trim(), ...sections].join('\n\n'), start: submitter?.value === 'start' };
+}
 async function createRequest(form, submitter) {
   rememberDraft(form);
   const draft = draftValues();
   if (!draft.title.trim() || !draft.request.trim()) return inlineError('board-request-error', 'Add a title and describe what the agent should do.');
-  const input = { ...draft, start: submitter?.value === 'start' };
+  const input = requestInput(draft, submitter);
+  if (input.request.length > 10000) return inlineError('board-request-error', 'Keep the complete brief under 10,000 characters.');
   await mutate('create', async b => {
     const saved = await post(b, '/cards', input);
     if (!current(b)) return;
@@ -521,7 +597,7 @@ function selectCard(button) {
   const b = board();
   if (b.formOpen && hasRequestDraft()) return inlineError('board-request-error', 'Save or cancel your new request before opening another.');
   b.formOpen = false;
-  b.selected = button.dataset.cardId; b.formError = '';
+  b.selected = button.dataset.cardId; b.formError = ''; b.queueOpen = false;
   rememberSelection(b.selected);
   render(); focus('board-request-heading');
   document.getElementById('board-detail-host')?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
@@ -554,6 +630,9 @@ async function releaseSourceIntegration() {
 function answerAgent() { const reply = document.getElementById('board-reply'); reply?.scrollIntoView({ block: 'center', behavior: 'instant' }); reply?.focus({ preventScroll: true }); }
 const boardActions = {
   reply: answerAgent,
+  'planned-request': button => prepareTask(button.dataset.taskId),
+  'queue-review': button => prepareReview(button.dataset.pageId),
+  'refresh-queue': () => refreshQueue(),
   new: () => openBoardRequest(),
   refresh: () => loadBoard(board(), !board().data),
   inspect: inspectChanges,
@@ -563,20 +642,27 @@ const boardActions = {
   select: selectCard,
   close: closeCard,
   cancel: cancelRequest,
-  ...Object.fromEntries(['run', 'stop', 'complete', 'reopen', 'discard-feedback'].map(action => [action, () => runAction(action)])),
+  ...Object.fromEntries(['run', 'stop', 'complete', 'reopen', 'discard-feedback', 'verify-task', 'accept-task', 'reopen-task'].map(action => [action, () => runAction(action)])),
 };
 function boardClick(button) { boardActions[button.dataset.boardAction]?.(button); }
 function handleBoardInput(event) {
   const form = event.target.closest('#board-request-form, #board-comment-form');
+  if (event.target.id === 'board-search') { board().search = event.target.value; updateBoardDataNodes(); return; }
   if (form) rememberDraft(form);
 }
+function changeBoardFilter(target) {
+  if (target.id === 'board-qa-backend') { board().qaBackend = target.value; return true; }
+  if (target.id === 'board-filter') { board().filter = target.value; updateBoardDataNodes(); return true; }
+  return false;
+}
 function handleBoardChange(event) {
+  if (changeBoardFilter(event.target)) return;
   const form = event.target.closest('#board-request-form, #board-comment-form');
   if (!form) return;
   rememberDraft(form);
   if (event.target.id === 'board-page') board().draft.featureId = '';
   const id = event.target.id;
-  if (['board-page', 'board-backend', 'board-note', 'board-intent'].includes(id)) { render(); focus(id); }
+  if (['board-page', 'board-backend', 'board-note', 'board-intent', 'board-task'].includes(id)) { render(); focus(id); }
 }
 function handleBoardSubmit(event) {
   const handlers = { 'board-request-form': createRequest, 'board-comment-form': sendComment };
@@ -592,7 +678,7 @@ export function registerBoardEvents(app) {
     if (button) boardClick(button);
     if (event.target.closest('[data-action="request-page-change"]')) openBoardRequest(state.pageId);
   });
-  app.addEventListener('toggle', event => { if (event.target.classList?.contains('board-request-context')) board().linksOpen = event.target.open; }, true);
+  app.addEventListener('toggle', event => { if (event.target.id === 'board-work-queue') board().queueOpen = event.target.open; if (event.target.classList?.contains('board-request-context')) board().linksOpen = event.target.open; }, true);
   app.addEventListener('input', handleBoardInput);
   app.addEventListener('change', handleBoardChange);
   app.addEventListener('submit', handleBoardSubmit);

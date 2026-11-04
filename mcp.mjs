@@ -11,6 +11,7 @@ import { newProjectTools } from './lib/new-project.mjs';
 import { annotationTools } from './lib/annotations.mjs';
 import { workflowTools } from './lib/workflow-tools.mjs';
 import { agentBoardTools } from './lib/agent-board-tools.mjs';
+import { qaWorkQueueTools } from './lib/qa-work-queue.mjs';
 import { readFileSync, realpathSync } from 'node:fs';
 import { onboardProject } from './lib/onboard.mjs';
 import { scanPage, scanProject } from './lib/scanner.mjs';
@@ -582,6 +583,7 @@ function runPlatformTool(name) {
   return ({ project, page, ...input }) => recordNativeCheck(project, page, input);
 }
 definitions.push(...workflowTools);
+definitions.push(...qaWorkQueueTools);
 definitions.push(...agentBoardTools, ...readinessTools, ...projectMapTools, ...newProjectTools, ...annotationTools, ...portfolioTools);
 
 const toolList = definitions.map(({ run, ...tool }) => tool);

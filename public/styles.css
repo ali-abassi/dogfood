@@ -1017,3 +1017,83 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .board-request-form .field-hint { margin: 8px 0 12px; line-height: 1.5; }
 .board-history { max-width: 76ch; margin-top: 24px; }
 .board-result-packet { margin-top: 12px; }
+
+/* Agent work: five equal lanes within the existing canvas; evidence uses the same gutters. */
+.board-toolbar { display: flex; gap: 12px; margin-top: 24px; align-items: center; }
+.board-toolbar input, .board-toolbar select, .work-queue-controls select { border: 1px solid var(--separator); border-radius: 8px; background: var(--group); color: var(--ink); padding: 9px 12px; font: inherit; font-size: 14px; min-height: 40px; }
+.board-toolbar input { width: min(320px, 55%); }
+.board-toolbar select { max-width: 45%; }
+.board-lanes { margin-top: 20px; gap: 12px; }
+.board-lane-heading h2 { font-size: 13px; }
+.board-card { background: var(--group); padding: 14px; gap: 10px; }
+.board-card.selected { border-color: var(--secondary); box-shadow: none; background: var(--fill); }
+.board-card-time { font-size: 12px; color: var(--secondary); }
+.board-delivery-badge { color: var(--secondary); font-size: 12px; font-weight: 500; line-height: 1.45; }
+.board-delivery-badge.is-verified { color: var(--green); }
+.board-state-done { border-color: var(--secondary); background: transparent; }
+.board-delivery { padding: 20px; margin: 20px 0 24px; background: var(--fill); border-radius: 8px; }
+.board-delivery-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.board-delivery h3 { margin: 0; font-size: 16px; }
+.board-delivery p { margin: 8px 0 0; font-size: 14px; line-height: 1.55; max-width: 76ch; }
+.board-task-outcome strong { display: block; margin-top: 12px; }
+.delivery-requirements { list-style: none; padding: 0; margin: 20px 0 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+.delivery-requirement { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.delivery-requirement strong, .delivery-requirement span:not(.delivery-mark) { display: block; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.delivery-requirement span:not(.delivery-mark) { color: var(--secondary); }
+.delivery-mark { width: 18px; flex: none; color: var(--secondary); }
+.delivery-mark.is-met { color: var(--green); }
+.board-delivery details { margin-top: 16px; font-size: 13px; }
+.delivery-pages { list-style: none; padding: 0; }
+.delivery-pages li { margin-top: 10px; }
+.delivery-pages span { display: block; color: var(--secondary); margin-top: 4px; }
+.board-work-queue, .board-ready-work { margin-top: 20px; padding: 16px 20px; border: 1px solid var(--separator); border-radius: 12px; background: var(--group); }
+.board-work-queue > summary, .board-ready-work > summary { cursor: pointer; font-size: 14px; font-weight: 500; }
+.work-queue-list, .board-ready-work ul { list-style: none; margin: 12px 0 0; padding: 0; }
+.work-queue-list > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; padding: 16px 0; border-top: 1px solid var(--separator); }
+.work-queue-page > span, .board-ready-work li > div > span { display: block; color: var(--secondary); font-size: 13px; line-height: 1.5; margin-top: 4px; }
+.work-queue-page .link-button { text-align: left; font-weight: 500; }
+.work-queue-list details { grid-column: 1 / -1; font-size: 13px; color: var(--secondary); }
+.work-queue-list details li { margin: 8px 0; line-height: 1.5; }
+.work-queue-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: 13px; margin-top: 16px; }
+.board-ready-work li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-top: 1px solid var(--separator); }
+.board-ready-work li strong { font-size: 14px; }
+.board-ready-work li button, .work-queue-action button { white-space: nowrap; }
+.board-linked-contract { padding: 16px; margin-top: 20px; border-radius: 8px; background: var(--fill); font-size: 13px; line-height: 1.5; }
+.board-linked-contract p { margin: 8px 0; }
+.board-linked-contract dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; }
+.board-linked-contract dd { margin: 0; overflow-wrap: anywhere; }
+.board-linked-contract code { overflow-wrap: anywhere; }
+.board-request-form #board-done-when { min-height: 72px; }
+@media (max-width: 760px) {
+  #board-ready-host, .board-work-queue, .board-toolbar { order: 2; }
+  #board-filter-empty { order: 4; }
+  .has-selection #board-lanes, .has-selection #board-empty-host, .has-selection .board-toolbar, .has-selection #board-ready-host, .has-selection .board-work-queue { display: none; }
+  .board-toolbar { gap: 8px; margin-top: 16px; }
+  .board-toolbar input, .board-toolbar select { min-height: 44px; font-size: 14px; min-width: 0; }
+  .board-work-queue, .board-ready-work { padding: 16px; }
+  .board-delivery { padding: 16px; }
+  .delivery-requirements { grid-template-columns: minmax(0, 1fr); }
+  .work-queue-list > li { grid-template-columns: minmax(0, 1fr); }
+  .work-queue-action { justify-self: start; }
+  .board-ready-work li { align-items: flex-start; flex-direction: column; }
+  .board-lane-hint { font-size: 12px; }
+}
+/* Selecting a request keeps the work list alongside its evidence rather than above a long thread. */
+.has-selection .board-workspace { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; margin-top: 24px; align-items: start; }
+.has-selection .board-workspace > .board-lanes { grid-template-columns: minmax(0, 1fr); margin-top: 0; max-height: calc(100vh - 64px); overflow: auto; position: sticky; top: 24px; padding-right: 4px; }
+.has-selection .board-lane:has(ul:empty) { display: none; }
+.has-selection .board-detail { margin-top: 0; padding: 24px; }
+.has-selection #board-filter-empty { grid-column: 1; }
+.has-selection #board-detail-host { grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+.has-selection .board-detail-top h2 { font-size: 20px; }
+.has-selection .board-detail .delivery-requirements { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 1440px) {
+  .has-selection .board-detail .delivery-requirements { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .board-workspace { order: 3; }
+  .has-selection .board-workspace { display: block; margin-top: 16px; }
+  .has-selection .board-detail { padding: 16px; }
+}
+.board-work-queue[open] > summary { margin-bottom: 12px; }
+.has-selection #board-work-queue { display: none; }

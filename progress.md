@@ -92,3 +92,17 @@ Release verification: all19controlledbrowser suites passed. A subsequent scoped 
 Added How Dogfood works with a four-step process, explicit request/task/page/deployment meanings, project-specific copyable agent instructions and setup guidance. Navigation follows the workflow. New requests expose build/discovery/QA intent. Decisions, agent-reported evidence and actual queue/error states are visible; earlier history and machine packets are folded without deletion. Reply drafts, disclosure state and session details survive refresh.
 
 Fixed the conversation-count cap that could prevent result and source-save receipts, prohibited QA-source apply/save, and preserved structured needs-input evidence. The full 19 browser suites pass; the focused board suite additionally checks intent, help, decision evidence, repeated review/apply/save, queued-feedback Stop behavior, stale-question recovery and preserved history. All 264 native tests pass, with syntax and complexity checks. Independent Opus review passes after the two identified UI-state corrections. Final rendered/source-bound acceptance and local deployment evidence are recorded in ignored `data/reviews/final-polish-20261103/`; the structured task remains the completion authority. Provider quota, external product integrations and all downstream product releases retain their existing boundaries.
+
+## 2026-11-04 — Agent engineering and QA handoff
+
+Implemented: dependency/ownership-enforced linked builds, prioritized
+explicit queue, current delivery requirements, operator check/accept/reopen controls, truthful agent
+observation states, searchable Kanban and side-by-side request review, structured briefs, and
+idempotent full-page QA requests generated from all missing registered requirements.
+
+Verification: full native suite and 17 browser scenarios cover request→agent fixture→review→exact
+source save→independent command checks→acceptance, plus no-change delivery, stale evidence,
+source/ownership guards, retry/feedback, drafts/search, mobile layout, and QA-request deduplication.
+All three independent review findings were fixed and independently rechecked. The provider lifecycle is tested
+with a controlled PAL fixture; this does not prove every user's authentication, quota or provider.
+This work makes missing coverage actionable; it does not complete AI Money Team's outstanding audit.

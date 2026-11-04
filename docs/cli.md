@@ -218,3 +218,25 @@ A portfolio save uses `portfolio.json.lock` in the selected data folder. If a sa
 existing lock after a process crash, first confirm the writer has stopped and no save is running,
 then remove only that lock file. Keep `portfolio.json` and all project manifests. An unavailable
 project is shown as a setup gap without hiding the rest of the portfolio.
+
+## Verify a linked agent delivery
+
+For a linked build after reviewing and saving its changes:
+
+```sh
+dogfood board verify-task CARD --project my-app
+dogfood board accept-task CARD --project my-app
+```
+
+These explicit operator actions use the request's stable task claim. Acceptance requires fresh
+passing task checks, accepted dependencies and all related page gates. A request finishing or closing
+never accepts its task. If accepted evidence becomes stale, `dogfood board reopen-task CARD --project
+my-app` preserves the historical receipt and reopens it for verification. The board and tool responses
+include the current delivery requirements and next action. Native request agents cannot invoke these
+operator actions to approve their own work.
+
+`dogfood tool dogfood_qa_work_queue --input queue.json` reads all outstanding page checks. Its input is
+`{"project":"my-app"}` or adds `"page":"page-id"` for a complete scoped read. To save a full-page review,
+use `dogfood tool dogfood_request_page_review --input review.json` with
+`{"project":"my-app","page":"page-id","backend":"codex"}`. Repeated saves reuse the active generated
+review request. This does not start it or mark anything checked.

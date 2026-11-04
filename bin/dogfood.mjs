@@ -38,6 +38,9 @@ const help = `dogfood — plan, build, verify, and resume web, iOS and CLI proje
   dogfood board stop CARD
   dogfood board done CARD
   dogfood board reopen CARD
+  dogfood board verify-task CARD
+  dogfood board accept-task CARD
+  dogfood board reopen-task CARD
   dogfood board discard-feedback CARD
   dogfood board integrate CARD --input reviewed.json
   dogfood board save-source CARD --input integration.json
@@ -182,7 +185,7 @@ function boardCommand([action = 'list', card, ...extra], values) {
 }
 
 function validateBoardAction(action) {
-  if (!['list', 'show', 'changes', 'create', 'comment', 'start', 'run', 'stop', 'done', 'complete', 'reopen', 'discard-feedback', 'integrate', 'save-source', 'release-integration'].includes(action)) throw new Error(`Unknown board action: ${action}. Run dogfood --help.`);
+  if (!['list', 'show', 'changes', 'create', 'comment', 'start', 'run', 'stop', 'done', 'complete', 'reopen', 'discard-feedback', 'integrate', 'save-source', 'release-integration', 'verify-task', 'accept-task', 'reopen-task'].includes(action)) throw new Error(`Unknown board action: ${action}. Run dogfood --help.`);
 }
 
 function validateBoardPositionals(action, card) {

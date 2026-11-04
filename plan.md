@@ -65,3 +65,20 @@ Check: `npm test`, `npm run check`, `npm run lint`, full `npm run test:acceptanc
 Outcome: a person and coding agent can understand setup, choose the correct request intent, follow the same conversation, answer a required decision, inspect evidence and distinguish closing a request from accepting a task/page. Scope: app help, board presentation and lifecycle edge cases, README and agent instructions. Preserve existing brand and data.
 
 Check: `npm test`, `npm run check`, `npm run lint`, `node tests/acceptance/agent-board.mjs`, existing browser acceptance suites. At 1280/390, inspect help, request creation, needs-input/result details and review controls in light/dark; no page overflow, readable state, functional navigation and clipboard fallback. Review source independently, deploy to the established local runtime, then record current source-bound page QA. Structured task `final-workflow-polish` owns completion status.
+
+## Agent engineering workflow — 2026-11-04
+
+Outcome: the board carries a planned task through an owned agent session, review, source integration,
+independent verification and acceptance. QA gaps become complete, saved review requests.
+
+Scope: board UI and dispatcher, linked task guards, delivery projection, QA work queue, CLI/MCP and
+agent instructions. Keep the existing local stack, native agent backends, source review boundary,
+page gates and project data. No hosted team system or automatic spending/publishing.
+
+Check: `npm run check && npm run lint && npm test && node tests/acceptance/mcp.mjs && node tests/acceptance/agent-board.mjs`
+
+Visible at 1280 and 390: search/filter requests, read exact task completion expectations, see missing
+coverage, save one full-page QA request, inspect returned work and independently verify/accept a
+linked build. Closed conversations are neutral, stale evidence offers a recheck action, and missing
+session observations never claim confirmed ongoing work. Acceptance tests use isolated fixtures and
+a controlled PAL provider; live provider readiness is checked separately by doctor.

@@ -26,6 +26,7 @@ import { projectMapRoutes } from './lib/project-map.mjs';
 import { newProjectRoutes } from './lib/new-project.mjs';
 import { annotationRoutes } from './lib/annotations.mjs';
 import { agentBoardRoutes, startAgentBoardDispatcher } from './lib/agent-board.mjs';
+import { qaWorkQueueRoutes } from './lib/qa-work-queue.mjs';
 
 const publicDir = join(root, 'public');
 const port = Number(process.env.DOGFOOD_PORT || 4321);
@@ -149,6 +150,7 @@ const scanOptions = request => request.headers['content-type']?.startsWith('appl
 const routes = [
   ['GET', '/api/health', () => ({ app: 'dogfood', agentBoardDispatcher: dispatcherStarted, dataStoreIdentity: dataStoreIdentity() })],
   ...agentBoardRoutes(requestJson),
+  ...qaWorkQueueRoutes(requestJson),
   ...readinessRoutes(requestJson),
   ...projectMapRoutes(),
   ...newProjectRoutes(requestJson),

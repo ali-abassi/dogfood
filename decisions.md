@@ -107,3 +107,22 @@ A configured browser session is shared operator state. Scans reuse `DOGFOOD_BROW
 Keep the existing blue dog mark, system type, restrained surfaces and native-app layout. The main question is what needs attention and what happens next. Improve the explanation at the point of action instead of adding dashboards, vanity scores or decorative graphics. A persistent How Dogfood works view gives the four-step process, separate completion meanings and a project-specific agent prompt.
 
 Expose build, discovery and QA intents in request creation. Put a required decision and its evidence in the result; keep the machine packet in a closed disclosure and preserve the full conversation. Queue cancellation and progress labels must reflect actual state. Keep open review disclosures stable during board refresh. A QA intent cannot apply or save application source; start a build request for changes. Remove the arbitrary conversation count cap because a bookkeeping limit must not prevent a completed run or source-save receipt from being recorded.
+
+## 2026-11-04 — Agent work is a core product surface
+
+Ali clarified that agentic engineering is half the product and that every required QA item must be
+checked. Treat partial coverage as unfinished work, not a completed audit. Connect the existing task
+engine to the board instead of building a second acceptance system. Claim linked builds atomically,
+respect dependencies, display current delivery evidence, and preserve operator review before source
+integration. Keep conversation closure separate from verified delivery.
+
+Design review: the board must answer “What needs my attention, and what has actually been verified?”
+Keep the established Apple/system type, dog mark and blue action. Three changes: visible delivery
+requirements on each card; ready tasks and incomplete QA becoming concrete requests; searchable
+quiet lanes with neutral closed state. No invented productivity KPIs or optimistic agent scores.
+
+Prior-art check used the GitHub research skill. Vibe Kanban at 08064e043c2d78ad123b473257ed867e7ce74768
+(Apache-2.0, repo updated 2026-11-03) has separate StartReview, ToggleChangesMode and TogglePreviewMode
+in packages/web-core/src/shared/actions/index.ts. Adopt the separation of conversation, review and
+preview actions; Dogfood already has isolated worktrees and patch inspection. Add evidence-bound
+acceptance using Dogfood's existing gates. No third-party code copied or dependency added.

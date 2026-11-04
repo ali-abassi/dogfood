@@ -91,3 +91,43 @@ If the applied source changes were discarded, **Release applied-change record** 
 active application record after verifying source is clean. If source moved on, the archived record names that revision and a fresh request is needed before integrating further work.
 The receipt remains in history. Dirty or unrelated source is refused; Dogfood never restores,
 resets or deletes those files to recover a request.
+
+## Delivery is half of Dogfood
+
+The board is a work surface, not just an agent launcher. Search requests and filter open work,
+questions, review and closed conversations. Closed is neutral: closing a conversation never turns
+unverified work green. Each card identifies the agent, latest update and delivery state.
+
+A request can include **Done when** and **Boundaries**. These become explicit sections of the agent's
+brief. Selecting a planned task also exposes its actual outcome, scope, dependencies, command checks
+and visible result. Ready planned tasks can be prepared directly from the board.
+
+For linked builds, the backend enforces dependency acceptance, blocked state and ownership before
+launch. The request claims the task as `request:<card UUID>` and retains it for review; another request
+cannot build the same owned task. Recover an abandoned claim explicitly in Plan. Queued builds use
+task priority; saving a request does not queue it automatically.
+
+The delivery panel derives its requirements from current source evidence. Review and save changes,
+then use **Run task checks** and **Accept verified task** when offered. These are explicit operator
+actions using the existing task gate, not agent-reported check results. Changed source or task
+requirements invalidate receipts. Missing page QA remains visible and blocks acceptance. A status
+refresh error says **Status unavailable**; a known finished agent whose result has not arrived says
+**Fetching result**. Neither is presented as confirmed ongoing work.
+
+## Turn incomplete coverage into work
+
+**QA coverage** lists every registered page with missing requirements, findings or verification debt.
+Expand **What remains** for the concrete gaps. **Prepare review** saves a page-linked QA request with
+its full inventory, expected behaviors and evidence boundary. Choose Codex or Claude Code, then start
+the saved request explicitly. Repeated preparation reuses the active full-page review request.
+Existing narrower QA conversations are preserved separately.
+
+The agent must inspect every required item and record pass, failure or a specific blocker. A blocker
+is not a passing check and does not make the audit complete. Large inventories use exact complete
+read commands rather than truncating or sampling the scope. This queue covers the registered
+inventory; discovery still has to establish that the inventory represents the full product.
+
+Terminal agents can read `dogfood_qa_work_queue` and save a scoped request with
+`dogfood_request_page_review`. Inspect their schemas with `dogfood schema TOOL`; normal
+`dogfood board` commands continue the resulting conversation. These operations never start an
+agent, execute tests, purchase services or change QA verdicts implicitly.

@@ -81,6 +81,11 @@ test('board requests save by default; invalid commands and executable-looking in
   assert.match(failed(['show']), /card ID/);
   assert.match(failed(['show', 'missing']), /does not exist/);
   assert.match(failed(['list', card.id]), /Unexpected/);
+  for (const action of ['verify-task', 'accept-task', 'reopen-task']) {
+    const error = failed([action, card.id]);
+    assert.doesNotMatch(error, /Unknown board action/);
+    assert.match(error, /linked|build|task/i);
+  }
   assert.equal(calls().length, 0);
 });
 

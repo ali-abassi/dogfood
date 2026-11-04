@@ -14,6 +14,14 @@ A person working with Claude Code or Codex who wants to understand and direct th
 4. **Review the result.** Inspect the actual patch and preview, answer questions and pin feedback to captured screens. Apply and save only the reviewed source changes. Closing a request does not accept its task or page.
 5. **Prove the outcome.** Run task checks, use the real app, record attributed evidence and resolve findings after a retest. Overview and the product map show what is accepted, what needs attention and what still needs live verification.
 
+## Two equal halves
+
+Dogfood continuously checks the product and coordinates the engineering needed to improve it.
+QA discovers concrete gaps; the agent board turns scoped work into reviewed and verified outcomes.
+The task inventory, dependencies, ownership, conversations and evidence must stay connected.
+Every required check must be executed or remain explicitly blocked; a substantial report is not
+completion. A finished agent turn is the start of review, not proof that the product works.
+
 ## What evidence means
 
 Web pages use browser captures and behavior checks. Native iOS screens use actual Simulator images with device and build evidence. CLI projects use command receipts and review of their generated output. Claims cover only the devices, source and environments actually checked.
