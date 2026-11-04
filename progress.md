@@ -112,3 +112,9 @@ This work makes missing coverage actionable; it does not complete AI Money Team'
 Requests, Ready tasks and QA coverage are separate views. QA requirements, findings and acceptance gaps are visible for the selected page; phones use a compact page selector. Related work fields, task command checks, related page acceptance and agent-reported checks no longer require opening accordions. Long technical content remains available in disclosures. Drafts and review-agent choice remain intact across view changes and polling.
 
 Validation covers the existing browser delivery journey plus view navigation, visible QA requirements, phone selection and retained reply drafts. Source and page acceptance evidence are recorded in Dogfood against the shipped revision.
+
+## 2026-11-04 — Calmer page reviews
+
+Page reports use one review sheet with the preview beside the six review results on desktop. Phone keeps the preview first. Clear state words accompany each answer; supporting details and page management live in Page details with keyboard return focus. Unmet acceptance requirements remain directly accessible. Fixed a real desktop-only scan crash in About, and covered both desktop-only and mobile-only metadata/links.
+
+Verification includes the report-card browser flow, acceptance-display regressions, syntax/data validation and complexity lint. Current task and page evidence are recorded in Dogfood after integration.

@@ -1,7 +1,9 @@
+import { checkAgainMarkup, missingRequirementsMarkup, pageManagementMarkup } from './page.mjs';
+import { backMarkup } from './answer.mjs';
 import { isNative, requiredDevices, deviceName } from '../platform.mjs';
 import { nativeEvidenceMarkup } from './native-evidence.mjs';
 import { answerMarkMarkup, environmentLabel, escapeHtml, plainMessageMarkup, shortReason } from '../format.mjs';
-import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
+import { answerWords, deviceNames, displayAnswerStatus, state } from '../state.mjs';
 import { measuredAnswersMarkup } from './measured.mjs';
 import { aboutMarkup } from './about.mjs';
 import { shownShot, timelineMarkup } from './history.mjs';
@@ -49,12 +51,17 @@ function takeScreenshotsMarkup(page) {
   return `<div class="screens-empty"><strong>${copy.title}</strong><div class="screens-empty-text">${plainMessageMarkup(copy.text)}</div><button type="button" class="save-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button>${scanErrorMarkup()}</div>`;
 }
 
+function reportHistoryMarkup(rendered) {
+  if (!rendered) return '';
+  const history = timelineMarkup();
+  return history ? `<div class="screens-actions">${history}</div>` : '';
+}
 function screensMarkup(page) {
   const selectedDevices = requiredDevices(page);
   const rendered = selectedDevices.some(device => page.captures[device].state === 'rendered');
   const body = rendered ? `<div class="report-screen-pair ${selectedDevices.length === 1 ? 'report-screens-single' : ''}">${selectedDevices.map(device => screenMarkup(page, device)).join('')}</div>` : takeScreenshotsMarkup(page);
-  const actions = rendered ? `<div class="screens-actions">${timelineMarkup()}<button type="button" class="link-button" data-action="view-screens">View full page</button></div>` : '';
-  return `<section class="report-screens content-panel" data-report-screens aria-label="How the page looks">${actions}${body}</section>`;
+  const actions = reportHistoryMarkup(rendered);
+  return `<section class="report-screens content-panel" data-report-screens aria-label="How the page looks"><div class="report-section-heading"><h2>Page preview</h2>${checkAgainMarkup(page)}</div>${body}${actions}${rendered ? '<button type="button" class="link-button" data-action="view-screens">View full page</button>' : ''}</section>`;
 }
 
 function aiCheckWanted(page) {
@@ -73,14 +80,18 @@ function answerRowMarkup(page, answer) {
   // The tag cell is always there, so every row's chevron lines up.
   const source = `<span class="answer-source-tag">${answer.parts.some(part => part.source === 'ai') ? 'AI' : ''}</span>`;
   const oneLine = shortReason(answer.summary);
-  return `<li><button type="button" class="answer-row" data-view="${escapeHtml(answer.id)}" data-answer-row="${escapeHtml(answer.id)}">${answerMarkMarkup(answer.name, displayAnswerStatus(page, answer))}<span class="answer-name">${escapeHtml(answer.name)}</span><span class="answer-summary" title="${escapeHtml(oneLine)}">${escapeHtml(oneLine)}</span>${source}<span class="chevron" aria-hidden="true"></span></button></li>`;
+  return `<li><button type="button" class="answer-row" data-view="${escapeHtml(answer.id)}" data-answer-row="${escapeHtml(answer.id)}">${answerMarkMarkup(answer.name, displayAnswerStatus(page, answer))}<span class="answer-name">${escapeHtml(answer.name)}</span><span class="report-answer-state">${escapeHtml(answerWords[displayAnswerStatus(page, answer)])}</span><span class="answer-summary" title="${escapeHtml(oneLine)}">${escapeHtml(oneLine)}</span>${source}<span class="chevron" aria-hidden="true"></span></button></li>`;
 }
 
 function answersMarkup(page) {
   const rows = page.progress.answers.map(answer => answerRowMarkup(page, answer)).join('');
-  return `<section class="answers-panel content-panel" data-answers aria-labelledby="answers-heading"><header class="answers-heading"><h2 id="answers-heading">Is this page working?</h2><div class="answers-actions">${qaAgentMarkup(page)}${aiCheckMarkup(page)}</div></header><ul class="answer-list">${rows}</ul></section>`;
+  return `<section class="answers-panel content-panel" data-answers aria-labelledby="answers-heading"><header class="answers-heading"><h2 id="answers-heading">Review results</h2></header><ul class="answer-list">${rows}</ul><div class="answers-actions">${qaAgentMarkup(page)}${aiCheckMarkup(page)}</div></section>`;
 }
 
 export function pageReportMarkup(page) {
-  return `${screensMarkup(page)}${nativeEvidenceMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}${measuredAnswersMarkup(page)}${aboutMarkup(page)}`;
+  return `<div class="page-report-layout"><div class="report-preview-column">${screensMarkup(page)}${nativeEvidenceMarkup(page)}</div><div class="report-results-column">${openFindingsMarkup(page)}${answersMarkup(page)}</div></div>`;
+}
+
+export function pageInfoMarkup(page) {
+  return `<section class="page-info-view">${backMarkup(page)}<header><h1 id="answer-heading" tabindex="-1">Page details</h1><p class="muted">${escapeHtml(page.name)}</p></header>${missingRequirementsMarkup(page)}${measuredAnswersMarkup(page)}${aboutMarkup(page)}${pageManagementMarkup(page)}</section>`;
 }

@@ -132,3 +132,9 @@ acceptance using Dogfood's existing gates. No third-party code copied or depende
 Ali found the board's collapsible sections difficult to understand. The main question remains: what work needs attention, and what should I do next? Requests, ready planned tasks and outstanding page QA now have named views instead of stacked accordions. The QA view uses a page list and a visible requirements sheet; a labeled page selector replaces the list on phones. Task links, required commands, agent-reported checks, unresolved gaps and related page acceptance stay visible. Long briefs, old conversations and raw technical artifacts retain disclosures.
 
 Preserved the existing Dogfood logo, system typography, neutral navigation and blue actions; no new visual system or decorative metrics. The three priorities were discoverable work, visible requirements, and less vertical travel on phones. AGENTS.md records this rule for future interface changes.
+
+## 2026-11-04 — Page reports as a single review sheet
+
+Ali still found the pages complex after the board navigation change. The page report now answers two questions together: what does this page look like, and what needs attention? Desktop places the real preview beside plain review results on one sheet. Phone keeps the preview before the results. A short status line preserves page health and acceptance as distinct facts; What remains opens the complete acceptance gaps.
+
+Supporting metadata, measured answers and page removal move to Page details with keyboard return focus. Required checks remain available directly; no evidence or ability is removed. Existing Dogfood branding and real screenshots are retained. Single-device scan handling is corrected: desktop-only and mobile-only evidence can both describe links and page metadata without crashing.

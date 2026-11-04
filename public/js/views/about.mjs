@@ -14,8 +14,9 @@ function aiFactsMarkup() {
   return `${factMarkup('What it’s for', analysis.pagePurpose)}${factMarkup('Main action', analysis.primaryAction)}`;
 }
 
+function scanViews(page) { return Object.values(page.scan?.viewports || {}); }
 function seoFactsMarkup(page) {
-  const seo = page.scan?.viewports.desktop.seo;
+  const seo = scanViews(page).find(view => view.seo)?.seo;
   return seo ? `${factMarkup('Title', seo.title)}${factMarkup('Search description', seo.description)}` : '';
 }
 
@@ -44,9 +45,10 @@ function featuresMarkup(page) {
 
 // Links from both screen sizes, each once; a phone menu can hold links the computer layout does not.
 function pageLinks(page) {
-  const viewports = page.scan?.viewports;
-  if (!viewports?.desktop.links) return null;
-  const byHref = new Map([...viewports.desktop.links, ...(viewports.mobile.links ?? [])].map(link => [link.href, link]));
+  const viewports = scanViews(page);
+  if (!viewports.some(view => Array.isArray(view.links))) return null;
+  const links = viewports.flatMap(view => view.links || []);
+  const byHref = new Map(links.map(link => [link.href, link]));
   return [...byHref.values()];
 }
 

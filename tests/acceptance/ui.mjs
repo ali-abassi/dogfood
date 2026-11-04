@@ -151,9 +151,11 @@ try {
   check('the report shows the backend acceptance gate and only unmet acceptance requirements', () => {
     const expected = book.progress.accepted === true ? 'Accepted' : book.progress.complete === true ? 'Checked · Not accepted' : 'Not fully checked';
     assert.equal(page(`document.querySelector('[data-gate-status]')?.textContent`), expected);
+    page(`document.querySelector('.report-info-link').click() || true`); settle();
     const shown = page(`[...document.querySelectorAll('.page-gate-requirements li strong')].map(item => item.textContent)`);
     const requirements = book.progress.acceptanceRequirements ?? book.progress.requirements;
     assert.deepEqual(shown, requirements.filter(item => !item.met).map(item => item.label));
+    page(`document.querySelector('[data-action=back-to-report]').click() || true`); settle();
   });
   check('the page shows the server\'s six answers with one-line reasons', () => {
     const rows = page(`[...document.querySelectorAll('[data-answer-row]')].map(row => ({ id: row.dataset.answerRow, mark: row.querySelector('[data-answer-mark]').getAttribute('aria-label'), summary: row.querySelector('.answer-summary').textContent }))`);

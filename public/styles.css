@@ -138,7 +138,6 @@ code { font-family: var(--mono); }
 .page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: end; gap: 6px 14px; color: var(--secondary); font-size: 13px; white-space: nowrap; }
 .page-gate { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; min-width: 0; max-width: 100%; color: var(--secondary); font-size: 12.5px; white-space: normal; }
 .page-gate-state { font-weight: 600; }
-.page-gate-requirements > summary { color: var(--blue); cursor: pointer; }
 .page-gate-requirements ul { max-width: 78ch; margin: 8px 0 0; padding-left: 20px; }
 .page-gate-requirements li { margin: 4px 0; overflow-wrap: anywhere; }
 .page-gate-requirements strong { color: var(--ink); }
@@ -1131,3 +1130,65 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .board-full-brief[open] p { margin-top: 12px; font-size: 13px; }
 #board-request-heading { scroll-margin-top: 24px; }
 @media (max-width: 760px) { #board-request-heading { scroll-margin-top: 72px; } }
+
+/* A page report is one review sheet: preview beside results, supporting detail one level deeper. */
+.page-report-header { margin-bottom: 24px; }
+.page-report-header .page-heading { align-items: center; margin-bottom: 16px; }
+.report-status-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; font-size: 13px; }
+.report-status-line .page-gate { align-items: center; font-size: 13px; }
+.report-info-link { white-space: nowrap; }
+.page-report-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); background: var(--group); border: 1px solid var(--separator); border-radius: 16px; overflow: hidden; }
+.report-preview-column { min-width: 0; padding: 24px; border-right: 1px solid var(--separator); }
+.report-results-column { min-width: 0; padding: 24px; }
+.page-report-layout .content-panel { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.page-report-layout .report-screens { margin: 0; }
+.report-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.page-report-layout h2 { font-size: 16px; }
+.page-report-layout .report-screen-pair { grid-template-columns: minmax(0, 1fr) 90px; gap: 12px; }
+.page-report-layout .report-screens-single { grid-template-columns: minmax(0, 1fr); }
+.page-report-layout .screen-frame { height: 380px; border: 1px solid var(--separator); box-shadow: none; }
+.page-report-layout .screens-actions { margin: 20px 0 16px; }
+.page-report-layout .timeline { flex-wrap: wrap; gap: 8px; }
+.page-report-layout .timeline-days button[aria-pressed="true"] { background: var(--selection); color: var(--ink); font-weight: 600; }
+.page-report-layout .answers-heading { padding: 0 0 12px; }
+.page-report-layout .answer-row { grid-template-columns: 22px minmax(0, 1fr) auto 10px; column-gap: 10px; row-gap: 4px; min-height: 68px; padding: 12px 0; border-radius: 0; }
+.page-report-layout .answer-row .answer-mark { grid-column: 1; grid-row: 1 / 3; }
+.page-report-layout .answer-name { grid-column: 2; grid-row: 1; font-size: 14px; }
+.report-answer-state { grid-column: 3; grid-row: 1; font-size: 12px; color: var(--secondary); white-space: nowrap; }
+.page-report-layout .answer-summary { grid-column: 2 / 4; grid-row: 2; font-size: 12px; line-height: 18px; }
+.page-report-layout .answer-source-tag { display: none; }
+.page-report-layout .answer-row .chevron { grid-column: 4; grid-row: 1 / 3; }
+.page-report-layout .answers-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--separator); }
+.page-report-layout [data-open-findings] { margin: 0 0 24px; padding-bottom: 20px; border-bottom: 1px solid var(--separator); }
+.page-report-layout .finding-row { grid-template-columns: auto minmax(0, 1fr) 10px; padding-inline: 0; }
+.page-report-layout .finding-row-meta { display: none; }
+.page-info-view { display: grid; gap: 24px; max-width: 920px; }
+.page-info-view h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -.022em; }
+.page-info-view > header .muted { font-size: 15px; }
+.page-info-view > .content-panel, .page-info-view > .page-gate-requirements, .page-management { padding: 24px 0 0; margin: 0; border: 0; border-top: 1px solid var(--separator); border-radius: 0; background: transparent; }
+.page-info-view h2 { font-size: 17px; margin: 0 0 12px; }
+.page-gate-requirements ul { font-size: 14px; line-height: 1.6; }
+.page-management .remove-page-button { margin-top: 16px; }
+@media (max-width: 1100px) {
+  .page-report-layout { grid-template-columns: minmax(0, 1fr); }
+  .report-preview-column { border-right: 0; border-bottom: 1px solid var(--separator); }
+  .page-report-layout .report-screen-pair { grid-template-columns: minmax(0, 1fr) 110px; }
+  .page-report-layout .report-screens-single { grid-template-columns: minmax(0, 1fr); }
+  .page-report-layout .screen-frame { height: 250px; }
+}
+@media (max-width: 760px) {
+  .page-report-header .page-heading { align-items: flex-start; }
+  .report-status-line { gap: 10px 16px; }
+  .report-status-line .page-gate { gap: 8px; }
+  .report-info-link { margin-left: 0; }
+  .report-preview-column, .report-results-column { padding: 20px 16px; }
+  .page-report-layout .report-screen-pair { grid-template-columns: minmax(0, 1fr) 76px; gap: 10px; }
+  .page-report-layout .report-screens-single { grid-template-columns: minmax(0, 1fr); }
+  .page-report-layout .screen-frame { height: 220px; }
+  .page-report-layout .answer-row { column-gap: 8px; }
+  .page-report-layout .answer-name { font-size: 13px; }
+  .report-answer-state { font-size: 11px; }
+}
+
+.page-report-layout [data-action="view-screens"] { margin-top: 16px; }
+.page-report-layout .finding-row-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }

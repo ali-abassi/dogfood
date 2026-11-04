@@ -44,7 +44,7 @@ async function scanActivePage() {
 }
 
 // Fix-first rows name their page and view; every other page jump opens the report.
-const pageJumpViews = ['report', 'screens', 'works', ...answerIds];
+const pageJumpViews = ['report', 'page-info', 'screens', 'works', ...answerIds];
 
 function selectPage(id, view = 'report') {
   const name = pageJumpViews.includes(view) ? view : 'report';
@@ -213,7 +213,8 @@ function backToReport() {
   closeEditors();
   Object.assign(state, { view: 'report', message: '' });
   render();
-  restoreFocus(from === 'screens' ? '[data-action="view-screens"]' : `[data-answer-row="${from}"]`);
+  const destinations = { screens: '[data-action="view-screens"]', 'page-info': '.report-info-link' };
+  restoreFocus(destinations[from] || `[data-answer-row="${from}"]`);
 }
 
 function openScreens() {
@@ -293,7 +294,7 @@ function navigationRequested(button) {
 }
 
 function selectView(name) {
-  if (!answerIds.includes(name)) return;
+  if (!answerIds.includes(name) && name !== 'page-info') return;
   closeEditors();
   Object.assign(state, { view: name, message: '' });
   render();

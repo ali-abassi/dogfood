@@ -51,6 +51,8 @@ try {
   });
   evaluate(`(document.querySelector('[data-page="admin"]').click(), true)`);
   browser('wait', '500');
+  evaluate(`(document.querySelector('.report-info-link').click(), true)`);
+  browser('wait', '250');
   evaluate(`(document.querySelector('[data-action="remove-page"]').click(), true)`);
   browser('wait', '300');
   check('Remove page opens an inline form asking why', () => {

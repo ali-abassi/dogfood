@@ -11,7 +11,7 @@ import { docViewIds, docsMarkup, syncDocsState } from './views/docs.mjs';
 import { featuresMarkup } from './views/features.mjs';
 import { overviewMarkup } from './views/overview.mjs';
 import { pageHeaderMarkup, sidebarMarkup, toolbarMarkup } from './views/page.mjs';
-import { pageReportMarkup } from './views/report.mjs';
+import { pageInfoMarkup, pageReportMarkup } from './views/report.mjs';
 import { screensMarkup } from './views/screens.mjs';
 import { suggestionsReviewMarkup, syncSuggestionsState } from './views/suggestions.mjs';
 import { syncQaState } from './views/tests.mjs';
@@ -31,6 +31,7 @@ export const app = document.querySelector('#app');
 // The report is the page's home; each answer and the full screenshots open from it.
 const pageViews = {
   report: page => `${pageHeaderMarkup(page)}${pageReportMarkup(page)}`,
+  'page-info': pageInfoMarkup,
   screens: screensMarkup,
   works: worksMarkup,
 };
@@ -128,7 +129,7 @@ const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'bo
 
 function initialView(project, destination) {
   if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };
-  if (['report', 'screens', 'works', ...answerIds].includes(destination.view) && project.pages.some(page => page.id === destination.pageId)) return { view: destination.view, pageId: destination.pageId };
+  if (['report', 'page-info', 'screens', 'works', ...answerIds].includes(destination.view) && project.pages.some(page => page.id === destination.pageId)) return { view: destination.view, pageId: destination.pageId };
   return { view: 'overview', pageId: null };
 }
 

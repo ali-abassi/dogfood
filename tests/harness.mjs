@@ -28,8 +28,8 @@ export async function startServer(dataDir) {
   throw new Error(`dogfood did not start on ${url}`);
 }
 
-export function browserSession(name) {
-  const session = `${name}-${process.pid}`;
+export function browserSession(name, existingSession) {
+  const session = existingSession || `${name}-${process.pid}`;
   const browser = (...args) => execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 60_000 });
   // Runs an expression in the page and returns its JSON value.
   const evaluate = expression => {

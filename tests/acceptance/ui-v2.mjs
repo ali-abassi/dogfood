@@ -135,7 +135,7 @@ try {
     assert.ok(mobile < desktop, 'the phone screenshot is shown narrower than the computer one');
   });
   check('Check again is a quiet link and the report keeps one blue button', () => {
-    assert.equal(page(`Boolean(document.querySelector('.page-heading button[data-action="scan"]'))`), true);
+    assert.equal(page(`Boolean(document.querySelector('.report-section-heading button[data-action="scan"]'))`), true);
     assert.ok(page(`document.querySelectorAll('.page-workspace .save-button').length`) <= 1, 'one filled blue button per view');
   });
   const answerText = (id, selector = `[data-answer-detail="${id}"]`) => {
@@ -163,11 +163,13 @@ try {
     assert.ok(answerText('works').includes('Lists all four classes with their ages.'));
   });
   check('About this page gives its title and description, links split by site, and the APIs it calls', () => {
+    click('.report-info-link'); settle();
     const about = text('[data-about]');
     for (const expected of ['Book a lesson · Tidepool', 'Pick a class and a time.', 'Classes', '/classes', 'Instagram', 'https://instagram.com/tidepool', 'GET /api/slots']) assert.ok(about.includes(expected), `About should show ${expected}`);
     assert.match(about, /On this site · 1/);
     assert.match(about, /Elsewhere · 1/);
     assert.equal(page(`document.querySelector('[data-about] [data-links]').open`), false, 'links are folded');
+    click('[data-action=back-to-report]'); settle();
   });
   check('Easy to use includes the accessibility questions', () => {
     assert.match(answerText('ease'), /keyboard/i);
@@ -175,7 +177,7 @@ try {
 
   const rescanned = structuredClone(project);
   stubApi({ 'POST /api/projects/tidepool/pages/book/scan': [200, rescanned] });
-  click('.page-heading button[data-action="scan"]');
+  click('.report-section-heading button[data-action="scan"]');
   settle();
   check('Check again posts to the page scan API', () => {
     const calls = page('window.__calls');

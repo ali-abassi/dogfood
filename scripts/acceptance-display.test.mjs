@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { pageHeaderMarkup } from '../public/js/views/page.mjs';
+import { missingRequirementsMarkup, pageHeaderMarkup } from '../public/js/views/page.mjs';
+import { aboutMarkup } from '../public/js/views/about.mjs';
 import { state } from '../public/js/state.mjs';
 
 state.project = { id: 'fixture' };
@@ -24,8 +25,9 @@ test('an audit-complete page names the unmet acceptance provenance requirement',
   ];
   const markup = pageHeaderMarkup(fixture({ complete: true, accepted: false, requirements, acceptanceRequirements }));
   assert.match(markup, /data-gate-status="Checked · Not accepted"/);
-  assert.match(markup, /Before acceptance/);
-  assert.match(markup, /Declared checkout evidence.*not declared to serve this checkout/);
+  assert.match(markup, /1 requirement remaining/);
+  const details = missingRequirementsMarkup(fixture({ acceptanceRequirements }));
+  assert.match(details, /Declared checkout evidence.*not declared to serve this checkout/);
   assert.doesNotMatch(markup, /<li><strong>Audit/);
 });
 
@@ -39,8 +41,17 @@ test('Before acceptance lists only missing requirements with escaped plain reaso
     { id: 'capture', label: 'Screenshots', met: true, missing: '' },
     { id: 'works', label: 'Works answered', met: false, missing: 'Check the <booking> flow.' },
   ];
-  const markup = pageHeaderMarkup(fixture({ complete: false, accepted: false, requirements }));
-  assert.match(markup, /<summary>Before acceptance<\/summary>/);
+  const markup = missingRequirementsMarkup(fixture({ complete: false, accepted: false, requirements }));
+  assert.match(markup, /<h2>Before acceptance<\/h2>/);
   assert.match(markup, /Works answered.*Check the &lt;booking&gt; flow/);
   assert.doesNotMatch(markup, /<li><strong>Screenshots/);
 });
+
+for (const device of ['desktop', 'mobile']) {
+  test(`page details tolerates ${device}-only scan evidence and keeps its links`, () => {
+    const page = { features: [], connections: [], scan: { sourceUrl: 'https://example.test/', scannedAt: '2026-11-04T00:00:00Z', viewports: { [device]: { seo: { title: 'One device page' }, links: [{href:'https://example.test/next',text:'Next page'}] } } } };
+    const markup = aboutMarkup(page);
+    assert.match(markup, /One device page/);
+    assert.match(markup, /Next page/);
+  });
+}

@@ -479,3 +479,9 @@ Required reviewer assignments: one independent reviewer, on a different model fr
 - Accepted follow-ups (not blocking, recorded in intent.md): the folded Automated tests panel still uses Pass/Fail and checkout wording, and folded data connections show Sends/Gets rows; both are secondary evidence for coding agents.
 - Check-change log: v1 (polish pass, 2026-09-26, 33 checks OV/PS/RC/SP/MR/SS/IS/AP/SG/NV) → v2 (this contract) → the owner redirected the product on 2026-09-26 ("think of the user as non technical … there is so much on this page that is confusing"), which removes the tabs and requirement list those checks inspected → authorized by the owner's direction → v1 was never run; v2's checks and evidence replace it. Within v2 no check changed; probes were fixed where they tested the wrong thing (AD-3 accepts "under 0.1 s", which is still seconds; NV-1 accepts the typographic apostrophe in "Can’t open"; PR-5 uses a page with no screenshots and no answers, as the check states).
 - Final decision: Pass
+
+## 2026-11-04 report composition revision
+
+User direction supersedes the earlier stacked-panel composition: reduce visual complexity, not only the number of disclosures. The page report is one sheet with preview and results side by side on desktop, stacked preview-first on phone. Review results retain six answers in the same order with a plain state word and one-line supporting reason. Open bugs precede the answers. Health and acceptance stay distinct in a compact status line.
+
+Page details holds the full unmet acceptance list, measured answers, About this page and page removal. It is directly reachable from the report, supports deep links and returns keyboard focus. PR-1 through PR-6 keep their behavioral guarantees; the removal and About checks now navigate through Page details. Check again moves into the preview heading. This revision changes presentation, not gate semantics or evidence requirements.

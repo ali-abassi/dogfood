@@ -32,7 +32,7 @@ const markLabel = /^(Looks right|Clear purpose|Easy to use|Safe|Fast & findable|
 const internalTerms = /\b(requirements?|verdicts?|audits?|checklists?|connections?|captures?|P0|P1)\b/i;
 
 const { check, passed } = checker();
-const { browser, evaluate } = browserSession('dogfood-report-card');
+const { browser, evaluate } = browserSession('dogfood-report-card', process.env.DOGFOOD_BROWSER_SESSION);
 const text = selector => evaluate(`document.querySelector(${JSON.stringify(selector)})?.innerText ?? ''`);
 const count = selector => evaluate(`document.querySelectorAll(${JSON.stringify(selector)}).length`);
 const noSidewaysScroll = () => evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1');
@@ -112,7 +112,8 @@ try {
     assert.ok(evaluate(`[...document.querySelectorAll('.save-button')].filter(button => button.offsetParent).length`) <= 1);
   });
 
-  await check('Cancel on Remove page returns keyboard focus to Remove page', () => {
+  await check('Page details opens management; cancelling removal restores its keyboard focus', () => {
+    browser('click', '.report-info-link'); settle();
     browser('focus', '[data-action="remove-page"]');
     browser('press', 'Enter');
     settle(300);
@@ -121,6 +122,8 @@ try {
     settle(300);
     assert.equal(evaluate('document.activeElement?.dataset.action ?? null'), 'remove-page');
   });
+  browser('focus', '[data-action=back-to-report]'); browser('press', 'Enter'); settle();
+  assert.equal(evaluate('document.activeElement?.classList.contains("report-info-link")'), true);
   openAnswer('design');
   await check('AD-1 an answer shows its question, the answer, and where it came from', () => {
     assert.equal(text('[data-answer-detail="design"] h1'), 'Looks right');
@@ -347,9 +350,12 @@ try {
     assert.deepEqual(marks('[data-answers]').map(label => label.split(': ')[1]), Array(6).fill('Not checked'));
   });
   openPage('revenue');
-  await check('WK-4a the report folds the page\'s API connections under About this page', () => {
+  await check('WK-4a page details preserves API connections outside the report summary', () => {
+    assert.equal(count('[data-about]'), 0);
+    browser('click', '.report-info-link'); settle();
     assert.equal(evaluate(`document.querySelector('[data-about] [data-connections]')?.open`), false);
   });
+  browser('click', '[data-action=back-to-report]'); settle();
   openAnswer('works');
   await check('WK-4 the longest content stays readable', () => {
     assert.equal(count('[data-thing]'), 9);
@@ -389,7 +395,7 @@ try {
   process.exitCode = 1;
 } finally {
   try { stopRecording(); } catch { /* not recording */ }
-  try { browser('close'); } catch { /* closed */ }
+  try { if (!process.env.DOGFOOD_BROWSER_SESSION) browser('close'); } catch { /* closed */ }
   main.stop();
   welcome.stop();
   rmSync(data, { recursive: true, force: true });

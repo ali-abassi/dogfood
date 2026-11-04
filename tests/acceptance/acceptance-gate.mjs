@@ -30,6 +30,7 @@ try {
 
   await check('checked but unaccepted report names provenance as the missing gate requirement', () => {
     assert.equal(evaluate(`document.querySelector('[data-gate-status]')?.textContent`), 'Checked · Not accepted');
+    browser('click', '.report-info-link'); browser('wait', '250');
     assert.deepEqual(evaluate(`[...document.querySelectorAll('.page-gate-requirements li strong')].map(item => item.textContent)`), ['Declared checkout evidence']);
     assert.match(evaluate(`document.querySelector('.page-gate-requirements')?.textContent`), /not declared to serve this checkout/);
   });

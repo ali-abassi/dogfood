@@ -98,7 +98,7 @@ function checkAgainLabel(page) {
 }
 
 // A page that has never been checked leads with Take screenshots in the screenshot panel instead.
-function checkAgainMarkup(page) {
+export function checkAgainMarkup(page) {
   if (isNative(page)) return '';
   if (!page.scan) return '';
   return `<button type="button" class="link-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${escapeHtml(checkAgainLabel(page))}</button>`;
@@ -114,22 +114,29 @@ export function acceptanceLabel(progress) {
   return progress.complete === true ? 'Checked · Not accepted' : 'Not fully checked';
 }
 
-function missingRequirementsMarkup(page) {
+export function missingRequirementsMarkup(page) {
   const requirements = page.progress.acceptanceRequirements ?? page.progress.requirements ?? [];
   const missing = requirements.filter(item => !item.met);
   if (!missing.length) return '';
   const rows = missing.map(item => `<li><strong>${escapeHtml(item.label)}</strong>${item.missing ? ` — ${escapeHtml(item.missing)}` : ''}</li>`).join('');
-  return `<details class="page-gate-requirements"><summary>Before acceptance</summary><ul>${rows}</ul></details>`;
+  return `<section class="page-gate-requirements"><h2>Before acceptance</h2><ul>${rows}</ul></section>`;
 }
 
 function acceptanceMarkup(page) {
   const label = acceptanceLabel(page.progress);
-  return `<div class="page-gate" role="group" aria-label="Acceptance status"><span class="page-gate-state" data-gate-status="${escapeHtml(label)}">${escapeHtml(label)}</span>${missingRequirementsMarkup(page)}</div>`;
+  return `<div class="page-gate" role="group" aria-label="Acceptance status"><span class="page-gate-state" data-gate-status="${escapeHtml(label)}">${escapeHtml(label)}</span>${missingCountMarkup(page)}</div>`;
 }
 
+function missingCountMarkup(page) {
+  const missing = (page.progress.acceptanceRequirements ?? page.progress.requirements ?? []).filter(item => !item.met);
+  return missing.length ? `<button type="button" class="link-button" data-view="page-info" aria-label="${missing.length} ${missing.length === 1 ? 'requirement' : 'requirements'} remaining">What remains</button>` : '';
+}
+export function pageManagementMarkup(page) {
+  return `<section class="page-management"><h2>Manage page</h2><p class="muted">Remove a duplicate or a page that no longer belongs in this project.</p><button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button>${removePageMarkup(page)}</section>`;
+}
 export function pageHeaderMarkup(page) {
   const open = externalLinkMarkup(page.captures.desktop.sourceUrl, 'Open page ↗', 'link-button');
-  return `<div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions">${statusPill(page.progress.status)}${acceptanceMarkup(page)}${checkAgainMarkup(page)}<button type="button" class="link-button" data-action="request-page-change">Request a change</button>${open}<button type="button" class="remove-page-button" data-action="remove-page">Remove page…</button></div></div>${scanErrorMarkup(page)}${removePageMarkup(page)}`;
+  return `<header class="page-report-header"><div class="page-heading"><div class="page-title"><p class="page-route" title="${escapeHtml(page.route)}">${escapeHtml(page.route)}</p><h1 id="selected-page-heading" tabindex="-1">${escapeHtml(page.name)}</h1></div><div class="page-actions"><button type="button" class="text-button" data-action="request-page-change">Request a change</button>${open}<button type="button" class="link-button report-info-link" data-view="page-info">Page details</button></div></div><div class="report-status-line">${statusPill(page.progress.status)}${acceptanceMarkup(page)}</div></header>${scanErrorMarkup(page)}`;
 }
 
 // Pages is the phone's way into the sidebar; on a computer the sidebar is always there.
