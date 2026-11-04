@@ -131,3 +131,11 @@ Terminal agents can read `dogfood_qa_work_queue` and save a scoped request with
 `dogfood_request_page_review`. Inspect their schemas with `dogfood schema TOOL`; normal
 `dogfood board` commands continue the resulting conversation. These operations never start an
 agent, execute tests, purchase services or change QA verdicts implicitly.
+
+### Finding work on the board
+
+- **Requests** follows saved requests, running agents, questions, review and closed conversations.
+- **Ready tasks** lists planned work whose dependencies are satisfied. Prepare a request to review its scope and choose an agent.
+- **QA coverage** lists pages with outstanding requirements. Select a page to read its checks, findings and acceptance gaps. Open its existing request or prepare a complete review; preparing does not start the agent.
+
+Task links and required checks are visible in the relevant view. Disclosures hold long briefs, previous conversations and technical artifacts. Closing a conversation still does not accept its task or page.

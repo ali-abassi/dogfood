@@ -254,11 +254,21 @@ try {
   });
   await check('QA coverage prepares a complete saved request and repeated clicks reuse it', async () => {
     click('[data-board-action="close"]');
-    click('#board-work-queue > summary');
+    click('[data-board-action=section][data-section=qa]');
     await until(() => page('!!document.querySelector("[data-board-action=queue-review]")'));
     browser('select', '#board-qa-backend', 'claude');
     await sleep(4300);
     assert.equal(page('document.querySelector("#board-qa-backend").value'), 'claude');
+    assert.equal(page('document.querySelectorAll("#board-work-queue details").length'), 0);
+    assert.ok(page('document.querySelectorAll(".queue-requirements li").length') > 0);
+    assert.match(page('location.search'), /boardView=qa/);
+    capture('qa-coverage-desktop');
+    browser('set', 'viewport', '390', '844');
+    const mobilePage = page('document.querySelector("#board-qa-page option:last-child").value');
+    browser('select', '#board-qa-page', mobilePage);
+    assert.equal(page('document.querySelector("#board-qa-page").value'), mobilePage);
+    assertNoOverflow(); capture('qa-coverage-phone');
+    browser('set', 'viewport', '1280', '850');
     const pageId = page('document.querySelector("[data-board-action=queue-review]").dataset.pageId');
     click(`[data-board-action="queue-review"][data-page-id="${pageId}"]`);
     await until(() => page('!!document.querySelector("#board-request-heading")'));
@@ -277,6 +287,11 @@ try {
   });
   await check('search and filters preserve the selected conversation reply draft', async () => {
     browser('fill', '#board-reply', 'Keep this review scoped to the full required inventory.');
+    const selected = page('document.querySelector(".board-card.selected").dataset.cardId');
+    click('[data-board-action=section][data-section=ready]');
+    click('[data-board-action=section][data-section=requests]');
+    click(`.board-card[data-card-id="${selected}"]`);
+    assert.equal(page('document.querySelector("#board-reply").value'), 'Keep this review scoped to the full required inventory.');
     browser('fill', '#board-search', 'no such request exists');
     await sleep(4300);
     assert.equal(page('document.activeElement.id'), 'board-search');
@@ -310,8 +325,11 @@ try {
     const response = await fetch(`${server.url}/api/projects/tidepool/tasks`, {method:'POST',headers:{'Content-Type':'application/json',Origin:server.url},body:JSON.stringify(task)});
     assert.equal(response.ok, true);
     browser('open', `${server.url}/?project=tidepool&view=board`);
-    await until(() => page('!!document.querySelector(".board-ready-work")'));
-    click('.board-ready-work > summary');
+    await until(() => page('!!document.querySelector("[data-board-action=planned-request][data-task-id=verified-delivery]")'));
+    click('[data-board-action=section][data-section=ready]');
+    browser('focus', '[data-board-action=planned-request][data-task-id=verified-delivery]');
+    await sleep(4300);
+    assert.equal(page('document.activeElement.dataset.taskId'), 'verified-delivery');
     click('[data-board-action="planned-request"][data-task-id="verified-delivery"]');
     assert.match(page('document.querySelector(".board-linked-contract").textContent'), /required command checks/);
     click('#board-request-form button[value="start"]');

@@ -13,7 +13,13 @@ const agentNames = { codex: 'Codex', claude: 'Claude Code' };
 let poll;
 
 function freshBoard(key = '', selected = '') {
-  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, note: {}, formError: '', search: '', filter: 'all', queue: null, queueError: '', queueOpen: false, qaBackend: 'codex' };
+  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, note: {}, formError: '', search: '', filter: 'all', queue: null, queueError: '', section: initialSection(selected), queuePage: '', qaBackend: 'codex' };
+}
+
+function initialSection(selected) {
+  if (selected) return 'requests';
+  const section = new URLSearchParams(window.location.search).get('boardView');
+  return ['ready', 'qa'].includes(section) ? section : 'requests';
 }
 
 function board() { return state.board ??= freshBoard(); }
@@ -231,8 +237,8 @@ function changedFilesMarkup(card) {
   if (!review) return `<section class="board-review-tools">${appliedMarkup(card)}${inspect}</section>`;
   return `<section class="board-review-tools"><h3>Changes and proof</h3>${inspect}${review.files.map(fileChangesMarkup).join('')}${review.files.filter(file => /\.html?$/i.test(file.path)).slice(0, 2).map(staticPreview).join('')}${integrationMarkup(card, review)}</section>`;
 }
-function outcomeChecks(checks) { return checks ? `<details data-detail-key="outcome-checks"><summary>Agent-reported checks</summary><ul>${checks}</ul><p class="field-hint">Run source checks after applying. These are the agent’s reported observations.</p></details>` : ''; }
-function outcomeGaps(gaps) { return gaps ? `<details open data-detail-key="outcome-gaps"><summary>Still unverified</summary><ul>${gaps}</ul></details>` : ''; }
+function outcomeChecks(checks) { return checks ? `<section class="board-reported-checks"><h4>Agent-reported checks</h4><ul>${checks}</ul><p class="field-hint">Run source checks after applying. These are the agent’s reported observations.</p></section>` : ''; }
+function outcomeGaps(gaps) { return gaps ? `<section class="board-unverified"><h4>Still unverified</h4><ul>${gaps}</ul></section>` : ''; }
 function outcomeMarkup(card) {
   if (!card.outcome) return '';
   if (card.error || card.status === 'running') return '';
@@ -279,8 +285,7 @@ function requestFieldsMarkup(data) {
   return `<label for="board-intent">Type of work</label><select id="board-intent" name="intent" aria-describedby="board-intent-hint">${Object.entries(intentNames).map(([id, label]) => option(id, label, data.intent)).join('')}</select><p id="board-intent-hint" class="field-hint">${intentHints[data.intent]}</p><label for="board-title">Title</label><input id="board-title" name="title" required maxlength="160" value="${escapeHtml(data.title)}" placeholder="What needs to change?"><label for="board-request">What should the agent do?</label><textarea id="board-request" name="request" rows="4" required maxlength="10000" placeholder="Describe the result you want and how to check it.">${escapeHtml(data.request)}</textarea><label for="board-done-when">Done when <span class="field-optional">expected result and proof</span></label><textarea id="board-done-when" name="doneWhen" rows="2" maxlength="2000" placeholder="What must work, and what evidence should the agent return?">${escapeHtml(data.doneWhen)}</textarea><label for="board-constraints">Boundaries <span class="field-optional">optional</span></label><input id="board-constraints" name="constraints" maxlength="1000" value="${escapeHtml(data.constraints)}" placeholder="What must the agent preserve or leave alone?"><div class="board-form-pair"><div><label for="board-backend">Agent</label><select id="board-backend" name="backend">${Object.entries(agentNames).map(([id, label]) => option(id, label, data.backend)).join('')}</select></div><div><label for="board-page">Related page <span class="field-optional">optional</span></label><select id="board-page" name="pageId">${option('', 'Project-wide', data.pageId)}${requestPages().map(page => option(page.id, page.name, data.pageId)).join('')}</select></div></div>`;
 }
 function requestContextMarkup(data) {
-  const open = Boolean(board().linksOpen || data.featureId || data.taskId);
-  return `<details class="board-request-context" ${open ? 'open' : ''}><summary>Link a feature or planned task</summary><div class="board-form-pair"><div>${featureOptions(data)}</div><div><label for="board-task">Planned task <span class="field-optional">optional</span></label><select id="board-task" name="taskId">${option('', 'No linked task', data.taskId)}${board().tasks.map(task => option(task.id, task.title, data.taskId)).join('')}</select></div></div></details>`;
+  return `<section class="board-request-context" aria-label="Related work"><h3>Related work <span class="field-optional">optional</span></h3><div class="board-form-pair"><div>${featureOptions(data)}</div><div><label for="board-task">Planned task <span class="field-optional">optional</span></label><select id="board-task" name="taskId">${option('', 'No linked task', data.taskId)}${board().tasks.map(task => option(task.id, task.title, data.taskId)).join('')}</select></div></div></section>`;
 }
 function requestActionsMarkup(available) {
   const busy = Boolean(board().action);
@@ -294,7 +299,7 @@ function requestFormMarkup() {
 }
 function boardHeadingMarkup() {
   const buttonClass = board().selected ? 'text-button' : 'save-button';
-  const newButton = board().formOpen ? '' : `<button type="button" class="${buttonClass}" data-board-action="new">New request</button>`;
+  const newButton = board().formOpen || board().section !== 'requests' ? '' : `<button type="button" class="${buttonClass}" data-board-action="new">New request</button>`;
   return `<div class="page-heading board-heading"><div><h1 id="board-heading" tabindex="-1">Agent board</h1><p id="board-summary" class="board-summary">${escapeHtml(summary())}</p></div><div class="board-heading-actions"><button type="button" class="link-button" data-project-view="help">How it works</button>${newButton}</div></div>`;
 }
 function loadErrorMarkup() {
@@ -307,18 +312,35 @@ function emptyBoardMarkup() {
 }
 function boardLoadingMarkup() { return !board().data ? '<p class="muted" role="status" id="board-loading">Loading requests…</p>' : ''; }
 function noMatches() { return cards().length > 0 && visibleCards().length === 0; }
+function sectionVisibility(name) { return board().section === name ? '' : 'hidden'; }
 export function boardMarkup() {
   const data = board().data;
-  return `<div class="agent-board ${board().selected ? 'has-selection' : ''}" data-ui>${boardHeadingMarkup()}${loadErrorMarkup()}${requestFormMarkup()}${boardLoadingMarkup()}<div id="board-ready-host">${readyWorkMarkup(data)}</div>${workQueuePanel()}${toolbarMarkup()}<div id="board-empty-host">${emptyBoardMarkup()}</div><div class="board-workspace"><div id="board-lanes" class="board-lanes" role="region" aria-label="Agent requests" ${data ? '' : 'hidden'}>${data ? lanesMarkup() : ''}</div><p id="board-filter-empty" class="muted" ${noMatches() ? '' : 'hidden'}>No requests match these filters.</p><div id="board-detail-host">${detailMarkup(selectedCard())}</div></div></div>`;
+  return `<div class="agent-board ${board().selected ? 'has-selection' : ''}" data-ui>${boardHeadingMarkup()}${loadErrorMarkup()}${boardNavigation()}${requestFormMarkup()}${boardLoadingMarkup()}<div id="board-ready-host" ${sectionVisibility('ready')}>${readyWorkMarkup(data)}</div>${workQueuePanel()}<div id="board-requests-view" ${sectionVisibility('requests')}>${toolbarMarkup()}<div id="board-empty-host">${emptyBoardMarkup()}</div><div class="board-workspace"><div id="board-lanes" class="board-lanes" role="region" aria-label="Agent requests" ${data ? '' : 'hidden'}>${data ? lanesMarkup() : ''}</div><p id="board-filter-empty" class="muted" ${noMatches() ? '' : 'hidden'}>No requests match these filters.</p><div id="board-detail-host">${detailMarkup(selectedCard())}</div></div></div></div>`;
 }
 
 
 function toolbarMarkup() {
   return `<div class="board-toolbar"><label for="board-search" class="sr-only">Search requests</label><input id="board-search" type="search" placeholder="Search requests…" value="${escapeHtml(board().search)}"><label for="board-filter" class="sr-only">Filter requests</label><select id="board-filter">${[['all','All requests'],['active','Open requests'],['attention','Needs you'],['review','Ready for review'],['done','Closed requests']].map(([value,label]) => option(value,label,board().filter)).join('')}</select></div>`;
 }
+function boardNavigation() {
+  const b = board();
+  const options = [['requests', 'Requests', cards().length], ['ready', 'Ready tasks', b.data?.readyTasks?.length], ['qa', 'QA coverage', b.queue?.summary?.needsReview]];
+  return `<nav class="board-navigation" aria-label="Agent work"><div>${options.map(([id,label,total]) => `<button type="button" data-board-action="section" data-section="${id}" aria-pressed="${b.section === id}">${label}${Number.isInteger(total) ? `<span>${total}</span>` : ''}</button>`).join('')}</div></nav>`;
+}
 function workQueuePanel() {
-  const total = board().queue?.summary?.needsReview;
-  return `<details id="board-work-queue" class="board-work-queue" ${board().queueOpen ? 'open' : ''}><summary>QA coverage${Number.isInteger(total) ? ` · ${total} pages need attention` : ''}</summary><div id="board-work-queue-body">${queueMarkup(board().queue, board().queueError, Boolean(board().action), board().qaBackend)}</div></details>`;
+  return `<section id="board-work-queue" class="board-work-queue" aria-label="QA coverage" ${sectionVisibility('qa')}><div id="board-work-queue-body">${queueMarkup(board().queue, board().queueError, Boolean(board().action), board().qaBackend, board().queuePage)}</div></section>`;
+}
+function showBoardSection(button) {
+  const b = board();
+  if (b.formOpen && hasRequestDraft()) return inlineError('board-request-error', 'Save or cancel your request before switching views.');
+  b.section = button.dataset.section; b.selected = ''; b.formOpen = false;
+  rememberSelection(''); render();
+  document.querySelector(`[data-section="${b.section}"]`)?.focus({ preventScroll: true });
+}
+function showQueuePage(button) {
+  board().queuePage = button.dataset.pageId || button.value;
+  render();
+  document.getElementById('queue-page-heading')?.focus({ preventScroll: true });
 }
 async function loadQueue(b) {
   try { const data = await readJson(`/api/projects/${encodeURIComponent(b.key)}/work-queue`); if (current(b)) { b.queue = data; b.queueError = ''; } }
@@ -329,9 +351,8 @@ async function refreshQueue() {
   await loadQueue(b);
   if (!active(b)) return;
   const root = document.getElementById('board-work-queue-body');
-  if (root) root.innerHTML = queueMarkup(b.queue, b.queueError, Boolean(b.action), b.qaBackend);
-  const summary = document.querySelector('#board-work-queue > summary');
-  if (summary) summary.textContent = `QA coverage${b.queue ? ` · ${b.queue.summary.needsReview} pages need attention` : ''}`;
+  if (root) root.innerHTML = queueMarkup(b.queue, b.queueError, Boolean(b.action), b.qaBackend, b.queuePage);
+  updateBoardNavigation();
 }
 function prepareTask(id) {
   const task = board().tasks.find(item => item.id === id);
@@ -343,7 +364,7 @@ async function prepareReview(pageId) {
   await mutate('queue-review', async b => {
     const saved = await readJson(`/api/projects/${encodeURIComponent(b.key)}/work-queue/${encodeURIComponent(pageId)}/request`, { method: 'POST', body: JSON.stringify({ backend }) });
     if (!current(b)) return;
-    b.selected = saved.request.id; b.formOpen = false; b.queueOpen = false;
+    b.selected = saved.request.id; b.formOpen = false; b.section = 'requests';
     rememberSelection(b.selected);
     await refreshAfterMutation(b);
     await loadQueue(b);
@@ -354,6 +375,7 @@ function rememberSelection(id) {
   const query = new URLSearchParams(window.location.search);
   query.set('project', state.project.id);
   query.set('view', 'board');
+  if (board().section === 'requests') query.delete('boardView'); else query.set('boardView', board().section);
   if (id) query.set('card', id); else query.delete('card');
   history.replaceState(null, '', `${window.location.pathname}?${query}`);
 }
@@ -370,7 +392,7 @@ function updateRunnerAvailability() {
   const note = document.getElementById('board-agent-unavailable');
   if (note) note.hidden = available;
 }
-function editingBoard(b) { return b.formOpen || Boolean(b.replies[b.selected]) || document.activeElement?.closest('.board-toolbar, #board-comment-form, #board-work-queue'); }
+function editingBoard(b) { return b.formOpen || Boolean(b.replies[b.selected]) || document.activeElement?.closest('.board-toolbar, .board-navigation, #board-ready-host, #board-comment-form, #board-work-queue'); }
 function updateReplyLabels(card) {
   const note = Boolean(board().note[card.id]);
   const hint = document.getElementById('board-reply-hint');
@@ -410,9 +432,14 @@ function updateBoardErrorNode() {
   root.hidden = !board().error;
   root.textContent = board().error;
 }
+function updateBoardNavigation() {
+  const nav = document.querySelector('.board-navigation');
+  if (nav && !nav.contains(document.activeElement)) nav.outerHTML = boardNavigation();
+}
 function updateBoardExtras() {
+  updateBoardNavigation();
   const ready = document.getElementById('board-ready-host');
-  if (ready) { const opened = detailStates(ready); ready.innerHTML = readyWorkMarkup(board().data); restoreDetails(ready, opened); }
+  if (ready && !ready.contains(document.activeElement)) ready.innerHTML = readyWorkMarkup(board().data);
   const filtered = document.getElementById('board-filter-empty');
   if (filtered) filtered.hidden = !noMatches();
 }
@@ -475,7 +502,7 @@ async function refreshAfterMutation(b) {
 function needsInitialLoad(b) { return !b.attempted && !b.loading; }
 function applyBoardDestination() {
   if (!state.boardDestination) return;
-  Object.assign(board(), { selected: state.boardDestination, formOpen: false, attempted: false });
+  Object.assign(board(), { selected: state.boardDestination, section: 'requests', formOpen: false, attempted: false });
 }
 export function syncBoardState() {
   if (board().key !== state.project.id) state.board = freshBoard(state.project.id, state.boardDestination || '');
@@ -494,7 +521,7 @@ export function discardBoardDrafts() {
   b.draft = null; b.replies = {}; b.note = {};
 }
 export function reviewBoardDraft() {
-  const b = board();
+  const b = board(); b.section = 'requests';
   Object.assign(state, { view: 'board', browseOpen: false });
   if (hasRequestDraft()) { b.formOpen = true; b.selected = ''; }
   else b.selected = Object.keys(b.replies).find(id => b.replies[id].trim()) || '';
@@ -527,7 +554,7 @@ export function openBoardRequest(pageId = '', seed = {}) {
   const b = board();
   Object.assign(state, { view: 'board', browseOpen: false, message: '' });
   if (!hasRequestDraft()) b.draft = { pageId, ...seed };
-  Object.assign(b, { formOpen: true, selected: '', formError: '' });
+  Object.assign(b, { formOpen: true, selected: '', section: 'requests', formError: '' });
   rememberSelection('');
   render();
   focus('board-title');
@@ -558,7 +585,7 @@ async function post(b, path, body = {}) {
 }
 function savedRequest(b, saved) {
   b.selected = saved.id ?? saved.card?.id ?? '';
-  b.formOpen = false; b.draft = null;
+  b.formOpen = false; b.draft = null; b.section = 'requests';
   rememberSelection(b.selected);
 }
 function requestInput(draft, submitter) {
@@ -604,7 +631,7 @@ function selectCard(button) {
   const b = board();
   if (b.formOpen && hasRequestDraft()) return inlineError('board-request-error', 'Save or cancel your new request before opening another.');
   b.formOpen = false;
-  b.selected = button.dataset.cardId; b.formError = ''; b.queueOpen = false;
+  b.selected = button.dataset.cardId; b.formError = ''; b.section = 'requests';
   rememberSelection(b.selected);
   render(); focus('board-request-heading');
   document.getElementById('board-request-heading')?.scrollIntoView({ block: 'start', behavior: 'instant' });
@@ -636,6 +663,8 @@ async function releaseSourceIntegration() {
 }
 function answerAgent() { const reply = document.getElementById('board-reply'); reply?.scrollIntoView({ block: 'center', behavior: 'instant' }); reply?.focus({ preventScroll: true }); }
 const boardActions = {
+  section: showBoardSection,
+  'queue-page': showQueuePage,
   reply: answerAgent,
   'planned-request': button => prepareTask(button.dataset.taskId),
   'queue-review': button => prepareReview(button.dataset.pageId),
@@ -658,6 +687,7 @@ function handleBoardInput(event) {
   if (form) rememberDraft(form);
 }
 function changeBoardFilter(target) {
+  if (target.id === 'board-qa-page') { showQueuePage(target); return true; }
   if (target.id === 'board-qa-backend') { board().qaBackend = target.value; return true; }
   if (target.id === 'board-filter') { board().filter = target.value; updateBoardDataNodes(); return true; }
   return false;
@@ -685,7 +715,6 @@ export function registerBoardEvents(app) {
     if (button) boardClick(button);
     if (event.target.closest('[data-action="request-page-change"]')) openBoardRequest(state.pageId);
   });
-  app.addEventListener('toggle', event => { if (event.target.id === 'board-work-queue') board().queueOpen = event.target.open; if (event.target.classList?.contains('board-request-context')) board().linksOpen = event.target.open; }, true);
   app.addEventListener('input', handleBoardInput);
   app.addEventListener('change', handleBoardChange);
   app.addEventListener('submit', handleBoardSubmit);

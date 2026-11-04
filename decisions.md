@@ -126,3 +126,9 @@ Prior-art check used the GitHub research skill. Vibe Kanban at 08064e043c2d78ad1
 in packages/web-core/src/shared/actions/index.ts. Adopt the separation of conversation, review and
 preview actions; Dogfood already has isolated worktrees and patch inspection. Add evidence-bound
 acceptance using Dogfood's existing gates. No third-party code copied or dependency added.
+
+## 2026-11-04 — Make the board readable without nested disclosures
+
+Ali found the board's collapsible sections difficult to understand. The main question remains: what work needs attention, and what should I do next? Requests, ready planned tasks and outstanding page QA now have named views instead of stacked accordions. The QA view uses a page list and a visible requirements sheet; a labeled page selector replaces the list on phones. Task links, required commands, agent-reported checks, unresolved gaps and related page acceptance stay visible. Long briefs, old conversations and raw technical artifacts retain disclosures.
+
+Preserved the existing Dogfood logo, system typography, neutral navigation and blue actions; no new visual system or decorative metrics. The three priorities were discoverable work, visible requirements, and less vertical travel on phones. AGENTS.md records this rule for future interface changes.
