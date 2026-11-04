@@ -82,7 +82,7 @@ dogfood board start CARD --project my-app
 
 Creation saves for later by default. To explicitly authorize immediate execution, use
 `dogfood board create --input request.json --start`, or set `"start": true` in the JSON.
-The backend is `codex` or `claude`; page/feature/task links are optional and validated, including planned pages. `intent` is `build` by default, `discovery` for questions/brief proposals, or `qa` for an audit without application source edits. QA can also use a labeled URL-only audit workspace.
+The backend is `codex` or `claude`; page/feature/task links are optional and validated, including planned pages. `intent` is `build` by default (**Build or change** in the app), `discovery` (**Explore the idea**) for questions and brief proposals, or `qa` (**Review and test**) for an audit without application source edits or source integration. QA can also use a labeled URL-only audit workspace.
 
 The selected project's registered committed checkout is the source. Each native session uses
 an isolated worktree; uncommitted source changes are not copied. Starting via CLI or MCP waits
@@ -101,7 +101,7 @@ dogfood board comment CARD --project my-app --input comment.json --send
 dogfood board comment CARD --project my-app --input comment.json --note
 ```
 
-The JSON may instead contain an explicit `"send": true` or `false`. A note never launches work.
+The JSON may instead contain an explicit `"send": true` or `false`. When a card needs an answer, send the answer; a note never launches or resumes work.
 Sent feedback waits for the current turn to end and continues the same native session. `--input -`
 reads JSON from stdin, avoiding shell interpolation of long requests.
 
@@ -112,6 +112,8 @@ dogfood board discard-feedback CARD --project my-app
 dogfood board done CARD --project my-app
 dogfood board reopen CARD --project my-app
 ```
+
+Retry the same card after a transient failure or stop when its session and source are still valid. If the save receipt says continuation is unavailable or the source has moved, preserve the work and start a fresh request from current source. Inspect the card and receipt before retrying an uncertain operation.
 
 Discarding queued feedback retains its comment history. A running request must stop before it
 can be closed. Done closes the request after review, or closes an idle Needs-you request; it

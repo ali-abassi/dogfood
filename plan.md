@@ -59,3 +59,9 @@ Check: `npm test`, `npm run check`, `npm run lint`, full `npm run test:acceptanc
 - Onboard the five selected products with current source mappings and representative real-flow QA. Keep external services and protected journeys explicitly unverified.
 - Present a concise public GitHub with a verified no-key demo, accessible workflow artwork, CLI and native-app setup documentation.
 - Check: `npm test`, `npm run check`, `npm run lint`, and `node tests/acceptance/platform-portfolio.mjs`. Retain scoped real-product evidence locally and review before shipping.
+
+## 2026-11-03 — final workflow polish
+
+Outcome: a person and coding agent can understand setup, choose the correct request intent, follow the same conversation, answer a required decision, inspect evidence and distinguish closing a request from accepting a task/page. Scope: app help, board presentation and lifecycle edge cases, README and agent instructions. Preserve existing brand and data.
+
+Check: `npm test`, `npm run check`, `npm run lint`, `node tests/acceptance/agent-board.mjs`, existing browser acceptance suites. At 1280/390, inspect help, request creation, needs-input/result details and review controls in light/dark; no page overflow, readable state, functional navigation and clipboard fallback. Review source independently, deploy to the established local runtime, then record current source-bound page QA. Structured task `final-workflow-polish` owns completion status.

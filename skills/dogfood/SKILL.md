@@ -7,6 +7,19 @@ description: Plan, build, verify and resume web, iOS and generated-publication p
 
 Dogfood holds the structured work plan and evidence. You build with your normal coding tools. The person sees the Plan and page reports in the local dashboard. Task acceptance, a finished audit, and a production deployment are different outcomes.
 
+When reading this through `dogfood skill`, resolve relative reference links from the directory of its returned `path`.
+
+## Operating sequence
+
+1. Read `dogfood context --project ID --json` and the relevant task, page and documents. Confirm the
+   project, source, scope, owner and current evidence before acting.
+2. Work only within the requested intent and linked outcome. Use the designated browser session for
+   browser work; report missing setup instead of substituting an account or session.
+3. Check the real outcome in the appropriate environment and record observations and gaps. Use
+   task verification and page QA for their respective gates, not a request's completion status.
+4. Return a concise result and the structured packet. For a required decision, ask a specific question
+   and stop dependent work. The operator reviews source and evidence before accepting or shipping.
+
 ## Set up or resume
 
 Dogfood needs Node 22.12+. Clone it once if unavailable; its server has no runtime dependencies. Use `node /absolute/path/to/dogfood/bin/dogfood.mjs` for every command below, or optionally run `npm link` from the Dogfood checkout to install the `dogfood` command. Start the dashboard with `npm start`; use `DOGFOOD_PORT` if the default 4321 is occupied. Leave existing sessions and servers alone.
@@ -72,52 +85,20 @@ to linked task scope and labeled historical when stale; they are not runtime dep
 
 ## Plan the smallest complete outcome
 
-### Requests and feedback from the Agent board
+### Agent requests
 
-The same controls are available from the terminal: `dogfood board list`, `show CARD`, `create --input request.json`, `start CARD`, `comment CARD --input comment.json --send` (or `--note`), `changes CARD`, `stop CARD`, `discard-feedback CARD`, `done CARD` and `reopen CARD`. Operator source actions are `integrate CARD --input reviewed.json` and `save-source CARD --input integration.json`; use only an inspected fingerprint and the latest integration receipt ID. Supply `--project ID` outside the registered checkout. Creation saves by default; `--start` explicitly launches it. Run `dogfood doctor --project ID --require-agents` to check native sign-in, PAL and the running dispatcher. Read `docs/cli.md` in the Dogfood checkout for examples and readiness boundaries.
+A request is a conversation and isolated working session, not a task acceptance or page verdict.
+Choose `build` for source changes, `discovery` for scope questions and proposals, or `qa` for an
+audit without application-source changes. Read the linked task, page and source context first.
+Keep notes as notes; explicitly send an answer or feedback to continue the same conversation.
+A native request must leave changes for the operator to inspect, apply and save; never bypass that
+boundary, self-approve scope, or accept its own work. QA requests cannot integrate source.
 
-People can create project requests in Agent board and explicitly start Claude Code or Codex through
-their local PAL installation. Requests may link a page, feature or existing planned task. Read them
-with `dogfood_agent_board` or one `dogfood_agent_card`; `dogfood_agent_changes` reads bounded patches/new-file contents and their inspected fingerprint. `dogfood_agent_action` runs, stops, closes, reopens, discards feedback or performs explicit operator source actions; inspect its schema for action values.
-`dogfood_agent_request` saves for later unless `start:true`; `dogfood_agent_comment` requires an
-explicit `send` choice. Sending or starting delegates work and needs the user's task authorization.
-Notes do not start work. A long-running board dispatcher belongs to the local web server; a one-shot
-MCP call is not a durable queue worker.
-
-Request `intent` is `build`, `discovery` or `qa`. A build follows the linked outcome/scope/checks;
-discovery asks questions and proposes scope; QA inspects without application source edits. URL-only
-QA uses a labeled audit workspace and cannot claim a deployed source revision. Native context gives
-the stable project ID, explicit context command, full linked expectations or an exact read path,
-source revision and browser contract. Never infer a missing task link from a similar name or the
-only task; ask before dependent edits.
-
-Reuse the operator's designated browser session/profile across pages and widths. Snapshot, interact,
-re-snapshot and independently verify. Do not create another session, close the selected preview,
-change accounts or stop services. Missing browser/authentication is setup-required. A DOM assertion
-proves that exact fact; inspect the rendered result before claiming visual quality.
-
-Finish with a concise outcome and a fenced `dogfood-result` JSON block using the supplied schema:
-status `ready_for_review` or `needs_input`, summary, specific decision, exact checks/results/evidence,
-preview URL when available and unverified items. Keep preparation chatter in the transcript. These
-checks are agent-reported until backed by independent receipts. Preserve NEEDS_INPUT for a required
-question; do not guess an answer to keep work moving.
-
-The board owns conversations and isolated native sessions. Keep planned-task claims, verification
-receipts and page acceptance in their existing tools. An agent's finished turn returns to Review;
-it never proves the app works, merges a branch, deploys or accepts QA. Review source and user-visible
-outcomes before integrating returned work. Preserve the request's worktree and conversation so a
-person can send further feedback through the same card.
-
-The operator can Inspect changes, Apply the exact reviewed change set to clean matching source
-(staging only), then Save reviewed changes as a local commit. Concurrent or unrelated edits are
-preserved and can block that action. Neither action accepts a task/page, pushes or deploys. A native request must not apply or save source, including another card's source. Operator tools guard recognized native contexts against accidental self-approval; they do not sandbox same-user local code. Do not bypass the authority contract through another local interface or a different actor label. Read the resulting revision
-and continuation receipt; if work changed concurrently, start a fresh request from saved source.
-
-For a page problem, `dogfood_add_annotation` records a pin on the exact current screenshot hash,
-position and device, retaining immutable image evidence and an open finding. Create its linked
-request with `dogfood_annotation_request`; it saves by default. Resolve with
-`dogfood_resolve_annotation` only after a fresh retest note. Older pins remain historical after a
-new capture, and pin resolution does not accept QA or close the agent request.
+Finish every turn with the result packet in [the board reference](references/workflow.md), including
+an explicit decision when blocked. Report checks as observed and identify unverified behavior;
+an agent report is not an independent receipt. Use the same card for feedback or a retry when its
+session and source are still valid. Start a fresh request from current source when its continuation
+receipt says the worktree cannot continue or source has moved. Preserve existing work.
 
 Keep intent in `vision.md`, visual direction in `design.html`/`design.md`, and milestones in `plan.md`. Dogfood's structured tasks are the task-status source of truth; don't maintain another checkbox ledger independently.
 

@@ -871,7 +871,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
   .board-summary { font-size: 13px; }
 }
 .board-changes { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--separator); }
-.board-changes summary, .board-older-result summary { cursor: pointer; color: var(--secondary); font-size: 13px; }
+.board-changes summary, .board-history summary, .board-result-packet summary { cursor: pointer; color: var(--secondary); font-size: 13px; }
 .board-changes ul { margin: 12px 0; padding-left: 18px; font-size: 12px; overflow-wrap: anywhere; }
 .board-changes pre, .board-comment-body pre { max-width: 100%; overflow: auto; padding: 12px; border-radius: 8px; background: var(--fill); font: 12px/1.6 var(--mono); }
 .board-comment-body { font-size: 15px; line-height: 1.65; overflow-wrap: anywhere; }
@@ -880,7 +880,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .board-comment-body ul, .board-comment-body ol { margin: 8px 0; padding-left: 22px; }
 .board-comment-body li + li { margin-top: 4px; }
 .board-comment-body code { font-size: 12px; }
-.board-older-result[open] > summary { margin-bottom: 14px; }
+.board-history[open] > summary { margin-bottom: 14px; }
 
 /* Empty boards explain the next step without repeating five empty boxes. */
 .board-empty-state { max-width: 76ch; margin-top: 28px; padding: 24px; border: 1px solid var(--separator); border-radius: 12px; background: var(--group); }
@@ -980,3 +980,40 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .report-screens-single .report-screen-mobile .screen-frame { height: 480px; }
 .native-evidence { padding: 24px; margin-bottom: 24px; }
 .native-evidence .facts dd { overflow-wrap: anywhere; }
+
+/* Workflow help uses the existing app face: blue mark, system type, quiet ruled rows. */
+.sidebar-help { flex: none; text-align: left; padding: 8px; font-size: 13px; color: var(--secondary); }
+.sidebar-help[aria-current=page] { color: var(--ink); font-weight: 600; }
+.help-view { max-width: 960px; }
+.help-intro { max-width: 72ch; margin: 0 0 28px; color: var(--secondary); font-size: 16px; line-height: 1.7; }
+.help-steps { margin: 0; padding: 0; list-style: none; counter-reset: workflow; border-top: 1px solid var(--hairline); }
+.help-steps > li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 16px; padding: 24px 0; border-bottom: 1px solid var(--hairline); counter-increment: workflow; }
+.help-steps > li::before { content: counter(workflow, decimal-leading-zero); color: var(--secondary); font-size: 13px; font-variant-numeric: tabular-nums; line-height: 24px; }
+.help-steps h2, .help-section h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.help-steps p, .help-section p { max-width: 76ch; margin: 8px 0 12px; color: var(--secondary); font-size: 14px; line-height: 1.65; }
+.help-section { margin-top: 32px; }
+.help-definitions { margin: 16px 0 0; }
+.help-definitions > div { display: grid; grid-template-columns: 144px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; line-height: 1.6; }
+.help-definitions dt { font-weight: 600; }
+.help-definitions dd { margin: 0; color: var(--secondary); }
+.help-agent { padding: 24px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--group); }
+.help-agent textarea { width: 100%; resize: vertical; padding: 12px; border: 1px solid var(--separator); border-radius: 8px; background: var(--canvas); color: var(--ink); font: 14px/1.7 var(--font); }
+.help-agent a, .help-setup a { font-size: 14px; }
+.help-setup summary { cursor: pointer; font-size: 16px; font-weight: 600; }
+.help-setup h3 { margin: 24px 0 0; font-size: 15px; }
+.board-heading-actions { display: flex; align-items: center; gap: 20px; }
+.board-lane-hint { margin: -4px 2px 14px; color: var(--secondary); font-size: 12px; line-height: 1.5; }
+.board-decision { padding-left: 16px; border-left: 2px solid var(--orange); white-space: pre-wrap; }
+@media (max-width: 760px) {
+  .sidebar-help, .help-view button, .help-setup summary { min-height: 44px; }
+  .help-steps > li { gap: 8px; padding: 20px 0; }
+  .help-definitions > div { grid-template-columns: 1fr; gap: 4px; }
+  .help-agent { padding: 16px; }
+  .help-agent .panel-heading { align-items: start; flex-direction: column; gap: 12px; }
+  .board-heading-actions { justify-content: space-between; }
+  .board-lane-hint { margin: 8px 0; }
+}
+
+.board-request-form .field-hint { margin: 8px 0 12px; line-height: 1.5; }
+.board-history { max-width: 76ch; margin-top: 24px; }
+.board-result-packet { margin-top: 12px; }

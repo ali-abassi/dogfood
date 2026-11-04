@@ -39,7 +39,7 @@ const navIcons = {
   features: '<path d="M8 2.5l5.5 3L8 8.5l-5.5-3z"/><path d="M2.5 8.2L8 11.2l5.5-3M2.5 10.9L8 13.9l5.5-3"/>',
 };
 
-const projectViews = [['overview', 'Overview'], ['discovery', 'Discovery'], ['map', 'Product map'], ['vision', 'Vision'], ['guide', 'Design'], ['board', 'Agent board'], ['plan', 'Plan'], ['features', 'Features'], ['competitors', 'Competitors']];
+const projectViews = [['overview', 'Overview'], ['discovery', 'Discovery'], ['vision', 'Vision'], ['guide', 'Design'], ['plan', 'Plan'], ['board', 'Agent board'], ['map', 'Product map'], ['features', 'Features'], ['competitors', 'Competitors']];
 
 function navIconMarkup(view) {
   return `<svg class="nav-icon" viewBox="0 0 16 16" aria-hidden="true">${navIcons[view]}</svg>`;
@@ -66,6 +66,8 @@ function projectPickerMarkup() {
   return `<label class="project-picker"><span class="sr-only">Project</span><select id="project-select">${options}</select></label>`;
 }
 
+function helpLinkMarkup() { return `<button type="button" class="link-button sidebar-help" data-project-view="help" ${state.view === 'help' ? 'aria-current="page"' : ''}>How Dogfood works</button>`; }
+
 export function sidebarMarkup() {
   const pages = menuPages();
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project">
@@ -79,6 +81,7 @@ export function sidebarMarkup() {
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
         <div class="page-groups">${pageOptionsMarkup(pages)}</div>
       </nav>
+      ${helpLinkMarkup()}
       ${state.project.source?.url ? externalLinkMarkup(state.project.source.url, 'Open the app ↗', 'source-link') : ''}
   </aside>`;
 }

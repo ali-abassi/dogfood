@@ -4,7 +4,7 @@
 
 # Build with agents. Know what works.
 
-**Dogfood connects your app’s scope, coding agents, feedback and evidence in one local workspace.**
+**Dogfood is a local workspace for planning an app, directing coding agents and checking what actually works.**
 
 [Quickstart](#quickstart) · [Workflow](#the-workflow) · [Agents](#work-with-your-agents) · [Docs](#docs)
 
@@ -27,11 +27,11 @@ Open **[localhost:4321](http://127.0.0.1:4321)**. Tidepool is a fictional swim s
 ## The workflow
 
 1. **Agree on the scope.** Start with an idea, answer the Discovery questions, define pages and features, then review the current Vision and Plan. New projects need that reviewed baseline before a build starts. Existing projects can connect without pretending discovery is complete.
-2. **Give your agent an outcome.** Link a task, page or feature and choose Claude Code or Codex. Save the request for later, or explicitly start it. The agent works in an isolated checkout and returns to Review.
+2. **Give your agent an outcome.** Link a task, page or feature; choose to build, explore the idea, or review and test; then choose Claude Code or Codex. Save the request for later or explicitly start it. The agent works in an isolated session and returns a result for review.
 3. **Review the actual change.** Read the patch and safe HTML preview. Explicitly apply and save reviewed source. Pin feedback to a screenshot and continue the same conversation.
 4. **Prove the result.** Try the real flow, record captures and check results, and resolve findings after a retest. The project map connects scope → work → evidence; Overview tells you what needs attention next.
 
-**Finishing a request, completing an audit and accepting a feature are separate outcomes.** A completed audit may contain failures. Acceptance requires the current source and environment, the required evidence, passing answers and no unresolved findings. It does not deploy your app or certify an untested integration.
+**A request is a conversation; a task is a planned outcome; QA is evidence about a page or feature.** Finishing a request does not accept its task or page. An audit can finish with failures. Acceptance requires current source and environment, the required evidence, passing answers and no unresolved findings. It does not deploy your app or certify an untested integration.
 
 ## Work with your agents
 

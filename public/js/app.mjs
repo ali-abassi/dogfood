@@ -1,3 +1,4 @@
+import { helpMarkup } from './views/help.mjs';
 import { portfolioMarkup, syncPortfolio, loadPortfolio } from './views/portfolio.mjs';
 import { readJson } from './api.mjs';
 import { registerEvents } from './events.mjs';
@@ -51,6 +52,7 @@ const projectViews = {
   discovery: discoveryMarkup,
   map: productMapMarkup,
   portfolio: portfolioMarkup,
+  help: helpMarkup,
 };
 
 function projectViewMarkup() {
@@ -122,7 +124,7 @@ export function showError(message) {
   app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
-const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map', 'portfolio']);
+const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map', 'portfolio', 'help']);
 
 function initialView(project, destination) {
   if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };

@@ -1,3 +1,4 @@
+import { registerHelpEvents } from './views/help.mjs';
 import { registerPortfolioEvents } from './views/portfolio.mjs';
 import { registerDiscoveryEvents } from './views/discovery.mjs';
 import { registerProductMapEvents } from './views/product-map.mjs';
@@ -377,6 +378,7 @@ function sharedClick(button) {
   handleButton(button);
 }
 export function registerEvents() {
+  registerHelpEvents(app);
   registerBoardEvents(app);
   registerPortfolioEvents(app, action => { if (!blockOpenFormNavigation(action)) action(); });
   registerDiscoveryEvents(app);

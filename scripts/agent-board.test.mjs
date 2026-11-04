@@ -347,3 +347,20 @@ test('an operator can release externally abandoned staging and continue the pres
   assert.equal(saved.integration.continuationReady, true); assert.equal(saved.turn, 2);
   assert.equal(readFileSync(join(checkout, 'app.txt'), 'utf8'), 'followup after release\n');
 });
+
+
+test('long conversations preserve notes, finished results, and lifecycle updates beyond 200 comments', async () => {
+  const created = board.createAgentCard('shop', input({ start: true }));
+  await until(() => card(created.id).checkout);
+  for (let index = 0; index < 205; index += 1) board.commentAgentCard('shop', created.id, { text: `Retained note ${index}.`, send: false });
+  finish(created.id, 'Long conversation result remains available.');
+  await until(() => card(created.id).status === 'review');
+  const finished = card(created.id);
+  assert.equal(finished.comments.filter(entry => entry.by === 'person').length, 205);
+  assert.equal(finished.comments[0].text, 'Retained note 0.');
+  assert.equal(finished.comments.at(-1).text, 'Long conversation result remains available.');
+  assert.equal(board.completeAgentCard('shop', created.id).status, 'done');
+  const reopened = board.reopenAgentCard('shop', created.id);
+  assert.equal(reopened.status, 'todo');
+  assert.equal(reopened.comments.length, 208);
+});

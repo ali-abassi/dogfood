@@ -66,7 +66,7 @@ export function displayAnswerStatus(page, answer) {
 }
 
 export function isProjectView() {
-  return ['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map', 'portfolio'].includes(state.view);
+  return ['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map', 'portfolio', 'help'].includes(state.view);
 }
 
 // Blog posts are content, not product: the menu leaves them out; the overview still lists them.

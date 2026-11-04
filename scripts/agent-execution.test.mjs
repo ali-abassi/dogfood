@@ -32,7 +32,7 @@ function fixture() {
 }
 function boardFixture(value) {
   const directory = join(data, 'agent-board'); mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, `${value.id}.json`), JSON.stringify({ version: 1, projectId: value.id, cards: [{ ...value.card, backend: 'codex', comments: [], pending: [] }] }));
+  writeFileSync(join(directory, `${value.id}.json`), JSON.stringify({ version: 1, projectId: value.id, cards: [{ ...value.card, backend: 'codex', comments: value.card.comments || [], pending: [] }] }));
 }
 
 test('native Git worktrees map to the existing project; explicit request mapping disambiguates repository aliases', () => {
@@ -289,4 +289,66 @@ test('release refuses dirty source and preserves the active integration', () => 
   assert.equal(readFileSync(join(value.source, 'app.txt'), 'utf8'), 'operator unstaged changes\n');
   assert.equal(readFileSync(join(value.card.checkout, 'app.txt'), 'utf8'), 'reviewed source\n');
   assert.equal(JSON.parse(readFileSync(join(data, 'agent-board', `${value.id}.json`))).cards[0].integration.id, integrationId);
+});
+
+
+test('long conversation history cannot lose integration or save receipts after source is changed', () => {
+  const value = fixture();
+  value.card.comments = Array.from({ length: 200 }, (_, index) => ({ id: `note-${index}`, by: 'person', text: `Retained note ${index}.` }));
+  boardFixture(value);
+  writeFileSync(join(value.card.checkout, 'app.txt'), 'reviewed long conversation change\n');
+  const review = inspectAgentChanges(value.id, value.card);
+  const integrated = integrateAgentCard(value.id, value.card.id, { fingerprint: review.fingerprint });
+  assert.equal(integrated.comments.length, 201);
+  assert.ok(integrated.integration.id);
+  const saved = saveAgentCardSource(value.id, value.card.id, { integrationId: integrated.integration.id });
+  assert.equal(saved.integration.sourceSaved, true);
+  assert.equal(saved.comments.length, 202);
+  assert.equal(saved.comments[0].text, 'Retained note 0.');
+  const stored = JSON.parse(readFileSync(join(data, 'agent-board', `${value.id}.json`), 'utf8')).cards[0];
+  assert.equal(stored.integration.savedRevision, git(value.source, 'rev-parse', 'HEAD').trim());
+  assert.equal(stored.comments.length, 202);
+});
+
+test('source-backed QA requests expose changes for inspection but cannot integrate audit edits', () => {
+  const value = fixture(); value.card.intent = 'qa'; boardFixture(value);
+  writeFileSync(join(value.card.checkout, 'app.txt'), 'unexpected audit edit\n');
+  const review = inspectAgentChanges(value.id, value.card);
+  assert.equal(review.files[0].content, 'unexpected audit edit\n');
+  assert.equal(review.integration.available, false);
+  assert.match(review.integration.reason, /QA requests are read-only/);
+  assert.throws(() => integrateAgentCard(value.id, value.card.id, { fingerprint: review.fingerprint }), /QA requests are read-only/);
+  assert.equal(readFileSync(join(value.source, 'app.txt'), 'utf8'), 'before\n');
+  assert.equal(git(value.source, 'status', '--porcelain').trim(), '');
+});
+
+
+test('a legacy needs-input marker preserves structured checks, gaps, and the explicit decision', () => {
+  const packet = { status: 'needs_input', summary: 'An account is needed to verify checkout.', decision: 'Which test account should checkout use?', checks: [{ command: 'npm test', result: 'Passed', evidence: '/tmp/check.log' }], unverified: ['Authenticated checkout'], previewUrl: 'http://localhost:3000' };
+  const reply = value => `NEEDS_INPUT: Which account?\n\n\`\`\`dogfood-result\n${JSON.stringify(value)}\n\`\`\``;
+  const outcome = agentOutcome(reply(packet));
+  assert.equal(outcome.status, 'needs_input');
+  assert.equal(outcome.structured, true);
+  assert.equal(outcome.decision, packet.decision);
+  assert.equal(outcome.summary, packet.summary);
+  assert.equal(outcome.checks[0].evidence, '/tmp/check.log');
+  assert.deepEqual(outcome.unverified, ['Authenticated checkout']);
+  const inconsistent = agentOutcome(reply({ ...packet, status: 'ready_for_review', decision: '' }));
+  assert.equal(inconsistent.status, 'needs_input');
+  assert.equal(inconsistent.decision, 'Which account?');
+  assert.equal(inconsistent.checks[0].command, 'npm test');
+});
+
+
+test('legacy applied QA changes cannot be saved through the read-only audit request', () => {
+  const value = fixture(); boardFixture(value);
+  writeFileSync(join(value.card.checkout, 'app.txt'), 'historical audit change\n');
+  const review = inspectAgentChanges(value.id, value.card);
+  const integrated = integrateAgentCard(value.id, value.card.id, { fingerprint: review.fingerprint });
+  const file = join(data, 'agent-board', `${value.id}.json`), document = JSON.parse(readFileSync(file, 'utf8'));
+  document.cards[0].intent = 'qa'; writeFileSync(file, JSON.stringify(document));
+  assert.throws(() => saveAgentCardSource(value.id, value.card.id, { integrationId: integrated.integration.id }), /QA requests are read-only/);
+  assert.equal(git(value.source, 'rev-parse', 'HEAD').trim(), value.card.baseRevision);
+  assert.equal(readFileSync(join(value.source, 'app.txt'), 'utf8'), 'historical audit change\n');
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).cards[0].integration.sourceSaved, undefined);
 });

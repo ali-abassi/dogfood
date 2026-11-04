@@ -16,12 +16,12 @@ Plan's **Send to agent** opens a request linked to that task. **Work myself** cl
 the person. The product map connects planned/registered pages, features, tasks, requests and QA
 using actual links. Context and Overview include pending requests and the next project action.
 
-Request intents are distinct:
+Choose an intent when creating a request:
 
-- `build` changes application source within the linked outcome, scope and acceptance contract.
-- `discovery` asks material questions and saves attributed brief proposals; it does not implement
+- **Build or change** (`build`) changes application source within the linked outcome, scope and acceptance contract.
+- **Explore the idea** (`discovery`) asks material questions and saves attributed brief proposals; it does not implement
   features, approve its own scope or commit the source baseline.
-- `qa` audits the named page and records evidence/findings through the same durable lifecycle.
+- **Review and test** (`qa`) audits the named page and records evidence/findings through the same durable lifecycle; it cannot integrate source.
   A URL-only audit uses an explicitly labeled execution workspace, not application source.
 
 ## Conversation and context
@@ -32,8 +32,12 @@ project ID, explicit context command, actual linked task/feature expectations, d
 source revision and selected browser contract. Oversized inline context points to the full tools.
 It never silently drops an acceptance requirement.
 
-Notes stay notes. Explicitly sent feedback is persisted in order; feedback during a turn waits for
+A question in **Needs you** requires an answer sent to the agent; saving it as a note does not
+resume work. Explicitly sent feedback is persisted in order; feedback during a turn waits for
 the next turn in the same session. Stop, retry and queued-feedback discard retain the conversation.
+Retry the same card after a transient failure or stop when its session and source remain valid. If a
+save receipt says continuation is unavailable, or source has moved, preserve the existing work and
+start a fresh request from current source.
 Finished turns return to Review or Needs you. A concise result summary leads the card; exact checks
 and unverified items remain visible. Agent-reported checks are distinct from independent receipts.
 
@@ -71,7 +75,7 @@ retest evidence; that does not accept the page or finish its request.
 `DOGFOOD_QA_AGENT` custom commands are no longer executed. Screenshot-only **Check with AI** is a
 separate provider-backed visual opinion, bound to actual device coverage and the review contract.
 
-See [Discovery](discovery.md) and the [CLI guide](cli.md) for exact operations. The server remains a
+See [Discovery](discovery.md), the [CLI guide](cli.md) and the [agent result contract](../skills/dogfood/references/workflow.md#return-a-result) for exact operations. The server remains a
 single-user loopback workbench with controlled backend/argv selection and local-origin writes.
 No card grants publication, deployment, account changes, purchases or credential access.
 

@@ -46,7 +46,8 @@ function page(expression) {
   const value = JSON.parse(browser('eval', `JSON.stringify(${expression})`).trim());
   return typeof value === 'string' ? JSON.parse(value) : value;
 }
-const click = selector => { browser('click', selector); };
+function capture(name) { if (process.env.DOGFOOD_SCREENSHOT_DIR) browser('screenshot', join(process.env.DOGFOOD_SCREENSHOT_DIR, `${name}.png`)); }
+const click = selector => { browser('scrollintoview', selector); browser('click', selector); };
 const { check, passed } = checker();
 let server;
 let created;
@@ -89,6 +90,7 @@ try {
     await until(async () => { created = await boardCard(); return created?.status === 'running' && created.checkout; });
     await until(() => page('!!document.querySelector("[data-board-action=stop]")'));
     assert.equal(created.backend, 'codex'); assert.equal(created.pageId, 'book');
+    assert.match(page('document.querySelector("#board-run-details-host").textContent'), /Agent session & worktree/);
   });
   await check('a result updates the selected card while retaining the same focused reply and its draft', async () => {
     browser('fill', '#board-reply', 'Keep my reply while the result arrives.');
@@ -121,8 +123,10 @@ try {
     await until(async () => (await boardCard()).status === 'running');
     created = await boardCard();
     await until(() => JSON.parse(readFileSync(join(data, `${created.session}.json`), 'utf8')).turns.length === 2);
+    click('.board-history > summary');
     finishProvider('<h1>Second reviewed fixture</h1>');
     await until(() => page('!!document.querySelector("[data-board-action=complete]")'));
+    assert.equal(page('document.querySelector(".board-history").open'), true);
     click('[data-board-action="inspect"]');
     await until(() => page('!!document.querySelector("[data-board-action=integrate]")'));
     click('[data-board-action="integrate"]');
@@ -167,6 +171,76 @@ try {
     click('[data-project-view="overview"]');
     click('[data-action="discard-board-drafts"]');
     await until(() => page('!!document.querySelector(".overview-content")'));
+  });
+  await check('help explains the complete workflow and gives the agent the exact project context', async () => {
+    click('[data-project-view="help"]');
+    assert.equal(page('document.querySelector("h1").textContent'), 'How Dogfood works');
+    assert.match(page('document.querySelector("#help-agent-prompt").value'), /dogfood context --project tidepool --json/);
+    assert.match(page('document.querySelector(".help-definitions").textContent'), /Request done.*Task accepted.*Page accepted.*Deployed/s);
+    capture('help-desktop');
+    click('[data-help-copy]');
+    await until(() => /Copied|Select and copy/.test(page('document.querySelector("#help-copy-status").textContent')));
+    browser('reload');
+    await until(() => page('!!document.querySelector(".help-view")'));
+    browser('set', 'viewport', '390', '844');
+    assertNoOverflow(); capture('help-phone');
+    browser('set', 'viewport', '1280', '850');
+  });
+  await check('intent choice survives saving and QA work remains a saved request', async () => {
+    click('[data-project-view="board"]');
+    click('[data-board-action="new"]');
+    browser('select', '#board-intent', 'qa');
+    assert.match(page('document.querySelector("#board-intent-hint").textContent'), /does not apply source/);
+    capture('request-intent');
+    browser('fill', '#board-title', 'Review the booking flow');
+    browser('fill', '#board-request', 'Inspect the booking flow and record any gaps without application edits.');
+    click('#board-request-form button[value="save"]');
+    await until(() => page('document.querySelector("#board-request-heading")?.textContent === "Review the booking flow"'));
+    const result = await fetch(`${server.url}/api/projects/tidepool/board`).then(response => response.json());
+    const card = result.cards.find(item => item.title === 'Review the booking flow');
+    assert.equal(card.intent, 'qa'); assert.equal(card.status, 'todo'); assert.equal(card.queued, false);
+    assert.match(page('document.querySelector(".board-context").textContent'), /Review and test/);
+  });
+  await check('a needs-input result shows the actual decision and retained check evidence', async () => {
+    // Use the existing fake provider conversation, never a real model call.
+    const response = await fetch(`${server.url}/api/projects/tidepool/board/cards/${created.id}/comment`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: server.url }, body: JSON.stringify({text:'Check whether the booking provider is available.',send:true}) });
+    assert.equal(response.ok, true);
+    await until(() => JSON.parse(readFileSync(join(data, `${created.session}.json`), 'utf8')).turns.length === 3);
+    const file = join(data, `${created.session}.json`), meta = JSON.parse(readFileSync(file));
+    meta.status = 'done'; meta.turns.at(-1).status = 'done';
+    const outcome = {status:'needs_input',summary:'Local checks passed; provider access is missing.',decision:'Which test account should the booking flow use?',checks:[{command:'node check.mjs',result:'Exit 0',evidence:'artifacts/booking-check.json'}],unverified:['Live booking provider']};
+    meta.reply = 'NEEDS_INPUT: Which test account should the booking flow use?\n\n```dogfood-result\n' + JSON.stringify(outcome) + '\n```';
+    writeFileSync(file, JSON.stringify(meta));
+    browser('open', `${server.url}/?project=tidepool&view=board&card=${created.id}`);
+    await until(() => page('!!document.querySelector(".board-decision")'));
+    assert.match(page('document.querySelector(".board-decision").textContent'), /Which test account/);
+    assert.match(page('document.querySelector(".board-outcome").textContent'), /artifacts\/booking-check.json/);
+    assert.equal(page('document.querySelector(".board-result-packet").open'), false);
+    assert.equal(page('document.querySelector(".board-history").open'), false);
+    click('[data-board-action=reply]');
+    assert.equal(page('document.activeElement.id'), 'board-reply');
+    browser('scrollintoview', '.board-outcome'); capture('decision-desktop');
+    browser('set', 'viewport', '390', '844'); assertNoOverflow();
+    browser('scrollintoview', '.board-outcome'); capture('decision-phone');
+    browser('set', 'viewport', '1280', '850');
+  });
+  await check('queued follow-up keeps Stop agent and a stopped turn replaces its earlier question', async () => {
+    browser('fill', '#board-reply', 'Use the isolated fixture account and continue.');
+    click('#board-reply-send');
+    await until(() => page('document.querySelector("[data-board-action=stop]")?.textContent === "Stop agent"'));
+    browser('fill', '#board-reply', 'Also verify the confirmation survives reload.');
+    click('#board-reply-send');
+    await until(() => page('/1 follow-up/.test(document.querySelector("#board-reply-hint")?.textContent || "")'));
+    assert.equal(page('document.querySelector("[data-board-action=stop]").textContent'), 'Stop agent');
+    assert.match(page('document.querySelector(".board-status").textContent'), /Working/);
+    assert.equal(page('!!document.querySelector(".board-decision")'), false);
+    click('[data-board-action=stop]');
+    await until(() => page('!!document.querySelector(".board-error") && !/Stopping/.test(document.querySelector(".board-status").textContent)'));
+    assert.equal(page('!!document.querySelector(".board-decision")'), false);
+    assert.equal(page('!!document.querySelector("[data-board-action=reply]")'), false);
+    const error = page('document.querySelector(".board-error").textContent');
+    assert.match(error, /stopped|Stopped/);
+    assert.equal(page('document.querySelector(".board-card.selected .board-card-preview").textContent'), error.slice(0,280));
   });
   console.log(`\n${passed()} agent-board browser checks passed`);
 } finally {

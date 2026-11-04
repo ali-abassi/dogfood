@@ -101,3 +101,9 @@ The selected portfolio contains Learn Quran, Scarlet, AI Money Team, AI Social T
 Public GitHub should explain the scope → agent work → feedback → evidence workflow with a tested zero-key demo and conceptual SVG, while keeping private project screenshots, credentials and QA artifacts local.
 
 A configured browser session is shared operator state. Scans reuse `DOGFOOD_BROWSER_SESSION`, never close it during completion/failure/shutdown, and never inject a saved state into it. Without that setting, scans retain their owned temporary-session lifecycle. Keep explicit profile selection and name actual authentication evidence accurately. The existing local deployment records its designated session/profile in ignored environment settings.
+
+## 2026-11-03 — final workflow clarity
+
+Keep the existing blue dog mark, system type, restrained surfaces and native-app layout. The main question is what needs attention and what happens next. Improve the explanation at the point of action instead of adding dashboards, vanity scores or decorative graphics. A persistent How Dogfood works view gives the four-step process, separate completion meanings and a project-specific agent prompt.
+
+Expose build, discovery and QA intents in request creation. Put a required decision and its evidence in the result; keep the machine packet in a closed disclosure and preserve the full conversation. Queue cancellation and progress labels must reflect actual state. Keep open review disclosures stable during board refresh. A QA intent cannot apply or save application source; start a build request for changes. Remove the arbitrary conversation count cap because a bookkeeping limit must not prevent a completed run or source-save receipt from being recorded.
