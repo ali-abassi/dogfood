@@ -164,11 +164,11 @@ try {
     assert.equal(imageResponse.headers.get('content-type'), 'image/png');
     assert.deepEqual(Buffer.from(await imageResponse.arrayBuffer()), readFileSync(join(data, 'captures/tidepool/book.png')));
     execFileSync(process.execPath, [join(repo, 'bin/dogfood.mjs'), 'board', 'comment', created.id, '--project', 'tidepool', '--attach', join(data, 'captures/tidepool/book-mobile.png'), '--note', '--json'], {cwd: created.checkout, env: {...process.env, DOGFOOD_DATA:data, DOGFOOD_PROJECT:'tidepool', DOGFOOD_NATIVE_REQUEST:'1', DOGFOOD_REQUEST_ID:created.id}, stdio:'pipe'});
-    await until(() => page('[...document.querySelectorAll(".board-thread:not(.board-history .board-thread) .board-attached-image img")].some(img => img.alt === "book-mobile.png" && img.naturalWidth > 0)'));
+    await until(() => page('[...document.querySelectorAll(".board-thread:not(.board-history .board-thread) .board-attached-image img")].some(img => img.closest("a").getAttribute("aria-label").includes("book-mobile.png") && img.naturalWidth > 0)'));
     finishProvider('<h1>Second reviewed fixture</h1>');
     await until(() => page('!!document.querySelector("[data-board-action=complete]")'));
     assert.equal(page('document.querySelector(".board-history").open'), true);
-    assert.ok(page('[...document.querySelectorAll(".board-thread:not(.board-history .board-thread) .board-attached-image img")].some(img => img.alt === "book-mobile.png")'));
+    assert.ok(page('[...document.querySelectorAll(".board-thread:not(.board-history .board-thread) .board-attached-image img")].some(img => img.closest("a").getAttribute("aria-label").includes("book-mobile.png"))'));
     click('[data-board-action="inspect"]');
     await until(() => page('!!document.querySelector("[data-board-action=integrate]")'));
     click('[data-board-action="integrate"]');

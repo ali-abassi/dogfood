@@ -1203,6 +1203,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .board-image-draft img { display: block; width: 112px; height: 80px; object-fit: contain; border: 1px solid var(--separator); border-radius: 6px; background: var(--fill); }
 .board-image-draft > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; margin-top: 4px; color: var(--secondary); }
 .board-image-draft button { min-height: 36px; padding: 6px 0; font-size: 12px; }
+.board-comment-body .board-comment-images { padding: 0; }
 .board-comment-images > li { width: min(240px, 100%); min-width: 0; }
 .board-attached-image { display: block; color: var(--secondary); font-size: 12px; text-decoration: none; overflow-wrap: anywhere; }
 .board-attached-image img { display: block; width: 100%; max-height: 180px; object-fit: contain; object-position: left center; border: 1px solid var(--separator); border-radius: 6px; background: var(--fill); margin-bottom: 6px; }

@@ -40,7 +40,7 @@ function safeImage(image) {
   return types.has(image.mimeType) && /^\/api\/projects\/[a-z0-9-]+\/board\/cards\/[a-z0-9-]+\/attachments\/[a-z0-9-]+\.(png|jpg|webp)$/.test(image.url);
 }
 function attachedMarkup(image) {
-  return `<li><a class="board-attached-image" href="${escapeHtml(image.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(image.name)} full size"><img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.name)}" loading="lazy"><span>${escapeHtml(image.name)} <span aria-hidden="true">↗</span></span></a></li>`;
+  return `<li><a class="board-attached-image" href="${escapeHtml(image.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(image.name)} full size"><img src="${escapeHtml(image.url)}" alt="" loading="lazy"><span>${escapeHtml(image.name)} <span aria-hidden="true">↗</span></span></a></li>`;
 }
 export function attachmentGallery(images = []) {
   const valid = images.filter(safeImage);
