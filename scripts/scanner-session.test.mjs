@@ -12,7 +12,8 @@ function fixture() {
   writeFileSync(executable, `#!${process.execPath}\nimport { appendFileSync } from 'node:fs';\nconst args=process.argv.slice(2);appendFileSync(process.env.DOGFOOD_SCANNER_TEST_LOG,JSON.stringify(args)+'\\n');process.stdout.write(JSON.stringify({success:true,data:{result:'fixture'}}));\n`);
   chmodSync(executable, 0o755);
   const env = { ...process.env, PATH: `${directory}:${process.env.PATH}`, DOGFOOD_DATA: directory, DOGFOOD_SCANNER_TEST_LOG: join(directory, 'commands.jsonl') };
-  delete env.DOGFOOD_BROWSER_SESSION; delete env.DOGFOOD_BROWSER_STATE;
+  // Explicit empty values keep a developer's ignored .env from selecting a real session.
+  env.DOGFOOD_BROWSER_SESSION = ''; env.DOGFOOD_BROWSER_STATE = '';
   return { directory, env };
 }
 function run(fixture, body) {
