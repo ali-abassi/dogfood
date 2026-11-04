@@ -10,12 +10,13 @@ import { checker, startServer } from '../harness.mjs';
 
 const repo = fileURLToPath(new URL('../..', import.meta.url));
 const data = mkdtempSync(join(tmpdir(), 'dogfood-search-proof-'));
-const session = `dogfood-search-proof-${process.pid}-${Date.now()}`;
+const existingSession = process.env.DOGFOOD_BROWSER_SESSION;
+const session = existingSession || `dogfood-search-proof-${process.pid}-${Date.now()}`;
 const { check, passed } = checker();
 const label = 'Search pages, routes, things to do or open bugs';
 // Linux/CI proves a disposable UI fixture, never Ali's authenticated session.
 const realProfile = process.platform === 'darwin' && !process.env.CI;
-const launch = realProfile ? ['--profile', 'Default', '--headed'] : [];
+const launch = realProfile && !existingSession ? ['--profile', 'Default', '--headed'] : [];
 const browserOptions = ['--session', session, '--pin-tab', ...launch];
 let server;
 
@@ -86,9 +87,38 @@ async function checkSearch(width, height) {
     assert.deepEqual(search('tp-001'), ['book']);
     evaluate('(window.releaseWorkResponse(),true)');
     browser('wait', '--fn', 'window.liveWorkState.loading === false');
-    assert.equal(evaluate('document.querySelector("#page-search") === window.liveSearchNode'), true);
+    assert.equal(evaluate('document.querySelector("#page-search") === window.liveSearchNode'), true, 'Work-status refresh replaced the live search input');
     assert.equal(evaluate('document.querySelector("#page-search").value'), 'tp-001');
     assert.equal(evaluate('document.activeElement.id'), 'page-search');
+    assert.deepEqual(sidebarIds(), ['book']);
+  });
+  await check(`${name}: delayed QA and suggestion responses preserve search identity and caret`, () => {
+    evaluate(`(async () => {
+      const {state} = await import('/js/state.mjs');
+      const {syncQaAgentState} = await import('/js/views/qa-agent.mjs');
+      const {reloadProjectSuggestions} = await import('/js/views/suggestions.mjs');
+      const original = window.fetch;
+      window.releaseAncillary = {};
+      window.fetch = async (...args) => {
+        const response = await original(...args);
+        const kind = String(args[0]).split('/').at(-1);
+        if (['qa-agent','suggestions'].includes(kind)) await new Promise(resolve => { window.releaseAncillary[kind] = resolve; });
+        return response;
+      };
+      window.restoreAncillaryFetch = () => { window.fetch = original; };
+      window.liveSearchNode = document.querySelector('#page-search');
+      state.qaAgent.key = '';
+      syncQaAgentState();
+      window.suggestionRefresh = reloadProjectSuggestions();
+      return true;
+    })()`);
+    browser('wait', '--fn', 'Object.keys(window.releaseAncillary).length === 2');
+    assert.deepEqual(search('tp-001'), ['book']);
+    evaluate(`(() => { const input = document.querySelector('#page-search'); input.setSelectionRange(2,2); return true; })()`);
+    evaluate(`(async () => { window.restoreAncillaryFetch(); Object.values(window.releaseAncillary).forEach(release => release()); await window.suggestionRefresh; await new Promise(resolve => setTimeout(resolve,0)); return true; })()`);
+    assert.equal(evaluate('document.querySelector("#page-search") === window.liveSearchNode'), true, 'Ancillary response replaced search');
+    assert.equal(evaluate('document.activeElement.id'), 'page-search');
+    assert.equal(evaluate('document.querySelector("#page-search").selectionStart'), 2);
     assert.deepEqual(sidebarIds(), ['book']);
   });
   await check(`${name}: open bug identifiers work and resolved bugs do not`, () => {
@@ -142,7 +172,7 @@ try {
   console.error(`FAILED after ${passed()} checks:`, error.message);
   process.exitCode = 1;
 } finally {
-  if (!realProfile) {
+  if (!realProfile && !existingSession) {
     try { browser('close'); } catch { /* fixture browser already stopped */ }
   }
   server?.stop();

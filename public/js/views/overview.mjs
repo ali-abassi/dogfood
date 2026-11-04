@@ -93,7 +93,7 @@ export function overviewMarkup() {
     ${liveDebtMarkup(state.project.pages)}
     ${legendMarkup()}
     <section class="overview-pages content-panel" aria-label="Pages">${pages}</section>
-    ${suggestionsWaitingMarkup()}
+    <div id="project-suggestions-host">${suggestionsWaitingMarkup()}</div>
   </section>`;
 }
 

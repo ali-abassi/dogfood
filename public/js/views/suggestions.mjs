@@ -123,7 +123,10 @@ function groupByPage(picked) {
 
 // A failed refresh keeps the previous items and says so, so a blip never hides waiting work.
 function renderSuggestionsFor(id) {
-  if (suggestionsVisibleFor(id)) render();
+  if (!suggestionsVisibleFor(id)) return;
+  if (state.view === 'suggestions') { render(); return; }
+  const host = document.getElementById('project-suggestions-host');
+  if (host) host.innerHTML = suggestionsWaitingMarkup();
 }
 
 function recordRefreshError(id, error) {

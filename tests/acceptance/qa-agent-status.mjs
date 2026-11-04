@@ -20,7 +20,7 @@ function nativeStatus(status) {
   mkdirSync(join(data, 'agent-board'), { recursive: true });
   writeFileSync(boardFile, JSON.stringify({ version: 1, projectId: 'tidepool', cards: [{ ...card, status }] }));
 }
-const { browser, evaluate } = browserSession('qa-agent-status');
+const { browser, evaluate } = browserSession('qa-agent-status', process.env.DOGFOOD_BROWSER_SESSION);
 const { check, passed } = checker();
 let server;
 function openHome() {
@@ -60,7 +60,7 @@ try {
   console.error(`FAILED after ${passed()} passing checks:`, error);
   process.exitCode = 1;
 } finally {
-  try { browser('close'); } catch { /* already closed */ }
+  if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* already closed */ } }
   server?.stop();
   rmSync(data, { recursive: true, force: true });
 }

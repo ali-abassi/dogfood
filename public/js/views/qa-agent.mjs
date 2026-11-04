@@ -48,6 +48,7 @@ function watchActiveRun() {
   refreshTimer = setTimeout(() => void refreshProject().catch(() => {}), refreshMs);
 }
 
+function renderLoadedStatus(projectId) { if (state.project?.id === projectId && state.view === 'report') render(); }
 async function loadQaAgent(projectId) {
   try {
     const status = await readJson(`/api/projects/${encodeURIComponent(projectId)}/qa-agent`);
@@ -55,7 +56,7 @@ async function loadQaAgent(projectId) {
   } catch (error) {
     if (state.qaAgent.key === projectId) state.qaAgent.error = error.message;
   }
-  render();
+  renderLoadedStatus(projectId);
 }
 
 export function syncQaAgentState() {
