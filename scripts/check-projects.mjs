@@ -128,7 +128,8 @@ function checkAuditList(rows, label) {
 function checkAuditEvidence(row, label) {
   assertRules(label, [
     [() => row.dependsOn !== undefined && !validAuditDependencies(row.dependsOn), 'audit dependencies invalid'],
-    [() => row.evidence !== undefined && !validAuditEvidence(row.evidence), 'audit evidence snapshot invalid'],
+    [() => row.evidence === null && row.status !== 'untested', 'answered audit evidence snapshot missing'],
+    [() => row.evidence != null && !validAuditEvidence(row.evidence), 'audit evidence snapshot invalid'],
     [() => row.carriedFrom && !row.evidence, 'carried audit requires an evidence snapshot'],
   ]);
   if (row.evidence) {
@@ -138,14 +139,22 @@ function checkAuditEvidence(row, label) {
   if (row.carriedFrom) checkCarried(row.carriedFrom, label);
 }
 
+function validFixtures(value) {
+  if (value === null) return true;
+  if (typeof value === 'string') return true;
+  if (!Array.isArray(value) || value.length > 10) return false;
+  return value.every(item => typeof item === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(item));
+}
+
 function checkEvidenceContext(context, label) {
   if (context.platform === 'ios') return checkNativeContext(context, label);
-  const strings = ['requiredRole', 'verifiedRole', 'fixture', 'browserProfile', 'declaredRole', 'declaredFixture'];
+  const strings = ['requiredRole', 'verifiedRole', 'browserProfile', 'declaredRole'];
   assertRules(label, [
     [() => !isHttpUrl(context.sourceUrl), 'audit evidence source must be HTTP(S)'],
     [() => !['local', 'live', 'mock'].includes(context.environment), 'audit evidence environment invalid'],
     [() => context.signedIn !== null && typeof context.signedIn !== 'boolean', 'audit evidence signed-in state invalid'],
-    [() => strings.some(key => context[key] !== null && typeof context[key] !== 'string'), 'audit evidence role or fixture context invalid'],
+    [() => strings.some(key => context[key] !== null && typeof context[key] !== 'string'), 'audit evidence role context invalid'],
+    [() => !validFixtures(context.fixture) || !validFixtures(context.declaredFixture), 'audit evidence fixture context invalid'],
   ]);
 }
 
