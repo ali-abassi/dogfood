@@ -60,4 +60,3 @@ position and device, retaining immutable image evidence and an open finding. Cre
 request with `dogfood_annotation_request`; it saves by default. Resolve with
 `dogfood_resolve_annotation` only after a fresh retest note. Older pins remain historical after a
 new capture, and pin resolution does not accept QA or close the agent request.
-
