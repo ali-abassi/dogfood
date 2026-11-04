@@ -4,7 +4,7 @@ import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const data=mkdtempSync(join(tmpdir(),'dogfood-portfolio-'));process.env.DOGFOOD_DATA=data;
-const {createProject}=await import('../lib/store.mjs');
+const {createProject,registerPage,recordVerdicts}=await import('../lib/store.mjs');
 const {portfolio,setActiveProjects}=await import('../lib/portfolio.mjs');
 after(()=>rmSync(data,{recursive:true,force:true}));
 test('current portfolio selection preserves historical project bytes and rejects stale/invalid updates',()=>{
@@ -22,4 +22,11 @@ test('an unavailable selected project cannot hide the rest of the portfolio',()=
  const previous=portfolio();setActiveProjects({projects:['history','current'],expectedRevision:previous.revision});
  rmSync(join(data,'projects/current.json'));
  const view=portfolio();assert.equal(view.active.length,2);assert.equal(view.active[0].id,'history');assert.equal(view.active[1].unavailable,true);assert.equal(view.active[1].pages,null);
+});
+
+test('portfolio names a blocked feature even when its captures are not blocked',()=>{
+ createProject({id:'blocked-project',name:'Blocked service',url:'http://localhost:1234'});
+ registerPage('blocked-project',{id:'home',name:'Home',group:'App',route:'/',features:[{id:'delivery',name:'Deliver a post'}]});
+ recordVerdicts('blocked-project','home',{features:[{id:'delivery',status:'blocked',note:'Live delivery is disabled in this isolated QA fixture.'}]},'agent:fixture');
+ const before=portfolio();const after=setActiveProjects({projects:['blocked-project'],expectedRevision:before.revision});assert.equal(after.active[0].blocked,1);
 });
