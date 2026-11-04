@@ -77,3 +77,19 @@ Operator CLI actions are `dogfood board verify-task CARD`, `accept-task CARD` an
 The latter only reopens stale accepted evidence and retains its historical receipt. Inspect the card's
 `delivery.nextAction` and requirements first. Closing a request is conversation closure only. A missing
 session observation must say status unavailable; never infer ongoing activity from the prior state.
+
+### Recover context and attach evidence
+
+Every native turn carries an immutable context snapshot path/hash plus the exact request-history
+command. Read omitted sections before acting; the snapshot retains prior sent decisions, pending
+feedback, task handoff and document provenance independently of provider conversation memory.
+Unsent notes/discarded feedback are not instructions. Inspect each relevant attachment with your
+image tool using the stored local path. Do not claim that a filename proves visual quality.
+
+Post screenshots to your own request with `dogfood board comment CARD --project PROJECT --attach
+/absolute/path/screenshot.png --note` (on one shell line). Add `--input comment.json` for text and
+repeat `--attach` for up to four images. PNG/JPEG/WebP, 8 MiB each. MCP equivalent:
+`dogfood_agent_comment` with `project`, `card`, `text`, `send:false`, and
+`attachments:[{name:"screenshot.png",data:"BASE64"}]`. Native request agents must use `send:false`;
+this posts evidence without recursively starting a turn. Never put base64 in the text/result packet.
+Use a stable `clientRequestId` UUID when retrying the same tool submission after an uncertain response.

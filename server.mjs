@@ -48,12 +48,14 @@ function send(response, status, body, type = 'application/json; charset=utf-8') 
   response.end(type.startsWith('application/json') ? JSON.stringify(body) : body);
 }
 
-async function requestJson(request) {
-  let body = '';
+async function requestJson(request, maximum = 100_000) {
+  const chunks = []; let length = 0;
   for await (const chunk of request) {
-    body += chunk;
-    if (body.length > 100_000) throw validationError('Request is too large.');
+    length += chunk.length;
+    if (length > maximum) throw validationError('Request is too large.');
+    chunks.push(chunk);
   }
+  const body = Buffer.concat(chunks).toString('utf8');
   try { return JSON.parse(body); }
   catch { throw validationError('Request body is not valid JSON.'); }
 }

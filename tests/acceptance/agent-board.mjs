@@ -113,6 +113,25 @@ try {
     assert.equal(page('window.boardInjected===true'), false);
     assert.equal(page('document.querySelector(".board-thread img")===null'), true);
   });
+  await check('image drafts survive polling, note toggles and phone layout with removable previews', async () => {
+    browser('upload', '#board-image-input', join(data, 'captures/tidepool/book.png'));
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 1);
+    browser('focus', '#board-reply');
+    await sleep(4300);
+    assert.equal(page('document.activeElement.id'), 'board-reply');
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 1);
+    browser('check', '#board-note'); browser('uncheck', '#board-note');
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 1);
+    browser('set', 'viewport', '390', '844'); assertNoOverflow();
+    browser('scrollintoview', '#board-comment-form'); capture('image-draft-phone');
+    click('[data-board-action=remove-image]');
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 0);
+    const encoded = readFileSync(join(data, 'captures/tidepool/book.png')).toString('base64');
+    page(`(() => { const bytes = Uint8Array.from(atob(${JSON.stringify(encoded)}), c => c.charCodeAt(0)); const transfer = new DataTransfer(); transfer.items.add(new File([bytes], 'book.png', {type:'image/png'})); document.querySelector('#board-reply').dispatchEvent(new ClipboardEvent('paste', {clipboardData:transfer,bubbles:true,cancelable:true})); return true; })()`);
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 1);
+    browser('set', 'viewport', '1280', '850');
+    browser('scrollintoview', '#board-comment-form'); capture('image-draft-desktop');
+  });
   await check('inspect, preview, apply and save reach the actual source through the browser', async () => {
     click('[data-board-action="inspect"]');
     await until(() => page('!!document.querySelector("[data-board-action=integrate]")'));
@@ -133,10 +152,23 @@ try {
     await until(async () => (await boardCard()).status === 'running');
     created = await boardCard();
     await until(() => JSON.parse(readFileSync(join(data, `${created.session}.json`), 'utf8')).turns.length === 2);
+    const current = await boardCard();
+    const attached = current.comments.find(item => item.attachments?.length);
+    assert.equal(attached.attachments[0].name, 'book.png');
+    const context = JSON.parse(readFileSync(current.contextManifest.path, 'utf8'));
+    assert.equal(context.pending[0].attachments[0].sha256, attached.attachments[0].sha256);
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 0);
     click('.board-history > summary');
+    await until(() => page('[...document.querySelectorAll(".board-attached-image img")].some(img => img.complete && img.naturalWidth > 0)'));
+    const imageResponse = await fetch(server.url + attached.attachments[0].url);
+    assert.equal(imageResponse.headers.get('content-type'), 'image/png');
+    assert.deepEqual(Buffer.from(await imageResponse.arrayBuffer()), readFileSync(join(data, 'captures/tidepool/book.png')));
+    execFileSync(process.execPath, [join(repo, 'bin/dogfood.mjs'), 'board', 'comment', created.id, '--project', 'tidepool', '--attach', join(data, 'captures/tidepool/book-mobile.png'), '--note', '--json'], {cwd: created.checkout, env: {...process.env, DOGFOOD_DATA:data, DOGFOOD_PROJECT:'tidepool', DOGFOOD_NATIVE_REQUEST:'1', DOGFOOD_REQUEST_ID:created.id}, stdio:'pipe'});
+    await until(() => page('[...document.querySelectorAll(".board-thread:not(.board-history .board-thread) .board-attached-image img")].some(img => img.alt === "book-mobile.png" && img.naturalWidth > 0)'));
     finishProvider('<h1>Second reviewed fixture</h1>');
     await until(() => page('!!document.querySelector("[data-board-action=complete]")'));
     assert.equal(page('document.querySelector(".board-history").open'), true);
+    assert.ok(page('[...document.querySelectorAll(".board-thread:not(.board-history .board-thread) .board-attached-image img")].some(img => img.alt === "book-mobile.png")'));
     click('[data-board-action="inspect"]');
     await until(() => page('!!document.querySelector("[data-board-action=integrate]")'));
     click('[data-board-action="integrate"]');
@@ -154,7 +186,27 @@ try {
     assert.equal((await boardCard()).status, 'review');
     click('[data-board-action="complete"]');
     await until(async () => (await boardCard()).status === 'done');
-    assert.equal((await boardCard()).comments.filter(item => item.by === 'agent').length, 2);
+    assert.equal((await boardCard()).comments.filter(item => item.by === 'agent' && item.sent === undefined).length, 2);
+  });
+  await check('image-only notes persist without starting an agent and image drafts protect navigation', async () => {
+    browser('upload', '#board-image-input', join(data, 'captures/tidepool/book-mobile.png'));
+    browser('fill', '#board-reply', '');
+    click('[data-project-view=overview]');
+    assert.equal(page('!!document.querySelector("#board-unsaved-prompt")'), true);
+    click('[data-action=review-board-draft]');
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 1);
+    browser('check', '#board-note');
+    page(`(() => { const original = window.fetch; window.fetch = (...args) => { if (String(args[0]).endsWith('/comment')) { window.fetch = original; return Promise.resolve(new Response(JSON.stringify({error:'Temporary upload failure'}), {status:503,headers:{'Content-Type':'application/json'}})); } return original(...args); }; return true; })()`);
+    click('#board-reply-send');
+    await until(() => page('/Temporary upload failure/.test(document.querySelector("#board-comment-error").textContent)'));
+    assert.equal(page('document.querySelectorAll(".board-image-draft").length'), 1);
+    click('#board-reply-send');
+    await until(() => page('document.querySelectorAll(".board-image-draft").length === 0'));
+    const current = await boardCard();
+    assert.equal(current.status, 'done'); assert.equal(current.turn, 2);
+    assert.equal(current.comments.at(-1).text, ''); assert.equal(current.comments.at(-1).sent, false);
+    assert.equal(current.comments.at(-1).attachments[0].name, 'book-mobile.png');
+    browser('scrollintoview', '.board-comment-images'); capture('image-comment-desktop');
   });
   await check('the selected conversation survives reload and narrow screens do not overflow', async () => {
     browser('reload');

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import '../lib/env.mjs';
-import { readFileSync, realpathSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { doctor } from '../lib/doctor.mjs';
 import { projectFromCheckout } from '../lib/project-init.mjs';
 import { root } from '../lib/paths.mjs';
+import { attachmentLimit } from '../lib/agent-attachments.mjs';
 import { pageById, projectView, readProject } from '../lib/store.mjs';
 import { pagesGate } from '../lib/completion.mjs';
 import { runNamedTool, toolDefinitions } from '../mcp.mjs';
@@ -33,7 +34,7 @@ const help = `dogfood — plan, build, verify, and resume web, iOS and CLI proje
   dogfood board show CARD
   dogfood board changes CARD
   dogfood board create --input request.json [--start]
-  dogfood board comment CARD --input comment.json [--send | --note]
+  dogfood board comment CARD [--input comment.json] [--attach screenshot.png ...] [--send | --note]
   dogfood board start CARD
   dogfood board stop CARD
   dogfood board done CARD
@@ -60,7 +61,7 @@ Keep the Dogfood web server running for results and queued feedback; doctor chec
 `;
 
 const options = Object.fromEntries(['project', 'input', 'checkout', 'id', 'name', 'url', 'environment', 'agent', 'revision', 'live-url', 'browser-profile', 'required-role'].map(name => [name, { type: 'string' }]));
-Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' }, 'serves-checkout': { type: 'boolean' }, verbose: { type: 'boolean' }, fixtures: { type: 'string', multiple: true } });
+Object.assign(options, { json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, accept: { type: 'boolean' }, 'serves-checkout': { type: 'boolean' }, verbose: { type: 'boolean' }, fixtures: { type: 'string', multiple: true }, attach: { type: 'string', multiple: true } });
 for (const name of ['start', 'send', 'note', 'require-agents']) options[name] = { type: 'boolean' };
 
 function inputJson(values) {
@@ -157,9 +158,20 @@ function boardCreate(project, values) {
   return boardTool('dogfood_agent_request', { ...input, project }, input.start === true);
 }
 
+function localAttachment(path) {
+  const resolved = resolve(path), stat = statSync(resolved);
+  if (!stat.isFile() || stat.size > attachmentLimit) throw new Error('Each attachment must be an image file no larger than 8 MiB.');
+  return { name: basename(resolved), data: readFileSync(resolved).toString('base64') };
+}
+function appendLocalAttachments(input, paths) {
+  if (paths.length > 4) throw new Error('Attach up to four images per comment.');
+  if (paths.length) input.attachments = [...(input.attachments || []), ...paths.map(localAttachment)];
+}
 function boardComment(project, card, values) {
-  const input = inputJson(values);
+  const input = values.input ? inputJson(values) : { text: '' };
   const send = explicitSend(input, values);
+  const paths = values.attach || [];
+  appendLocalAttachments(input, paths);
   return boardTool('dogfood_agent_comment', { ...input, project, card, send }, send);
 }
 

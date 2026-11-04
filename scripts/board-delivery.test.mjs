@@ -16,7 +16,7 @@ const file=path.join(process.env.FAKE_DELIVERY_DATA,name+'.json');
 if(cmd==='start') {
  const cwd=path.join(process.env.FAKE_DELIVERY_DATA,name);
  cp.execFileSync('git',['-C',opt('-C'),'worktree','add',cwd,opt('--worktree')],{stdio:'ignore'});
- const meta={status:'running',cwd,turns:[{n:1,status:'running'}],prompt:fs.readFileSync(opt('--file'),'utf8')};
+ const meta={name,status:'running',cwd,turns:[{n:1,status:'running'}],prompt:fs.readFileSync(opt('--file'),'utf8')};
  fs.writeFileSync(file,JSON.stringify(meta));
  fs.appendFileSync(path.join(process.env.FAKE_DELIVERY_DATA,'launches'),name+'\\n');
  console.log(JSON.stringify({session:name,turn:1}));

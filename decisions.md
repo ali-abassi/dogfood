@@ -138,3 +138,11 @@ Preserved the existing Dogfood logo, system typography, neutral navigation and b
 Ali still found the pages complex after the board navigation change. The page report now answers two questions together: what does this page look like, and what needs attention? Desktop places the real preview beside plain review results on one sheet. Phone keeps the preview before the results. A short status line preserves page health and acceptance as distinct facts; What remains opens the complete acceptance gaps.
 
 Supporting metadata, measured answers and page removal move to Page details with keyboard return focus. Required checks remain available directly; no evidence or ability is removed. Existing Dogfood branding and real screenshots are retained. Single-device scan handling is corrected: desktop-only and mobile-only evidence can both describe links and page metadata without crashing.
+
+## 2026-11-04 — Durable context and visual task evidence
+
+Ali asked for robust task-connected agents and screenshots in Kanban comments, using Paperclip as prior art. Adopted its durable bounded handoff and task-scoped attachment patterns after reading source at52b4b3c; see docs/research/paperclip-agent-context.md. Retained PAL's existing conversations and Dogfood's separate source/task/page gates instead of adding another agent framework.
+
+Each turn now has a hashed immutable context manifest. The prompt carries fresh task context, earlier sent steering, the prior structured result and exact retrieval paths when a section exceeds its inline budget. Unsent/discarded feedback is excluded. The latest manifest means prepared context, not proof the model read it. Parse results before display truncation, release failed prompt reservations, and require the expected PAL turn/session/isolated worktree before acknowledging feedback.
+
+Images belong beside the comment that explains them. Use one Attach images control and paste support, removable drafts, full-size originals and native CLI/MCP posting. Bound raster uploads, scope files to requests, verify integrity and deduplicate uncertain retries. Keep current-turn agent evidence visible with its final answer. Drafts survive polling and request switching, but remain in memory until posted; a full tab reload does not persist unsent files. No automatic QA acceptance comes from a screenshot.

@@ -91,6 +91,9 @@ A request is a conversation and isolated working session, not a task acceptance 
 Choose `build` for source changes, `discovery` for scope questions and proposals, or `qa` for an
 audit without application-source changes. Read the linked task, page and source context first.
 Keep notes as notes; explicitly send an answer or feedback to continue the same conversation.
+Read the supplied durable turn snapshot when resuming or when context exceeds the inline budget.
+Open relevant attached images by their exact local paths. Post screenshot evidence with
+`dogfood board comment CARD --project PROJECT --attach /path/to/image.png --note`; this does not start a turn.
 A native request must leave changes for the operator to inspect, apply and save; never bypass that
 boundary, self-approve scope, or accept its own work. QA requests cannot integrate source.
 

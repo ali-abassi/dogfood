@@ -99,6 +99,7 @@ Choose explicitly whether to send it to the agent or retain it as a note:
 ```sh
 dogfood board comment CARD --project my-app --input comment.json --send
 dogfood board comment CARD --project my-app --input comment.json --note
+dogfood board comment CARD --project my-app --attach /path/to/screenshot.png --note
 ```
 
 The JSON may instead contain an explicit `"send": true` or `false`. When a card needs an answer, send the answer; a note never launches or resumes work.

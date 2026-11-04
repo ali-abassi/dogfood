@@ -139,3 +139,46 @@ agent, execute tests, purchase services or change QA verdicts implicitly.
 - **QA coverage** lists pages with outstanding requirements. Select a page to read its checks, findings and acceptance gaps. Open its existing request or prepare a complete review; preparing does not start the agent.
 
 Task links and required checks are visible in the relevant view. Disclosures hold long briefs, previous conversations and technical artifacts. Closing a conversation still does not accept its task or page.
+
+## Images in the conversation
+
+Use **Attach images** under a reply, or paste a screenshot. PNG, JPEG and WebP are supported,
+up to four images per comment and 8 MiB per image. Remove a preview before sending if it is wrong.
+An image-only reply is allowed. **Keep as a note** stores the image without starting the agent.
+Draft images survive board refreshes and switching requests; leaving with unsent images prompts
+you to review or discard the draft. Drafts are held in this browser tab, not saved across a full reload.
+
+Posted images stay with their comment. Select a thumbnail to open the original. Images have
+request-scoped storage, validated type/dimensions, size limits and SHA-256 integrity checks.
+A failed send keeps the draft; retrying the same submission uses its ID to avoid duplicate comments.
+
+An agent can add evidence without starting another turn:
+
+```sh
+dogfood board comment CARD --project my-app --attach /absolute/path/screenshot.png --note
+```
+
+Add `--input comment.json` for accompanying text, or repeat `--attach` for multiple images. MCP's
+`dogfood_agent_comment` accepts `attachments: [{"name":"screenshot.png","data":"BASE64"}]` with
+`text: "What this image proves"` and `send: false`. Pass base64 only in that tool payload; do not
+paste it into comment text or the final result. Native request agents can post only to their own
+request and cannot send feedback that recursively starts themselves. These are local workflow
+guards, not a sandbox against code with the same OS account.
+
+## Context that survives compaction
+
+Before each turn, Dogfood writes an immutable JSON context snapshot with a SHA-256 receipt. It
+contains the current task contract and handoff, document snapshots with their actual provenance,
+the original request, earlier sent decisions, the previous structured result, and pending feedback
+in order. Attached images carry their exact local paths, so the agent can open them with an image
+viewer. Private notes and discarded feedback are excluded from sent instructions.
+
+The prompt has explicit size budgets. A section that does not fit names the complete section to
+read from the snapshot; it is never silently clipped. Each turn also includes the exact
+`dogfood board show CARD --project PROJECT --json` command for the complete request history.
+That history may include notes: their presence does not authorize acting on them.
+
+Agents should read the snapshot when resuming, inspect relevant images, and report any inaccessible
+source instead of assuming its contents. Project document excerpts are working-source snapshots;
+uncommitted drafts may differ from the isolated checkout. A final result is parsed before display
+text is shortened, so a long narrative cannot erase a blocker or its reported checks.

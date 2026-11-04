@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -25,17 +25,17 @@ if (cmd === 'start') {
   if (fs.existsSync(path.join(home, 'fail-start'))) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 150); console.error('Sign in to the selected agent before starting.'); process.exit(1); }
   if (fs.existsSync(file)) { console.error('session already exists'); process.exit(1); }
   const cwd = path.join(home, name); cp.execFileSync('git', ['-C', option('-C'), 'worktree', 'add', cwd, option('--worktree')], {stdio:'ignore'});
-  const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd, name, prompt, args, projectId:process.env.DOGFOOD_PROJECT});
+  const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd, name, prompt, args, projectId:process.env.DOGFOOD_PROJECT,requestId:process.env.DOGFOOD_REQUEST_ID});
   save({name,cwd,status:'running',turns:[{n:1,status:'running'}]}); console.log(JSON.stringify({session:name,turn:1,status:'running'}));
 } else {
   if (!fs.existsSync(file)) { console.error('session does not exist'); process.exit(1); }
   const meta = JSON.parse(fs.readFileSync(file,'utf8'));
   if (cmd === 'say') {
     if (meta.status === 'running') { console.error('already running'); process.exit(1); }
-    const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd,name,prompt,projectId:process.env.DOGFOOD_PROJECT});
+    const prompt = fs.readFileSync(option('--file'), 'utf8'); record({cmd,name,prompt,projectId:process.env.DOGFOOD_PROJECT,requestId:process.env.DOGFOOD_REQUEST_ID});
     meta.turns.push({n:meta.turns.length+1,status:'running'}); meta.status='running'; save(meta);
     console.log(JSON.stringify({session:name,turn:meta.turns.length,status:'running'}));
-  } else if (cmd === 'status') console.log(JSON.stringify(meta));
+  } else if (cmd === 'status') { if (fs.existsSync(path.join(home, 'status-stale'))) meta.turns = meta.turns.slice(0, -1); if (fs.existsSync(path.join(home, 'status-source'))) meta.cwd = path.join(home, '..', 'checkout'); console.log(JSON.stringify(meta)); }
   else if (cmd === 'read') { if (fs.existsSync(path.join(home, 'fail-read'))) { console.error('Temporary result read failure'); process.exit(1); } console.log(JSON.stringify({session:name,status:meta.status,turn:meta.turns.at(-1),reply:meta.reply || ''})); }
   else if (cmd === 'stop') { if (meta.status === 'running') { meta.status='stopped';meta.turns.at(-1).status='stopped';save(meta); } record({cmd,name});console.log('Stopped'); }
   else process.exit(1);
@@ -363,4 +363,101 @@ test('long conversations preserve notes, finished results, and lifecycle updates
   const reopened = board.reopenAgentCard('shop', created.id);
   assert.equal(reopened.status, 'todo');
   assert.equal(reopened.comments.length, 208);
+});
+
+
+test('long replies preserve the final structured blocker and checks before display is shortened', async () => {
+  const created = board.createAgentCard('shop', input({ start: true }));
+  await until(() => Boolean(card(created.id).checkout));
+  const outcome = { status: 'needs_input', summary: 'A deployment choice is still needed.', decision: 'Which preview environment?', checks: [{ command: 'npm test', result: 'Passed', evidence: 'checks.log' }], unverified: ['Hosted credentials'] };
+  finish(created.id, 'Detailed reasoning. '.repeat(1600) + '\n```dogfood-result\n' + JSON.stringify(outcome) + '\n```');
+  await until(() => card(created.id).status === 'attention');
+  const saved = card(created.id);
+  assert.equal(saved.outcome.status, 'needs_input'); assert.equal(saved.outcome.checks[0].command, 'npm test');
+  assert.deepEqual(saved.outcome.unverified, ['Hosted credentials']); assert.equal(saved.summary, outcome.summary);
+  assert.equal(saved.resultTruncated, true); assert.ok(saved.result.length <= 24_000); assert.match(saved.result, /shortened for display/);
+  assert.equal(saved.comments.at(-1).outcome.decision, outcome.decision);
+});
+
+test('prompt preparation failure releases the reservation and retries the queued feedback once', async () => {
+  const directory = join(data, 'agent-board', 'prompts'), backup = `${directory}-saved`;
+  renameSync(directory, backup); writeFileSync(directory, 'Not a directory');
+  const created = board.createAgentCard('shop', input());
+  try {
+    board.commentAgentCard('shop', created.id, { text: 'Keep this instruction after preparation fails.', send: true });
+    await until(() => card(created.id).status === 'attention');
+    assert.equal(card(created.id).starting, false); assert.equal(card(created.id).pendingCount, 1);
+    assert.equal(calls().filter(call => call.name === created.session).length, 0);
+  } finally { rmSync(directory); renameSync(backup, directory); }
+  board.runAgentCard('shop', created.id);
+  await until(() => Boolean(card(created.id).checkout));
+  assert.equal(card(created.id).pendingCount, 0);
+  const launched = calls().filter(call => call.name === created.session);
+  assert.equal(launched.length, 1); assert.match(launched[0].prompt, /Keep this instruction after preparation fails/);
+  assert.equal(launched[0].requestId, created.id);
+  finish(created.id); await until(() => card(created.id).status === 'review');
+});
+
+test('durable follow-up context retains earlier sent decisions and prior blockers without private notes', async () => {
+  const created = board.createAgentCard('shop', input({ start: true }));
+  await until(() => Boolean(card(created.id).checkout));
+  board.commentAgentCard('shop', created.id, { text: 'Keep the blue button.', send: true });
+  board.commentAgentCard('shop', created.id, { text: 'PRIVATE do not send purple experiment.', send: false });
+  finish(created.id); await until(() => card(created.id).pendingCount === 0 && card(created.id).turn === 1);
+  finish(created.id, 'NEEDS_INPUT: Which label belongs on the button?');
+  await until(() => card(created.id).status === 'attention');
+  board.commentAgentCard('shop', created.id, { text: 'Use Save as the label.', send: true });
+  await until(() => card(created.id).pendingCount === 0 && calls().filter(call => call.name === created.session).length === 3);
+  const prompt = calls().filter(call => call.name === created.session).at(-1).prompt;
+  assert.match(prompt, /Keep the blue button/); assert.match(prompt, /Which label belongs/); assert.match(prompt, /Use Save as the label/);
+  assert.doesNotMatch(prompt, /PRIVATE do not send/); assert.match(prompt, new RegExp(`board show ${created.id}`));
+  const descriptor = card(created.id).contextManifest, snapshot = JSON.parse(readFileSync(descriptor.path, 'utf8'));
+  assert.equal(descriptor.turn, 3); assert.equal(snapshot.pending[0].text, 'Use Save as the label.');
+  assert.equal(snapshot.conversation.some(comment => comment.text.includes('PRIVATE')), false);
+  finish(created.id); await until(() => card(created.id).status === 'review');
+});
+
+test('large queued feedback has a bounded prompt and every instruction remains in its ordered immutable manifest', async () => {
+  const created = board.createAgentCard('shop', input({ start: true }));
+  await until(() => Boolean(card(created.id).checkout));
+  const texts = Array.from({ length: 12 }, (_, i) => `Instruction ${i}: ` + 'x'.repeat(9900));
+  for (const text of texts) board.commentAgentCard('shop', created.id, { text, send: true });
+  finish(created.id);
+  await until(() => card(created.id).pendingCount === 0 && card(created.id).turn === 1);
+  const prompt = calls().filter(call => call.name === created.session).at(-1).prompt;
+  assert.ok(prompt.length < 65000); assert.match(prompt, /Required: read pending/);
+  const snapshot = JSON.parse(readFileSync(card(created.id).contextManifest.path, 'utf8'));
+  assert.deepEqual(snapshot.pending.map(comment => comment.text), texts);
+  assert.equal(new Set(snapshot.pending.map(comment => comment.id)).size, 12);
+  finish(created.id); await until(() => card(created.id).status === 'review');
+});
+
+test('a stale PAL status never acknowledges pending feedback and recovery avoids a duplicate turn', async () => {
+  writeFileSync(join(sessions, 'status-stale'), 'yes');
+  const created = board.createAgentCard('shop', input());
+  try {
+    board.commentAgentCard('shop', created.id, { text: 'Deliver only after the matching turn is confirmed.', send: true });
+    await until(() => card(created.id).status === 'attention');
+    assert.equal(card(created.id).pendingCount, 1); assert.equal(card(created.id).starting, false);
+    assert.equal(card(created.id).comments[0].deliveredAt, undefined);
+  } finally { rmSync(join(sessions, 'status-stale')); }
+  board.runAgentCard('shop', created.id);
+  await until(() => card(created.id).status === 'running' && card(created.id).pendingCount === 0);
+  assert.equal(calls().filter(call => call.name === created.session).length, 1);
+  finish(created.id); await until(() => card(created.id).status === 'review');
+});
+
+test('a source-checkout PAL status cannot bind the request or acknowledge feedback', async () => {
+  writeFileSync(join(sessions, 'status-source'), 'yes');
+  const created = board.createAgentCard('shop', input());
+  try {
+    board.commentAgentCard('shop', created.id, { text: 'Never work in the source checkout.', send: true });
+    await until(() => card(created.id).status === 'attention');
+    assert.equal(card(created.id).checkout, ''); assert.equal(card(created.id).pendingCount, 1);
+    assert.match(card(created.id).error, /isolated worktree/);
+  } finally { rmSync(join(sessions, 'status-source')); }
+  board.runAgentCard('shop', created.id);
+  await until(() => card(created.id).status === 'running' && card(created.id).pendingCount === 0);
+  assert.notEqual(card(created.id).checkout, checkout); assert.equal(calls().filter(call => call.name === created.session).length, 1);
+  finish(created.id); await until(() => card(created.id).status === 'review');
 });

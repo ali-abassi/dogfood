@@ -2,6 +2,7 @@ import { readJson } from '../api.mjs';
 import { dateLabel, escapeHtml, markdownMarkup } from '../format.mjs';
 import { state } from '../state.mjs';
 import { render } from '../app.mjs';
+import { attachmentComposer, attachmentGallery, draftImages, hasImageDrafts, firstImageDraft, clearImages, addImages, removeImage, imagePayload, clipboardImages, commentIdentity } from './board-images.mjs';
 import { deliveryBadge, deliveryMarkup, readyWorkMarkup, queueMarkup, contractMarkup } from './board-work.mjs';
 
 // Requests are conversations about work; Done here does not accept a task or page's QA.
@@ -13,7 +14,7 @@ const agentNames = { codex: 'Codex', claude: 'Claude Code' };
 let poll;
 
 function freshBoard(key = '', selected = '') {
-  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, note: {}, formError: '', search: '', filter: 'all', queue: null, queueError: '', section: initialSection(selected), queuePage: '', qaBackend: 'codex' };
+  return { key, data: null, tasks: [], loading: false, loadPromise: null, refreshRequested: false, attempted: false, error: '', action: '', formOpen: false, draft: null, selected, reviews: {}, replies: {}, images: {}, note: {}, formError: '', search: '', filter: 'all', queue: null, queueError: '', section: initialSection(selected), queuePage: '', qaBackend: 'codex' };
 }
 
 function initialSection(selected) {
@@ -151,15 +152,23 @@ function agentCommentMarkup(text) {
 }
 function commentBody(comment) { return comment.by === 'agent' ? agentCommentMarkup(comment.text) : `<p>${escapeHtml(comment.text)}</p>`; }
 function commentContent(comment, card) {
-  return `<div class="board-comment-by"><strong>${escapeHtml(commentAuthor(comment, card))}</strong><time datetime="${escapeHtml(comment.at)}">${escapeHtml(dateLabel(comment.at))}</time></div><div class="board-comment-body">${commentBody(comment)}</div>`;
+  return `<div class="board-comment-by"><strong>${escapeHtml(commentAuthor(comment, card))}</strong><time datetime="${escapeHtml(comment.at)}">${escapeHtml(dateLabel(comment.at))}</time></div><div class="board-comment-body">${commentBody(comment)}${attachmentGallery(comment.attachments)}</div>`;
 }
 function commentMarkup(comment, card) {
   return `<li class="board-comment board-comment-${escapeHtml(comment.by)}" data-comment-id="${escapeHtml(comment.id)}">${commentContent(comment, card)}</li>`;
 }
 function threadMarkup(comments, card) { return comments.length ? `<ol class="board-thread">${comments.map(comment => commentMarkup(comment, card)).join('')}</ol>` : ''; }
+function completedReply(comment) { return comment.by === 'agent' && comment.sent === undefined; }
+function visibleConversationStart(comments, card) {
+  const latest = comments.findLastIndex(completedReply);
+  if (card.status === 'running') return latest + 1;
+  if (latest < 0) return 0;
+  const sameTurn = comments.findIndex(comment => comment.by === 'agent' && comment.turn === comments[latest].turn);
+  return sameTurn < 0 ? latest : sameTurn;
+}
 function commentsMarkup(card) {
   const comments = card.comments ?? [];
-  const latestAgent = card.status === 'running' ? comments.length : comments.findLastIndex(comment => comment.by === 'agent');
+  const latestAgent = visibleConversationStart(comments, card);
   if (!comments.length) return '';
   if (latestAgent <= 0) return threadMarkup(comments, card);
   return `<details class="board-history" data-detail-key="history"><summary>Earlier conversation · ${latestAgent} messages</summary>${threadMarkup(comments.slice(0, latestAgent), card)}</details>${threadMarkup(comments.slice(latestAgent), card)}`;
@@ -184,11 +193,12 @@ function formErrorMarkup(id) {
   const error = board().formError;
   return `<p id="${id}" class="form-error" role="alert" ${error ? '' : 'hidden'}>${escapeHtml(error)}</p>`;
 }
+function replyHasDraft(card) { return Boolean(board().replies[card.id]) || draftImages(board(), card.id).length > 0; }
 function replyFormMarkup(card) {
   const value = board().replies[card.id] || '';
   const note = Boolean(board().note[card.id]);
   const label = card.status === 'done' ? 'Follow up on this request' : 'Your reply';
-  return `<form id="board-comment-form" class="board-comment-form" data-card-id="${escapeHtml(card.id)}" data-dirty="${Boolean(value)}"><label for="board-reply">${label}</label><textarea id="board-reply" name="text" rows="3" maxlength="10000" ${disabled()} required placeholder="Add feedback, answer a question, or ask for a change…">${escapeHtml(value)}</textarea><label class="board-note-choice"><input id="board-note" type="checkbox" name="note" ${disabled()} ${note ? 'checked' : ''}> Keep as a note; don’t send to the agent</label><p id="board-reply-hint" class="board-reply-hint">${replyHint(card, note)}</p>${formErrorMarkup('board-comment-error')}<div class="form-actions"><button id="board-reply-send" type="submit" class="save-button" ${replyDisabled(card, note) ? 'disabled' : ''}>${replyLabel(card, note)}</button></div></form>`;
+  return `<form id="board-comment-form" class="board-comment-form" data-card-id="${escapeHtml(card.id)}" data-dirty="${replyHasDraft(card)}"><label for="board-reply">${label}</label><textarea id="board-reply" name="text" rows="3" maxlength="10000" ${disabled()} placeholder="Add feedback, answer a question, or ask for a change…">${escapeHtml(value)}</textarea>${attachmentComposer(draftImages(board(), card.id), Boolean(board().action))}<label class="board-note-choice"><input id="board-note" type="checkbox" name="note" ${disabled()} ${note ? 'checked' : ''}> Keep as a note; don’t send to the agent</label><p id="board-reply-hint" class="board-reply-hint">${replyHint(card, note)}</p>${formErrorMarkup('board-comment-error')}<div class="form-actions"><button id="board-reply-send" type="submit" class="save-button" ${replyDisabled(card, note) ? 'disabled' : ''}>${replyLabel(card, note)}</button></div></form>`;
 }
 
 function reviewedChanges(card) { const value = board().reviews[card.id]; return value?.turn === card.turn ? value : null; }
@@ -250,9 +260,14 @@ function outcomeBodyMarkup(outcome) {
   const gaps = outcome.unverified.map(item => `<li>${escapeHtml(item)}</li>`).join('');
   return `<section class="board-outcome"><h3>${outcome.decision ? 'Decision needed' : 'Agent outcome'}</h3>${outcomeSummary(outcome)}${outcome.decision ? `<p class="board-decision"><strong>${escapeHtml(outcome.decision)}</strong></p>` : ''}${outcome.previewUrl ? `<a class="text-button" href="${escapeHtml(outcome.previewUrl)}" target="_blank" rel="noopener noreferrer">Open agent preview ↗</a>` : ''}${outcomeChecks(checks)}${outcomeGaps(gaps)}</section>`;
 }
+function contextReceiptMarkup(card) {
+  const context = card.contextManifest;
+  if (!context) return '';
+  return `<dt>Saved context · turn ${escapeHtml(context.turn)}</dt><dd>Task, sent decisions and image references are saved for this turn.<br><code>${escapeHtml(context.path)}</code></dd>`;
+}
 function runDetailsMarkup(card) {
   if (!card.session && !card.checkout) return '';
-  return `<details class="board-run-details"><summary>Agent session & worktree</summary><dl>${card.session ? `<dt>Session</dt><dd><code>${escapeHtml(card.session)}</code></dd>` : ''}${card.checkout ? `<dt>Worktree</dt><dd><code>${escapeHtml(card.checkout)}</code></dd>` : ''}</dl></details>`;
+  return `<details class="board-run-details"><summary>Agent session & worktree</summary><dl>${card.session ? `<dt>Session</dt><dd><code>${escapeHtml(card.session)}</code></dd>` : ''}${card.checkout ? `<dt>Worktree</dt><dd><code>${escapeHtml(card.checkout)}</code></dd>` : ''}${contextReceiptMarkup(card)}</dl></details>`;
 }
 function cardErrorMarkup(card) { return card.error ? `<p class="board-error form-error" role="alert">${escapeHtml(card.error)}</p>` : ''; }
 function reviewNoteMarkup(card) { return card.status === 'review' ? '<p class="board-review-note">The agent finished its turn. Review its changes and checks before closing the conversation. Delivery verification above tracks the linked task and pages.</p>' : ''; }
@@ -392,7 +407,7 @@ function updateRunnerAvailability() {
   const note = document.getElementById('board-agent-unavailable');
   if (note) note.hidden = available;
 }
-function editingBoard(b) { return b.formOpen || Boolean(b.replies[b.selected]) || document.activeElement?.closest('.board-toolbar, .board-navigation, #board-ready-host, #board-comment-form, #board-work-queue'); }
+function editingBoard(b) { return b.formOpen || hasReplyDrafts() || document.activeElement?.closest('.board-toolbar, .board-navigation, #board-ready-host, #board-comment-form, #board-work-queue'); }
 function updateReplyLabels(card) {
   const note = Boolean(board().note[card.id]);
   const hint = document.getElementById('board-reply-hint');
@@ -513,18 +528,19 @@ export function syncBoardState() {
   else schedulePoll(board());
 }
 
-export function hasBoardDrafts() { return hasRequestDraft() || Object.values(board().replies).some(text => Boolean(text.trim())); }
+export function hasBoardDrafts() { return hasRequestDraft() || hasReplyDrafts(); }
+function hasReplyDrafts() { return Object.values(board().replies).some(text => Boolean(text.trim())) || hasImageDrafts(board()); }
 export function closeBoardEditors() { board().formOpen = false; board().formError = ''; }
 export function discardBoardDrafts() {
   const b = board();
   closeBoardEditors();
-  b.draft = null; b.replies = {}; b.note = {};
+  clearImages(b); b.draft = null; b.replies = {}; b.note = {}; b.commentAttempts = {};
 }
 export function reviewBoardDraft() {
   const b = board(); b.section = 'requests';
   Object.assign(state, { view: 'board', browseOpen: false });
   if (hasRequestDraft()) { b.formOpen = true; b.selected = ''; }
-  else b.selected = Object.keys(b.replies).find(id => b.replies[id].trim()) || '';
+  else b.selected = Object.keys(b.replies).find(id => b.replies[id].trim()) || firstImageDraft(b);
   rememberSelection(b.selected);
   render();
   focus(b.formOpen ? 'board-title' : 'board-reply');
@@ -539,7 +555,7 @@ function rememberDraft(form) {
   const values = Object.fromEntries(new FormData(form));
   if (form.id === 'board-request-form') board().draft = values;
   if (form.id === 'board-comment-form') rememberReply(form, values);
-  form.dataset.dirty = String(draftHasText(values));
+  form.dataset.dirty = String(draftHasText(values) || draftImages(board(), form.dataset.cardId).length > 0);
 }
 
 function inlineError(id, message) {
@@ -610,12 +626,15 @@ async function sendComment(form) {
   rememberDraft(form);
   const id = form.dataset.cardId;
   const text = (board().replies[id] || '').trim();
-  if (!text) return inlineError('board-comment-error', 'Write a reply first.');
+  const images = draftImages(board(), id);
+  if (!text && !images.length) return inlineError('board-comment-error', 'Write a reply or attach an image first.');
   const input = { text, send: !board().note[id] };
+  input.clientRequestId = commentIdentity(board(), id, input, images);
   await mutate('comment', async b => {
+    input.attachments = await imagePayload(images);
     await post(b, cardPath(id, 'comment'), input);
     if (!current(b)) return;
-    b.replies[id] = '';
+    b.replies[id] = ''; clearImages(b, id); delete b.commentAttempts[id];
     await refreshAfterMutation(b);
   }, { form: true, focusId: 'board-reply' });
 }
@@ -663,6 +682,8 @@ async function releaseSourceIntegration() {
 }
 function answerAgent() { const reply = document.getElementById('board-reply'); reply?.scrollIntoView({ block: 'center', behavior: 'instant' }); reply?.focus({ preventScroll: true }); }
 const boardActions = {
+  'attach-images': () => document.getElementById('board-image-input')?.click(),
+  'remove-image': button => { removeImage(board(), board().selected, button.dataset.imageId); updateImageDraft(); },
   section: showBoardSection,
   'queue-page': showQueuePage,
   reply: answerAgent,
@@ -692,8 +713,13 @@ function changeBoardFilter(target) {
   if (target.id === 'board-filter') { board().filter = target.value; updateBoardDataNodes(); return true; }
   return false;
 }
+function handleImageSelection(target) {
+  if (target.id !== 'board-image-input') return false;
+  acceptImages(target.files); target.value = ''; return true;
+}
+function changeBoardField(target) { return handleImageSelection(target) || changeBoardFilter(target); }
 function handleBoardChange(event) {
-  if (changeBoardFilter(event.target)) return;
+  if (changeBoardField(event.target)) return;
   const form = event.target.closest('#board-request-form, #board-comment-form');
   if (!form) return;
   rememberDraft(form);
@@ -709,7 +735,26 @@ function handleBoardSubmit(event) {
   void handler(event.target, event.submitter);
 }
 
+function updateImageDraft() {
+  const host = document.getElementById('board-image-drafts');
+  if (host) host.innerHTML = attachmentComposer(draftImages(board(), board().selected), Boolean(board().action), true);
+  const form = document.getElementById('board-comment-form');
+  if (form) rememberDraft(form);
+}
+function acceptImages(files) {
+  if (board().action) return;
+  try { addImages(board(), board().selected, [...files]); inlineError('board-comment-error', ''); }
+  catch (error) { inlineError('board-comment-error', error.message); }
+  updateImageDraft();
+}
+function pasteImages(event) {
+  if (!event.target.closest('#board-comment-form')) return;
+  const files = clipboardImages(event.clipboardData);
+  if (!files.length) return;
+  event.preventDefault(); acceptImages(files);
+}
 export function registerBoardEvents(app) {
+  app.addEventListener('paste', pasteImages);
   app.addEventListener('click', event => {
     const button = event.target.closest('[data-board-action]');
     if (button) boardClick(button);

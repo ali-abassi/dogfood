@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,10 +12,11 @@ process.env.DOGFOOD_BROWSER_SESSION = 'operator-preview';
 process.env.DOGFOOD_BROWSER_PROFILE = 'Default';
 const { initProject, projectFromCheckout } = await import('../lib/project-init.mjs');
 const { createProject, registerPage, createFinding } = await import('../lib/store.mjs');
-const { addTask, context, claimTask, verifyTask, acceptTask } = await import('../lib/tasks.mjs');
+const { addTask, context, claimTask, verifyTask, acceptTask, updateTask } = await import('../lib/tasks.mjs');
 const { saveProjectBrief } = await import('../lib/project-readiness.mjs');
 const { agentOutcome } = await import('../lib/agent-results.mjs');
 const { nativeContext } = await import('../lib/agent-context.mjs');
+const { saveTurnContext, turnContextInstructions } = await import('../lib/agent-context-manifest.mjs');
 const { inspectAgentChanges, applyReviewedChanges } = await import('../lib/agent-changes.mjs');
 const { integrateAgentCard, saveAgentCardSource, releaseAgentCardIntegration, createAgentCard } = await import('../lib/agent-board.mjs');
 after(() => rmSync(data, { recursive: true, force: true }));
@@ -50,12 +52,14 @@ test('resume context includes waiting requests, while native context carries act
   const value = fixture();
   registerPage(value.id, { id: 'home', name: 'Home', group: 'Public', route: '/', features: [{ id: 'save', name: 'Save note', expected: 'Saved text survives reload.' }] });
   addTask(value.id, { id: 'title', title: 'Show the new title', outcome: 'The title reads Hello.', scope: ['app.txt'], checks: [{ id: 'read', command: ['node', '-e', 'require("fs").readFileSync("app.txt")'] }], look: 'Readable at1280 and390.', pageIds: ['home'] }, 'fixture');
+  updateTask(value.id, 'title', { handoff: 'Preserve the existing navigation while changing the title.' }, 'fixture');
   Object.assign(value.card, { pageId: 'home', featureId: 'save', taskId: 'title' }); boardFixture(value);
   const resume = context(value.id);
   assert.equal(resume.requests.summary.review, 1); assert.equal(resume.nextAction.kind, 'review_request'); assert.equal(resume.next.id, 'title');
   const packet = nativeContext(value.id, value.card);
   assert.equal(packet.projectId, value.id); assert.match(packet.inspect, new RegExp(`--project ${value.id}`));
   assert.equal(packet.feature.expected, 'Saved text survives reload.'); assert.deepEqual(packet.task.scope, ['app.txt']);
+  assert.deepEqual(packet.task.pageIds, ['home']); assert.match(packet.task.handoff, /Preserve the existing navigation/); assert.ok(packet.task.handoffAt);
   assert.equal(packet.task.outcome, 'The title reads Hello.'); assert.equal(packet.task.checks[0].command[0], 'node');
   assert.equal(packet.browser.session, 'operator-preview'); assert.equal(packet.browser.profile, 'Default');
 });
@@ -351,4 +355,26 @@ test('legacy applied QA changes cannot be saved through the read-only audit requ
   assert.equal(git(value.source, 'rev-parse', 'HEAD').trim(), value.card.baseRevision);
   assert.equal(readFileSync(join(value.source, 'app.txt'), 'utf8'), 'historical audit change\n');
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).cards[0].integration.sourceSaved, undefined);
+});
+
+
+test('turn snapshots retain working document provenance and image references without unsent or discarded notes', () => {
+  const value = fixture();
+  writeFileSync(join(value.source, 'vision.md'), '# Draft vision\nA current uncommitted decision.');
+  const screenshot = { id: 'image-1', name: 'before.png', mimeType: 'image/png', path: join(data, 'before.png'), url: '/api/images/before' };
+  const sent = { id: 'sent-1', by: 'person', text: 'Match this spacing.', sent: true, deliveredAt: '2026-11-04T00:00:00Z', attachments: [screenshot] };
+  Object.assign(value.card, { session: 'fixture-session', operation: { token: 'turn-snapshot', expectedTurn: 2 }, comments: [sent, { id: 'private', by: 'person', text: 'PRIVATE experiment', sent: false, attachments: [{ name: 'private.png' }] }, { id: 'discarded', by: 'person', text: 'DISCARDED experiment', sent: true, discardedAt: '2026-11-04T00:00:00Z' }] });
+  const saved = saveTurnContext(value.id, value.card, []);
+  const bytes = readFileSync(saved.descriptor.path);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), saved.descriptor.sha256);
+  assert.match(saved.snapshot.context.documents.vision.content, /uncommitted decision/);
+  assert.match(saved.snapshot.context.documents.vision.source, /including uncommitted drafts/);
+  assert.equal(saved.context.documents.vision.content, undefined);
+  assert.deepEqual(saved.snapshot.conversation.map(entry => entry.id), ['sent-1']);
+  assert.doesNotMatch(bytes.toString(), /PRIVATE|DISCARDED|private.png/);
+  assert.match(turnContextInstructions(saved), /Open each relevant attached image/);
+  assert.ok(turnContextInstructions(saved).includes(screenshot.path));
+  writeFileSync(join(value.source, 'vision.md'), '# Later changed document');
+  assert.equal(readFileSync(saved.descriptor.path).toString(), bytes.toString());
+  assert.throws(() => saveTurnContext(value.id, value.card, []), /EEXIST/);
 });
