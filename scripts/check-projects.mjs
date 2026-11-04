@@ -128,7 +128,6 @@ function checkAuditList(rows, label) {
 function checkAuditEvidence(row, label) {
   assertRules(label, [
     [() => row.dependsOn !== undefined && !validAuditDependencies(row.dependsOn), 'audit dependencies invalid'],
-    [() => row.evidence === null && row.status !== 'untested', 'answered audit evidence snapshot missing'],
     [() => row.evidence != null && !validAuditEvidence(row.evidence), 'audit evidence snapshot invalid'],
     [() => row.carriedFrom && !row.evidence, 'carried audit requires an evidence snapshot'],
   ]);

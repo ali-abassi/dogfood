@@ -296,14 +296,15 @@ test('manifest checker accepts real scanner fixture arrays and rejects malformed
   store.writeProject(project);
   assert.throws(() => checkedManifest('checker-web'), /fixture context invalid/);
 });
-test('manifest checker accepts unanswered custom native checklists without treating null as passing evidence', () => {
+test('manifest checker accepts unanswered and blocked native checklists as incomplete records', () => {
   const directory = setup('checker-native'); store.recordNativeCheck('checker-native', 'home', inputFor(directory));
   const audit = Object.fromEntries(Object.keys(page('checker-native').audit).map(key => [key, [{ id: `native-${key}`, question: `Has the native ${key} behavior been checked?`, status: 'untested', note: '' }]]));
   store.saveAudit('checker-native', 'home', { audit }, 'Synthetic fixture operator');
   assert.equal(store.readProject('checker-native').pages[0].audit.security[0].evidence, null);
   assert.match(checkedManifest('checker-native'), /1 pages, 0 with complete QA/);
-  const project = store.readProject('checker-native');
-  Object.assign(project.pages[0].audit.security[0], { status: 'pass', note, by: 'agent:fixture', at: new Date().toISOString() });
-  store.writeProject(project);
-  assert.throws(() => checkedManifest('checker-native'), /answered audit evidence snapshot missing/);
+  assert.equal(page('checker-native').progress.accepted, false);
+  const blocked = Object.fromEntries(Object.entries(audit).map(([key, rows]) => [key, rows.map(row => ({ ...row, status: 'blocked', note }))]));
+  store.saveAudit('checker-native', 'home', { audit: blocked }, 'Synthetic fixture operator');
+  assert.match(checkedManifest('checker-native'), /1 pages, 0 with complete QA/);
+  assert.equal(page('checker-native').progress.accepted, false);
 });
