@@ -1,3 +1,4 @@
+import { portfolioMarkup, syncPortfolio, loadPortfolio } from './views/portfolio.mjs';
 import { readJson } from './api.mjs';
 import { registerEvents } from './events.mjs';
 import { escapeHtml } from './format.mjs';
@@ -49,6 +50,7 @@ const projectViews = {
   board: boardMarkup,
   discovery: discoveryMarkup,
   map: productMapMarkup,
+  portfolio: portfolioMarkup,
 };
 
 function projectViewMarkup() {
@@ -110,6 +112,7 @@ export function render() {
   syncProductMapState();
   syncProjectWork();
   syncAnnotations();
+  syncPortfolio();
   syncLocation();
   replaceKeepingFocus(`${workspaceMarkup()}<div class="save-message" role="status">${escapeHtml(state.message)}</div>`);
   scrollToTopOnNewView();
@@ -119,7 +122,7 @@ export function showError(message) {
   app.innerHTML = `<div class="boot error" role="alert"><h1>dogfood could not open</h1><p>${escapeHtml(message)}</p><button type="button" id="retry">Retry</button></div>`;
 }
 
-const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map']);
+const linkableProjectViews = new Set(['overview', 'vision', 'guide', 'plan', 'board', 'features', 'competitors', 'add-project', 'suggestions', 'discovery', 'map', 'portfolio']);
 
 function initialView(project, destination) {
   if (linkableProjectViews.has(destination.view)) return { view: destination.view, pageId: null };
@@ -157,6 +160,7 @@ function initialDestination() {
 export async function start() {
   try {
     state.projects = await readJson('/api/projects');
+    await loadPortfolio();
     if (!state.projects.length) {
       state.project = null;
       state.view = 'add-project';

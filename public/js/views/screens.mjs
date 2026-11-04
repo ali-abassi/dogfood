@@ -1,57 +1,60 @@
+import { isNative, requiredDevices, deviceName, ensureScreenDevice } from '../platform.mjs';
 import { annotationImageMarkup, annotationsMarkup } from './annotations.mjs';
 import { escapeHtml, externalLinkMarkup, plainMessageMarkup, safeServedImagePath } from '../format.mjs';
-import { deviceNames, state } from '../state.mjs';
+import { state } from '../state.mjs';
 import { backMarkup } from './answer.mjs';
 import { shownShot, timelineMarkup } from './history.mjs';
 
-function deviceSwitchMarkup() {
-  const buttons = Object.entries(deviceNames).map(([device, label]) => `<button type="button" data-action="screens-device" data-screens-device="${device}" aria-pressed="${state.screensDevice === device}">${label}</button>`).join('');
+function deviceSwitchMarkup(page) {
+  const buttons = requiredDevices(page).map(device => `<button type="button" data-action="screens-device" data-screens-device="${device}" aria-pressed="${state.screensDevice === device}">${deviceName(device, page)}</button>`).join('');
   return `<div class="device-switch" role="group" aria-label="Screenshot">${buttons}</div>`;
 }
 
 function missingScreenshotMarkup(page, device) {
-  return `<div class="screen-missing"><strong>No ${escapeHtml(deviceNames[device].toLowerCase())} screenshot</strong><p>${plainMessageMarkup(page.captures[device].reason || 'No screenshot that day.')}</p><button type="button" class="text-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${state.scan.running ? 'Taking screenshots…' : 'Take screenshots'}</button></div>`;
+  if (isNative(page)) return '<div class="screen-missing"><strong>No iOS screenshot</strong><p>Record a new app check with its actual build and device evidence.</p></div>';
+  return `<div class="screen-missing"><strong>No ${escapeHtml(deviceName(device, page).toLowerCase())} screenshot</strong><p>${plainMessageMarkup(page.captures[device].reason || 'No screenshot that day.')}</p><button type="button" class="text-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${state.scan.running ? 'Taking screenshots…' : 'Take screenshots'}</button></div>`;
 }
 
 function fullScreenshotMarkup(page, device) {
   const shot = shownShot(page, device);
   if (!shot) return missingScreenshotMarkup(page, device);
   const size = shot.width ? ` width="${escapeHtml(shot.width)}" height="${escapeHtml(shot.height)}"` : '';
-  const image = `<img data-screenshot data-screens-image src="${shot.src}" alt="The whole ${escapeHtml(page.name)} page on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}>`;
-  return `<figure class="full-screen full-screen-${device}"><figcaption class="full-screen-caption"><span>${escapeHtml(deviceNames[device])} · ${escapeHtml(shot.caption)}</span><a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption>${annotationImageMarkup(page, device, shot, image)}</figure>`;
+  const image = `<img data-screenshot data-screens-image src="${shot.src}" alt="${isNative(page) ? 'The captured' : 'The whole'} ${escapeHtml(page.name)} ${isNative(page) ? 'screen' : 'page'} on ${escapeHtml(deviceName(device, page))}"${size}>`;
+  return `<figure class="full-screen full-screen-${device}"><figcaption class="full-screen-caption"><span>${escapeHtml(deviceName(device, page))} · ${escapeHtml(shot.caption)}</span><a href="${shot.src}" target="_blank" rel="noopener">Open full size ↗</a></figcaption>${annotationImageMarkup(page, device, shot, image)}</figure>`;
 }
 
 function changeFigureMarkup(page, device, kind, path, caption) {
   const image = safeServedImagePath(path);
   if (!image) return '';
-  return `<figure class="change-figure"><a href="${image}" target="_blank" rel="noopener"><img data-change-image="${kind}" src="${image}" alt="${escapeHtml(`${caption}: ${page.name} on a ${deviceNames[device].toLowerCase()}`)}" loading="lazy"></a><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+  return `<figure class="change-figure"><a href="${image}" target="_blank" rel="noopener"><img data-change-image="${kind}" src="${image}" alt="${escapeHtml(`${caption}: ${page.name} on a ${deviceName(device, page).toLowerCase()}`)}" loading="lazy"></a><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
 }
 
-function changeWords(device, change) {
+function changeWords(page, device, change) {
   const share = Math.max(1, Math.round(change.changedShare * 100));
   const size = change.sizeChanged ? 'The page changed size, and about' : 'About';
-  return `${deviceNames[device]}: ${size} ${share}% of the page looks different.`;
+  return `${deviceName(device, page)}: ${size} ${share}% of the page looks different.`;
 }
 
 function changeDeviceMarkup(page, device) {
   const change = page.scan.changes[device];
-  if (!change.changed) return `<p class="change-same">${escapeHtml(deviceNames[device])}: looks the same as the last check.</p>`;
+  if (!change.changed) return `<p class="change-same">${escapeHtml(deviceName(device, page))}: looks the same as the last check.</p>`;
   const figures = [
     changeFigureMarkup(page, device, 'previous', change.previousPath, 'Before'),
     changeFigureMarkup(page, device, 'current', page.captures[device].path, 'Now'),
     changeFigureMarkup(page, device, 'diff', change.diffPath, 'What changed'),
   ].join('');
-  return `<div class="change-device"><h3>${escapeHtml(changeWords(device, change))}</h3><div class="change-images">${figures}</div></div>`;
+  return `<div class="change-device"><h3>${escapeHtml(changeWords(page, device, change))}</h3><div class="change-images">${figures}</div></div>`;
 }
 
 function changesMarkup(page) {
   const changes = page.scan?.changes;
-  const devices = ['desktop', 'mobile'].filter(device => changes?.[device]);
+  const devices = requiredDevices(page).filter(device => changes?.[device]);
   if (!devices.length) return '';
   return `<section class="content-panel" aria-label="What changed"><h2>What changed since the last check</h2>${devices.map(device => changeDeviceMarkup(page, device)).join('')}</section>`;
 }
 
 export function screensMarkup(page) {
+  ensureScreenDevice(page);
   const source = externalLinkMarkup(shownShot(page, state.screensDevice)?.sourceUrl, 'Open page ↗', 'link-button');
-  return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup()}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceNames[state.screensDevice])} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${annotationsMarkup(page, state.screensDevice, shownShot(page, state.screensDevice))}${changesMarkup(page)}</section>`;
+  return `<section class="screens-view" data-screens aria-labelledby="answer-heading">${backMarkup(page)}<div class="screens-heading"><h1 id="answer-heading" tabindex="-1">How it looks</h1>${source}</div><div class="screens-toolbar">${deviceSwitchMarkup(page)}${timelineMarkup()}</div><section class="content-panel full-screen-panel" aria-label="${escapeHtml(deviceName(state.screensDevice, page))} screenshot">${fullScreenshotMarkup(page, state.screensDevice)}</section>${annotationsMarkup(page, state.screensDevice, shownShot(page, state.screensDevice))}${changesMarkup(page)}</section>`;
 }

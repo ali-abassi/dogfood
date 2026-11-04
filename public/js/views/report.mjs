@@ -1,3 +1,5 @@
+import { isNative, requiredDevices, deviceName } from '../platform.mjs';
+import { nativeEvidenceMarkup } from './native-evidence.mjs';
 import { answerMarkMarkup, environmentLabel, escapeHtml, plainMessageMarkup, shortReason } from '../format.mjs';
 import { deviceNames, displayAnswerStatus, state } from '../state.mjs';
 import { measuredAnswersMarkup } from './measured.mjs';
@@ -9,7 +11,7 @@ import { openFindingsMarkup } from './issues.mjs';
 function screenPictureMarkup(page, device, shot) {
   if (!shot) return `<div class="screen-missing">${plainMessageMarkup(page.captures[device].reason || 'No screenshot that day.')}</div>`;
   const size = shot.width ? ` width="${escapeHtml(shot.width)}" height="${escapeHtml(shot.height)}"` : '';
-  return `<img data-screenshot src="${shot.src}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceNames[device].toLowerCase())}"${size}>`;
+  return `<img data-screenshot src="${shot.src}" alt="${escapeHtml(page.name)} on a ${escapeHtml(deviceName(device, page).toLowerCase())}"${size}>`;
 }
 
 // Each screenshot is the whole page; its frame scrolls so the page can be read top to bottom.
@@ -22,7 +24,7 @@ function reportProvenanceMarkup(shot) {
 function screenMarkup(page, device) {
   const shot = shownShot(page, device);
   const provenance = reportProvenanceMarkup(shot);
-  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceNames[device])} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><span><strong>${escapeHtml(deviceNames[device])}</strong>${provenance}</span><span class="report-capture-age">${escapeHtml(shot?.age ?? 'No screenshot')}</span></figcaption></figure>`;
+  return `<figure class="report-screen report-screen-${device}"><div class="screen-frame" role="group" tabindex="0" aria-label="${escapeHtml(deviceName(device, page))} screenshot, scrolls">${screenPictureMarkup(page, device, shot)}</div><figcaption><span><strong>${escapeHtml(deviceName(device, page))}</strong>${provenance}</span><span class="report-capture-age">${escapeHtml(shot?.age ?? 'No screenshot')}</span></figcaption></figure>`;
 }
 
 const emptyScreens = {
@@ -38,22 +40,25 @@ function scanErrorMarkup() {
   return state.scan.error ? `<p class="form-error" role="alert">${escapeHtml(state.scan.error)}</p>` : '';
 }
 
+function emptyCaptureCopy(capture) { return emptyScreens[capture.reason && capture.reason !== neverCaptured ? 'blocked' : 'missing'](capture); }
 function takeScreenshotsMarkup(page) {
-  const capture = page.captures.desktop;
-  const copy = emptyScreens[capture.reason && capture.reason !== neverCaptured ? 'blocked' : 'missing'](capture);
+  if (isNative(page)) return '<div class="screens-empty"><strong>No iOS screenshot yet</strong><p>Ask the QA agent to inspect this screen on the existing Simulator and record its app check. Your actual device image appears here.</p></div>';
+  const capture = page.captures[requiredDevices(page)[0]];
+  const copy = emptyCaptureCopy(capture);
   const label = state.scan.running ? 'Taking screenshots…' : copy.action;
   return `<div class="screens-empty"><strong>${copy.title}</strong><div class="screens-empty-text">${plainMessageMarkup(copy.text)}</div><button type="button" class="save-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button>${scanErrorMarkup()}</div>`;
 }
 
 function screensMarkup(page) {
-  const rendered = ['desktop', 'mobile'].some(device => page.captures[device].state === 'rendered');
-  const body = rendered ? `<div class="report-screen-pair">${screenMarkup(page, 'desktop')}${screenMarkup(page, 'mobile')}</div>` : takeScreenshotsMarkup(page);
+  const selectedDevices = requiredDevices(page);
+  const rendered = selectedDevices.some(device => page.captures[device].state === 'rendered');
+  const body = rendered ? `<div class="report-screen-pair ${selectedDevices.length === 1 ? 'report-screens-single' : ''}">${selectedDevices.map(device => screenMarkup(page, device)).join('')}</div>` : takeScreenshotsMarkup(page);
   const actions = rendered ? `<div class="screens-actions">${timelineMarkup()}<button type="button" class="link-button" data-action="view-screens">View full page</button></div>` : '';
   return `<section class="report-screens content-panel" data-report-screens aria-label="How the page looks">${actions}${body}</section>`;
 }
 
 function aiCheckWanted(page) {
-  return page.progress.aiReview !== 'current' && page.captures.desktop.state === 'rendered';
+  return page.progress.aiReview !== 'current' && requiredDevices(page).some(device => page.captures[device].state === 'rendered');
 }
 
 // The AI check is the one primary action, offered only while the AI has not seen these screenshots.
@@ -77,5 +82,5 @@ function answersMarkup(page) {
 }
 
 export function pageReportMarkup(page) {
-  return `${screensMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}${measuredAnswersMarkup(page)}${aboutMarkup(page)}`;
+  return `${screensMarkup(page)}${nativeEvidenceMarkup(page)}${openFindingsMarkup(page)}${answersMarkup(page)}${measuredAnswersMarkup(page)}${aboutMarkup(page)}`;
 }

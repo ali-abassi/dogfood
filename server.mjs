@@ -1,3 +1,5 @@
+import { configureProject, recordNativeCheck } from './lib/store.mjs';
+import { portfolioRoutes } from './lib/portfolio.mjs';
 import './lib/env.mjs';
 import { dataStoreIdentity } from './lib/store-identity.mjs';
 import { readFileSync } from 'node:fs';
@@ -151,6 +153,9 @@ const routes = [
   ...projectMapRoutes(),
   ...newProjectRoutes(requestJson),
   ...annotationRoutes(requestJson),
+  ...portfolioRoutes(requestJson),
+  ['POST', '/api/projects/([a-z0-9-]+)/configure', async ([id], request) => projectView(configureProject(id, await requestJson(request), person))],
+  ['POST', '/api/projects/([a-z0-9-]+)/pages/([a-z0-9-]+)/native-check', async ([id, page], request) => projectView(recordNativeCheck(id, page, await requestJson(request)))],
   ['GET', '/api/projects/([a-z0-9-]+)/workflow', ([id]) => ({ ...workflow(id), plannedPages: projectReadiness(id).pages })],
   ['GET', '/api/projects/([a-z0-9-]+)/context', ([id]) => context(id)],
   ['POST', '/api/projects/([a-z0-9-]+)/tasks', async ([id], request) => addTask(id, await requestJson(request), person)],

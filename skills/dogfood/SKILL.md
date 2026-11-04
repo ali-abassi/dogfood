@@ -1,6 +1,6 @@
 ---
 name: dogfood
-description: Plan, build, verify and resume a web project with Dogfood's task workflow and evidence gates. Use to set up Dogfood, work through a project's plan, or QA its pages.
+description: Plan, build, verify and resume web, iOS and generated-publication projects with Dogfood's task workflow and evidence gates. Use to set up Dogfood, work through a project's plan, or QA its pages and screens.
 ---
 
 # Work on a project with Dogfood
@@ -9,7 +9,7 @@ Dogfood holds the structured work plan and evidence. You build with your normal 
 
 ## Set up or resume
 
-Dogfood needs Node 20+. Clone it once if unavailable; its server has no runtime dependencies. Use `node /absolute/path/to/dogfood/bin/dogfood.mjs` for every command below, or optionally run `npm link` from the Dogfood checkout to install the `dogfood` command. Start the dashboard with `npm start`; use `DOGFOOD_PORT` if the default 4321 is occupied. Leave existing sessions and servers alone.
+Dogfood needs Node 22.12+. Clone it once if unavailable; its server has no runtime dependencies. Use `node /absolute/path/to/dogfood/bin/dogfood.mjs` for every command below, or optionally run `npm link` from the Dogfood checkout to install the `dogfood` command. Start the dashboard with `npm start`; use `DOGFOOD_PORT` if the default 4321 is occupied. Leave existing sessions and servers alone.
 
 From the project checkout:
 
@@ -24,6 +24,24 @@ Initialization is idempotent for the same project and checkout. No running websi
 Always read `context` first when continuing. It identifies the next available task, current owners, blockers, documents, handoff, pending agent requests and a typed `nextAction` across scope, work and review. Read the project's current vision, design, plan and decisions when relevant. Do not claim somebody else's work. Release your own claim with a useful handoff before another agent takes it.
 
 MCP equivalents are `dogfood_init`, `dogfood_context`, `dogfood_tasks`, `dogfood_next_task`, `dogfood_add_task`, `dogfood_claim_task`, `dogfood_update_task`, `dogfood_verify_task`, and `dogfood_accept_task`. Inspect exact arguments with `dogfood schema TOOL`. Existing `dogfood_next` lists page QA gaps, not build tasks. Use `dogfood tool TOOL --input args.json` for any underlying operation; `--input -` reads JSON from stdin. Shell/MCP errors do not prove that a write happened; reread the resulting state.
+
+## Platform evidence and current projects
+
+Inspect `dogfood_configure_project` and declare the real platform and required devices before QA.
+Default web and `cli` publications require desktop and mobile; explicit `captureDevices:["desktop"]`
+requires only computer evidence and supports no phone claim. iOS requires mobile only and its actual
+bundle ID. Register screen identities as `ios://BUNDLE/SCREEN`; use `dogfood_record_native_check` for
+actual Simulator PNG, app/device metadata and current source/build evidence. Unknown installed build
+source stays unaccepted. Omitted native launch/accessibility/log checks stay untested; record only
+observed checks. Never fabricate web scans or computer screenshots for a native screen. Screenshots
+do not prove physical-device behavior, purchases, accounts or hosted services. Read
+`docs/native-apps.md` in the Dogfood checkout for exact JSON and provenance requirements.
+
+For generated CLI output, verify its relationship to the registered source before explicitly setting
+`servesCheckout:true`; use task-command receipts for CLI behavior and browser evidence for the output.
+`dogfood_portfolio` reads current projects and history. Setting current IDs with
+`dogfood_set_active_projects` is an operator action and preserves other project histories; subsequent
+writes require the latest revision. Native request agents must not bypass this operator restriction.
 
 ## Discovery before a new build
 

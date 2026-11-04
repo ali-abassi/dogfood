@@ -1,3 +1,4 @@
+import { registerPortfolioEvents } from './views/portfolio.mjs';
 import { registerDiscoveryEvents } from './views/discovery.mjs';
 import { registerProductMapEvents } from './views/product-map.mjs';
 import { registerAnnotationEvents } from './views/annotations.mjs';
@@ -377,6 +378,7 @@ function sharedClick(button) {
 }
 export function registerEvents() {
   registerBoardEvents(app);
+  registerPortfolioEvents(app, action => { if (!blockOpenFormNavigation(action)) action(); });
   registerDiscoveryEvents(app);
   registerProductMapEvents(app);
   registerAnnotationEvents(app);

@@ -51,3 +51,11 @@ Check: `npm test`, `npm run check`, `npm run lint`, `node tests/acceptance/mcp.m
 Outcome: a new idea becomes reviewed scope and a page/feature map; linked native requests return inspectable changes; screenshot feedback becomes a durable request; Overview explains the actual next action. Scope: managed project creation, readiness/docs/baseline, map, board context/results/diff/apply/save, pins, visual freshness, QA lifecycle, CLI/MCP/skill. Preserve existing acceptance gates, browser session, brand and source history.
 
 Check: `npm test`, `npm run check`, `npm run lint`, full `npm run test:acceptance`; independent code review; fresh-project discovery/baseline and native continuation; screenshot pin/request and diff/apply/save through the existing browser. At 1280 and 390, review Discovery, map, Overview, Plan, agent conversation and pinned screenshot in light/dark, with readable controls, preserved drafts, keyboard access and no sideways page scrolling. Re-run the established local release and source-bound QA gates; record remaining unproven outcomes explicitly.
+
+## 2026-11-03 — active portfolio and native app evidence
+
+- Select the active project list without deleting historical audits. Show actual coverage and open findings, with clear project navigation at1280/390.
+- Add an explicit web/iOS/CLI source profile. Preserve responsive web defaults; iOS uses real mobile frames and declared bundle/device/build evidence. Unknown installed builds cannot accept.
+- Onboard the five selected products with current source mappings and representative real-flow QA. Keep external services and protected journeys explicitly unverified.
+- Present a concise public GitHub with a verified no-key demo, accessible workflow artwork, CLI and native-app setup documentation.
+- Check: `npm test`, `npm run check`, `npm run lint`, and `node tests/acceptance/platform-portfolio.mjs`. Retain scoped real-product evidence locally and review before shipping.

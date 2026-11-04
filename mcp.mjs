@@ -1,3 +1,6 @@
+import { platformTools } from './lib/platform-contract.mjs';
+import { configureProject, recordNativeCheck } from './lib/store.mjs';
+import { portfolioTools } from './lib/portfolio.mjs';
 import './lib/env.mjs';
 import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
@@ -573,8 +576,13 @@ const definitions = [
   },
 ];
 
+definitions.push(...platformTools.map(tool => ({ ...tool, run: runPlatformTool(tool.name) })));
+function runPlatformTool(name) {
+  if (name === 'dogfood_configure_project') return ({ project, by, ...input }) => configureProject(project, input, byAgent(by));
+  return ({ project, page, ...input }) => recordNativeCheck(project, page, input);
+}
 definitions.push(...workflowTools);
-definitions.push(...agentBoardTools, ...readinessTools, ...projectMapTools, ...newProjectTools, ...annotationTools);
+definitions.push(...agentBoardTools, ...readinessTools, ...projectMapTools, ...newProjectTools, ...annotationTools, ...portfolioTools);
 
 const toolList = definitions.map(({ run, ...tool }) => tool);
 const tools = new Map(definitions.map(definition => [definition.name, definition]));

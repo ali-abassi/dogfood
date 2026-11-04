@@ -89,3 +89,13 @@ Handle external Git work explicitly: reconcile only an exact single-parent commi
 The real Codex continuation probe showed the shell retained DOGFOOD_NATIVE_REQUEST but its MCP child reached the idle-card guard instead of the native-context guard. Explicitly forward the five Dogfood context variable names in Codex's existing MCP entry; PAL's config is a symlink to that same file. Preserve command/account settings and credentials. This is a runtime setup correction supported by an actual harmless invalid-fingerprint probe, not an assumption about Codex's inherited environment.
 
 Overview status polling must update its own panel rather than replace the app. A real Linux CI search failure caught the lost-input race; deterministic delayed-response proof now covers it at desktop and phone widths. Defer the panel swap while it owns focus, preserving keyboard interaction, and retain open outcome disclosure across background updates.
+
+## 2026-11-03 — active portfolio and native app QA
+
+The current-project dashboard answers “What is being built, and what needs attention?” Its primary action opens the selected project. Use a quiet two-column list at desktop and one column on a phone, with truthful counts rather than invented KPI scores. Selection lives in a revisioned sidecar; omitted projects remain in History with their evidence.
+
+Use explicit platform/device profiles. Normal web projects retain computer and phone requirements; projects with a written desktop scope may select desktop only. Native iOS captures occupy one mobile slot and bind to bundle, screen, version/build, Simulator, current source and executable evidence. Preserve operator attribution: a matching file hash alone is not automatic installed-app attestation. Unknown installed source, unmeasured launch timing, missing accessibility checks and absent logs remain visible gaps. No HTTP/SEO facts are fabricated for native screens.
+
+The selected portfolio contains Learn Quran, Scarlet, AI Money Team, AI Social Team and Blog Dawg. Preserve existing native records and historical findings; use separate current web QA environments where older records mix source versions, production URLs and retired scope. Review web apps in isolated local data with publishing/providers disabled, preserve the existing Simulator, and keep generated CLI publication proof separate from public delivery. Project-level green acceptance is not a consequence of registering a project.
+
+Public GitHub should explain the scope → agent work → feedback → evidence workflow with a tested zero-key demo and conceptual SVG, while keeping private project screenshots, credentials and QA artifacts local.

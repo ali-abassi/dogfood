@@ -1,6 +1,8 @@
+import { checkedProfile, iosSourceUrl, platform, platformPage } from '../lib/project-platform.mjs';
+import { checkedHash } from '../lib/native-evidence.mjs';
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { captureProblem, readCapture } from '../lib/capture.mjs';
+import { captureProblem, decodePng, readCapture } from '../lib/capture.mjs';
 import { dataDir, projectsDir, root } from '../lib/paths.mjs';
 import {
   auditKeys, captureStates, captureTiers, checkKeys, connectionProvenance, devices, evidenceNote, findingStatuses,
@@ -34,7 +36,7 @@ function checkRenderedCapture(capture, project, label) {
   assertRules(label, [
     [() => !['sourceUrl', 'capturedAt', 'viewport', 'actor'].every(key => capture[key]), 'capture provenance missing'],
     [() => !captureTiers.has(capture.tier), 'capture evidence tier invalid'],
-    [() => !isHttpUrl(capture.sourceUrl), 'source URL must be HTTP(S)'],
+    [() => !validCaptureSource(capture, project), 'source URL must match the declared platform'],
     [() => !capture.path?.startsWith(`/captures/${project.id}/`), 'capture path invalid'],
     [() => typeof capture.fullPage !== 'boolean', 'full-page capture status missing'],
   ]);
@@ -43,7 +45,7 @@ function checkRenderedCapture(capture, project, label) {
     [() => capture.pixelWidth !== image.width || capture.pixelHeight !== image.height, 'capture dimensions do not match image'],
     [() => capture.sha256 && capture.sha256 !== image.sha256, 'capture file changed after it was recorded'],
   ]);
-  const problem = captureProblem(image.bytes);
+  const problem = checkedCaptureProblem(capture, image.bytes);
   if (problem) fail(`${label}: ${problem}`);
 }
 
@@ -53,11 +55,19 @@ function checkCapture(capture, project, label) {
   if (!capture.reason) fail(`${label}: blocked capture needs a reason`);
 }
 
+function validCaptureSource(capture, project) {
+  if (capture.native) return validNativeUrl(capture.sourceUrl, capture.native.app.bundleId);
+  return isHttpUrl(capture.sourceUrl);
+}
+function validNativeUrl(value, bundleId) {
+  try { iosSourceUrl({ bundleId }, value); return true; }
+  catch { return false; }
+}
 function checkScan(page, label) {
   if (page.scan === null) return;
   assertRules(`${label}/scan`, [
     [() => Number.isNaN(Date.parse(page.scan?.scannedAt)), 'scan time invalid'],
-    [() => !devices.every(device => page.scan.viewports?.[device] && page.scan.captureSha256?.[device]), 'scan must cover desktop and mobile'],
+    [() => !recordedScanDevices(page).every(device => page.scan.viewports?.[device] && page.scan.captureSha256?.[device]), 'scan must cover the declared devices'],
   ]);
 }
 
@@ -101,7 +111,7 @@ function checkFinding(finding, page, label) {
     [() => resolved && String(finding.resolution ?? '').trim().length < 20, 'resolution evidence missing'],
     [() => resolved && Number.isNaN(Date.parse(finding.resolvedAt)), 'resolution time invalid'],
     [() => typeof finding.evidence !== 'string', 'finding evidence field missing'],
-    [() => finding.evidence && finding.evidence !== page.captures.desktop.path?.slice(1), 'finding evidence belongs to another page'],
+    [() => finding.evidence && !devices.some(device => finding.evidence === page.captures[device].path?.slice(1)), 'finding evidence belongs to another page'],
   ]);
 }
 
@@ -129,6 +139,7 @@ function checkAuditEvidence(row, label) {
 }
 
 function checkEvidenceContext(context, label) {
+  if (context.platform === 'ios') return checkNativeContext(context, label);
   const strings = ['requiredRole', 'verifiedRole', 'fixture', 'browserProfile', 'declaredRole', 'declaredFixture'];
   assertRules(label, [
     [() => !isHttpUrl(context.sourceUrl), 'audit evidence source must be HTTP(S)'],
@@ -192,6 +203,7 @@ function checkPage(page, project, checkout) {
   ]);
   devices.forEach(device => checkCapture(page.captures?.[device], project, `${label}/${device}`));
   checkScan(page, label);
+  checkNativeRecord(page, project, label);
   for (const key of checkKeys) checkEntry(page.checks?.[key], `${label}/${key}`);
   checkFeatures(page, label);
   page.findings.forEach(finding => checkFinding(finding, page, label));
@@ -201,6 +213,7 @@ function checkPage(page, project, checkout) {
 }
 
 function checkProjectIdentity(project, name) {
+  checkedProfile(project.source);
   assertRules(name, [
     [() => project.version !== manifestVersion || `${project.id}.json` !== name, 'project version or ID mismatch'],
     [() => !idPattern.test(project.id), 'invalid project ID'],
@@ -232,13 +245,63 @@ function checkProject(name) {
   const project = JSON.parse(readFileSync(join(projectsDir, name), 'utf8'));
   checkProjectIdentity(project, name);
   const checkout = project.source.checkout ? realpathSync(resolve(root, project.source.checkout)) : null;
-  project.pages.forEach(page => checkPage(page, project, checkout));
+  project.pages.forEach(page => checkPage(platformPage(project, page), project, checkout));
   warnAboutOutsideEdits(project);
   const complete = projectView(project).pages.filter(page => page.progress.complete).length;
   console.log(`${project.name}: ${project.pages.length} pages, ${complete} with complete QA`);
 }
 
 if (!existsSync(projectsDir)) fail(`No projects folder at ${projectsDir}. Run with DOGFOOD_DATA=demo to check the demo.`);
-const names = readdirSync(projectsDir).filter(name => name.endsWith('.json'));
+function selectedManifest(id) {
+  if (!idPattern.test(id)) fail('Project selection must use registered project IDs.');
+  return `${id}.json`;
+}
+const selected = process.argv.slice(2);
+const names = selected.length ? selected.map(selectedManifest) : readdirSync(projectsDir).filter(name => name.endsWith('.json'));
 if (!names.length) fail('No project manifests found');
 names.forEach(checkProject);
+
+function checkNativeContext(context, label) {
+  assertRules(label, [
+    [() => !validNativeUrl(context.sourceUrl, context.app?.bundleId), 'native evidence source identity invalid'],
+    [() => !context.device?.simulatorUDID || !context.device.name || !context.device.os, 'native evidence device missing'],
+    [() => !context.app?.version || !context.app.build, 'native app version/build missing'],
+    [() => !['matched', 'unknown'].includes(context.build?.sourceProof), 'native build source proof missing'],
+  ]);
+  checkedHash(context.profileHash, 'Native profile hash');
+}
+function checkNativeRecord(page, project, label) {
+  const check = page.nativeCheck;
+  if (!check) return;
+  checkNativeContext({ ...check, platform: 'ios' }, label);
+  checkedHash(check.sourceFingerprint, 'Native source fingerprint');
+  checkedHash(check.captureSha256, 'Native capture fingerprint');
+  if (check.build.sourceProof === 'matched') checkMatchedNativeBuild(check, label);
+  if (platform(project.source) === 'ios') checkNativeReceipt(page, label);
+}
+function checkMatchedNativeBuild(check, label) {
+  checkedHash(check.build.artifactSha256, 'Native artifact fingerprint');
+  assertRules(label, [
+    [() => check.build.sourceFingerprint !== check.sourceFingerprint, 'native build/source mismatch'],
+    [() => !check.build.artifactFile || !check.build.note, 'native build receipt missing'],
+  ]);
+}
+function checkNativeReceipt(page, label) {
+  const capture = page.captures.mobile;
+  assertRules(label, [
+    [() => capture.sha256 !== page.nativeCheck.captureSha256, 'native screenshot/check mismatch'],
+    [() => capture.sourceUrl !== page.nativeCheck.sourceUrl, 'native screenshot/source mismatch'],
+    [() => JSON.stringify(capture.native?.device) !== JSON.stringify(page.nativeCheck.device), 'native screenshot/device mismatch'],
+  ]);
+}
+
+function checkedCaptureProblem(capture, bytes) {
+  if (!capture.native) return captureProblem(bytes);
+  const decoded = decodePng(bytes);
+  return typeof decoded === 'string' ? decoded : '';
+}
+
+function recordedScanDevices(page) {
+  if (page.scan.captureDevices === undefined) return devices;
+  return checkedProfile({ platform: 'web', captureDevices: page.scan.captureDevices }).captureDevices;
+}

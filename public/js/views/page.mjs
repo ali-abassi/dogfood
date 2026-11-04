@@ -1,3 +1,4 @@
+import { isNative } from '../platform.mjs';
 import { escapeHtml, externalLinkMarkup, plainMessageMarkup, statusPill } from '../format.mjs';
 import { groupedPages, isProjectView, menuPages, state, statusNames } from '../state.mjs';
 
@@ -52,8 +53,16 @@ function projectNavMarkup() {
   }).join('');
 }
 
+function projectOptions(items) { return items.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === state.project.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join(''); }
+function projectOptionGroups() {
+  const active = state.portfolio?.data;
+  if (!active?.configured) return projectOptions(state.projects);
+  const ids = active.projects;
+  const groups = [['Current projects', state.projects.filter(p => ids.includes(p.id))], ['Workspace', state.projects.filter(p => p.id === 'dogfood' && !ids.includes(p.id))], ['History', state.projects.filter(p => p.id !== 'dogfood' && !ids.includes(p.id))]];
+  return groups.filter(([, items]) => items.length).map(([label, items]) => `<optgroup label="${label}">${projectOptions(items)}</optgroup>`).join('');
+}
 function projectPickerMarkup() {
-  const options = state.projects.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === state.project.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('');
+  const options = projectOptionGroups();
   return `<label class="project-picker"><span class="sr-only">Project</span><select id="project-select">${options}</select></label>`;
 }
 
@@ -61,10 +70,11 @@ export function sidebarMarkup() {
   const pages = menuPages();
   return `<aside class="page-sidebar ${state.browseOpen ? 'open' : ''}" aria-label="Project">
       <div class="page-sidebar-head"><img class="app-icon" src="/logo.svg" alt="" width="32" height="32"><strong>dogfood</strong><button type="button" class="add-project-button" data-action="add-project" aria-label="Add an app" title="Add an app">+</button><button type="button" class="page-sidebar-close" data-action="close-pages">Done</button></div>
+      <button type="button" class="text-button portfolio-link" data-project-view="portfolio">Current projects</button>
       ${projectPickerMarkup()}
       <nav class="page-list" aria-label="Project">
         <div class="project-nav">${projectNavMarkup()}</div>
-        <div class="pages-head"><h2>Pages</h2></div>
+        <div class="pages-head"><h2>${isNative() ? 'Screens' : 'Pages'}</h2></div>
         <label class="search-field"><span class="sr-only">Search pages, routes, things to do or open bugs</span><span class="search-icon" aria-hidden="true"></span><input id="page-search" type="search" placeholder="Search pages" value="${escapeHtml(state.query)}"></label>
         <div class="menu-controls">${menuSelectMarkup('page-filter', 'Show', state.filter, [['all', 'All pages'], ['needs', 'Needs work'], ['untested', 'Not checked'], ['reviewed', 'Checked'], ['changed', 'Changed since last check']])}${menuSelectMarkup('page-sort', 'Sort', state.sort, [['navigation', 'Site order'], ['needs', 'Needs work first'], ['least', 'Least checked']])}</div>
         <div class="page-groups">${pageOptionsMarkup(pages)}</div>
@@ -86,6 +96,7 @@ function checkAgainLabel(page) {
 
 // A page that has never been checked leads with Take screenshots in the screenshot panel instead.
 function checkAgainMarkup(page) {
+  if (isNative(page)) return '';
   if (!page.scan) return '';
   return `<button type="button" class="link-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${escapeHtml(checkAgainLabel(page))}</button>`;
 }

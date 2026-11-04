@@ -964,3 +964,19 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .product-map-columns ul { list-style: none; padding: 0; }
 .product-map-columns li > small, .product-map-features li > span { display: block; color: var(--secondary); font-size: 13px; margin-top: 5px; }
 .product-map-features li > p { margin-top: 10px; }
+
+.portfolio-link { width: 100%; margin: 0 0 12px; justify-content: flex-start; }
+.portfolio-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.portfolio-card { min-width: 0; padding: 24px; }
+.portfolio-card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.portfolio-card h2 { margin: 18px 0 10px; }
+.portfolio-card p { line-height: 1.55; }
+.portfolio-coverage { margin-top: 24px; }
+.portfolio-status { color: var(--secondary); font-size: 13px; }
+@media (max-width: 760px) { .portfolio-grid { grid-template-columns: 1fr; } }
+
+.report-screen-pair.report-screens-single { grid-template-columns: minmax(0, 1fr); }
+.report-screens-single .report-screen-mobile { width: min(100%, 300px); justify-self: center; }
+.report-screens-single .report-screen-mobile .screen-frame { height: 480px; }
+.native-evidence { padding: 24px; margin-bottom: 24px; }
+.native-evidence .facts dd { overflow-wrap: anywhere; }

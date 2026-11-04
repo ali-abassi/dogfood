@@ -145,6 +145,30 @@ Use `dogfood_annotations` to read the immutable capture, finding, current/stale 
 **Ask the QA agent** uses the same durable native board with `qa` intent. `DOGFOOD_QA_BACKEND` may
 prefer `codex` or `claude`; legacy custom `DOGFOOD_QA_AGENT` commands are not executed.
 
+## Platform evidence and current projects
+
+Use `dogfood_configure_project` to declare `web`, `ios` or `cli` coverage while retaining project
+history. Web and generated publications default to computer and phone; explicit
+`captureDevices:["desktop"]` limits required evidence to computer. iOS requires mobile only and a
+bundle ID. `dogfood_record_native_check` imports an actual Simulator PNG with current source,
+app, executable and device provenance. It does not build or launch an app. Unknown build source
+remains unaccepted, and omitted observed checks remain untested.
+
+```sh
+dogfood schema dogfood_configure_project
+dogfood schema dogfood_record_native_check
+dogfood schema dogfood_portfolio
+dogfood schema dogfood_set_active_projects
+```
+
+The [native apps and generated-publication guide](native-apps.md) has exact JSON examples,
+screen identities and acceptance boundaries. Declare a generated output's `servesCheckout`
+relationship explicitly only after verifying it against the registered source.
+
+`dogfood_portfolio` reads current projects plus history. `dogfood_set_active_projects` takes
+`{"agent":"operator","input":{"projects":["my-app"]}}`; subsequent writes also require
+`input.expectedRevision` from the latest read. Other projects retain their QA history.
+
 ## MCP and native agent configuration
 
 Both native agents can use the same stdio server:
@@ -180,3 +204,8 @@ These are context-variable names, not credentials. Without forwarding, a Codex M
 lose the native-request marker even while its shell sees it. Worktree detection remains a
 fallback. Start the next native turn after changing configuration; an already-running MCP
 process keeps its original environment.
+
+A portfolio save uses `portfolio.json.lock` in the selected data folder. If a save reports an
+existing lock after a process crash, first confirm the writer has stopped and no save is running,
+then remove only that lock file. Keep `portfolio.json` and all project manifests. An unavailable
+project is shown as a setup gap without hiding the rest of the portfolio.

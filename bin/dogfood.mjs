@@ -11,7 +11,7 @@ import { pageById, projectView, readProject } from '../lib/store.mjs';
 import { pagesGate } from '../lib/completion.mjs';
 import { runNamedTool, toolDefinitions } from '../mcp.mjs';
 
-const help = `dogfood — plan, build, verify, and resume a web project
+const help = `dogfood — plan, build, verify, and resume web, iOS and CLI projects
 
   dogfood init --checkout . [--id my-app] [--name "My App"] [--url URL]
   dogfood doctor [--project ID] [--require-agents]
@@ -44,6 +44,8 @@ const help = `dogfood — plan, build, verify, and resume a web project
   dogfood board release-integration CARD --input integration.json
   dogfood tool TOOL --input args.json
   dogfood schema [TOOL]
+  # Native apps: tool dogfood_configure_project, then dogfood_record_native_check
+  # Current projects: tool dogfood_portfolio, dogfood_set_active_projects
   dogfood skill
 
 Project defaults to the current checkout or DOGFOOD_PROJECT.

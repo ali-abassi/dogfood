@@ -1,3 +1,5 @@
+import { isNative, requiredDevices, deviceName } from '../platform.mjs';
+import { nativeEvidenceMarkup } from './native-evidence.mjs';
 import { measuredAnswersMarkup } from './measured.mjs';
 import { readJson } from '../api.mjs';
 import { answerMarkMarkup, escapeHtml, secondsLabel, sourceLabel, verdictByMarkup } from '../format.mjs';
@@ -29,7 +31,7 @@ function partsMarkup(answer, lead) {
 
 // The AI can answer the three judged questions, so their detail offers it when it has not looked yet.
 function aiCanAnswer(page, answer) {
-  return judged.has(answer.id) && page.progress.aiReview !== 'current' && page.captures.desktop.state === 'rendered';
+  return judged.has(answer.id) && page.progress.aiReview !== 'current' && requiredDevices(page).some(device => page.captures[device].state === 'rendered');
 }
 
 function aiCheckMarkup(page, answer) {
@@ -45,7 +47,9 @@ function editAnswerMarkup(answer) {
 }
 
 // A Recheck answer names why it is stale and offers to check the page again.
-function recheckMarkup(page, answer) {
+function nativeRecheckMarkup(page, answer) { return displayAnswerStatus(page, answer) === 'recheck' ? '<p class="recheck-note">The app source or captured state changed. Record a fresh app check, then confirm this answer still holds.</p>' : ''; }
+function recheckMarkup(page, answer) { return isNative(page) ? nativeRecheckMarkup(page, answer) : webRecheckMarkup(page, answer); }
+function webRecheckMarkup(page, answer) {
   if (displayAnswerStatus(page, answer) !== 'recheck' || state.answerEditing) return '';
   const label = state.scan.running ? 'Checking the page…' : 'Check again';
   return `<p class="recheck-note">The screenshots changed since this answer. Check the page again, then confirm it still holds.</p><div class="form-actions"><button type="button" class="text-button" data-action="scan" ${state.scan.running ? 'disabled' : ''}>${label}</button></div>`;
@@ -65,10 +69,11 @@ function answerFormMarkup(answer) {
   return `<form id="answer-form" class="answer-form" novalidate data-answer="${escapeHtml(answer.id)}"><fieldset><legend>Your answer to “${escapeHtml(answer.question)}”</legend><div class="choices">${choice('pass', 'Good')}${choice('needs_work', 'Needs work')}${choice('blocked', 'Blocked')}</div></fieldset><label for="answer-note">What did you see, or what do you need?</label><p id="answer-note-help" class="form-help">Describe what you checked, what happened, or what is blocking you. At least 12 characters.</p><textarea id="answer-note" name="note" rows="4" maxlength="1200" aria-describedby="answer-note-help answer-error" placeholder="For example: the Book button is hard to find on a phone.">${escapeHtml(current.note)}</textarea><div id="answer-error" class="form-error" role="alert" hidden></div><div class="form-actions"><button class="save-button" type="submit">Save answer</button><button class="text-button" type="button" data-action="cancel-answer">Cancel</button></div></form>`;
 }
 
+function questionTopic(topic) { return isNative(activePage()) ? ({ security: 'App safety', scraping: 'Privacy', seo: 'App readiness', accessibility: 'Accessibility' }[topic]) : questionTopics[topic]; }
 function questionMarkup(row, topic, warning) {
   const note = row.note ? `<p class="question-note">${escapeHtml(row.note)}</p>` : '';
   const status = row.status === 'untested' ? 'untested' : row.status;
-  return `<li class="question" data-question>${answerMarkMarkup(row.question, status)}<div><strong>${escapeHtml(row.question)}</strong><span class="question-topic">${escapeHtml(questionTopics[topic])} · ${escapeHtml(answerWords[status])}</span>${note}${verdictByMarkup(row.by, row.at)}${auditSourceMarkup(row, warning)}</div></li>`;
+  return `<li class="question" data-question>${answerMarkMarkup(row.question, status)}<div><strong>${escapeHtml(row.question)}</strong><span class="question-topic">${escapeHtml(questionTopic(topic))} · ${escapeHtml(answerWords[status])}</span>${note}${verdictByMarkup(row.by, row.at)}${auditSourceMarkup(row, warning)}</div></li>`;
 }
 
 function auditSourceMarkup(row, warning) {
@@ -115,25 +120,28 @@ function presentOrMissing(value) {
 }
 
 function speedFactsMarkup(page) {
+  if (isNative(page)) return nativeEvidenceMarkup(page);
   if (!page.scan) return '<section class="content-panel" aria-label="Measured"><h2>Measured</h2><p class="muted">Not measured yet. Check the page to time it.</p></section>';
-  const [desktop, mobile] = [page.scan.viewports.desktop, page.scan.viewports.mobile];
-  return `<section class="content-panel" aria-label="Measured"><h2>Measured</h2><dl class="facts">${factMarkup('Load time on a computer', secondsLabel(desktop.loadMs))}${factMarkup('Load time on a phone', secondsLabel(mobile.loadMs))}${factMarkup('Page title', presentOrMissing(desktop.seo.title))}${factMarkup('Search description', presentOrMissing(desktop.seo.description))}${factMarkup('Main headings on the page', String(desktop.seo.h1Count))}${factMarkup('Page language', languageName(desktop.seo.lang))}</dl></section>`;
+  const devices = requiredDevices(page), desktop = page.scan.viewports[devices[0]];
+  const times = devices.map(device => factMarkup(`Load time on a ${deviceName(device, page).toLowerCase()}`, secondsLabel(page.scan.viewports[device].loadMs))).join('');
+  return `<section class="content-panel" aria-label="Measured"><h2>Measured</h2><dl class="facts">${times}${factMarkup('Page title', presentOrMissing(desktop.seo.title))}${factMarkup('Search description', presentOrMissing(desktop.seo.description))}${factMarkup('Main headings on the page', String(desktop.seo.h1Count))}${factMarkup('Page language', languageName(desktop.seo.lang))}</dl></section>`;
 }
 
 const headerWords = { 'content-security-policy': 'Limits which scripts can run', 'strict-transport-security': 'Always uses a secure connection', 'x-frame-options': 'Cannot be hidden inside another site', 'x-content-type-options': 'Files are read only as their real type', 'referrer-policy': 'Limits what other sites learn about visitors' };
 
 function safetyFactsMarkup(page) {
   if (!page.scan) return '';
-  const headers = page.scan.viewports.desktop.headers;
+  const headers = page.scan.viewports[requiredDevices(page)[0]].headers;
   const rows = Object.entries(headerWords).map(([name, words]) => factMarkup(words, headers[name] ? 'Yes' : 'No')).join('');
   return `<details class="content-panel fact-disclosure"><summary>Protections the page asks browsers for</summary><dl class="facts">${rows}</dl></details>`;
 }
 
 function easeFactsMarkup(page) {
   if (!page.scan) return '';
-  const { desktop, mobile } = page.scan.viewports;
-  const counts = mobile.accessibility;
-  return `<section class="content-panel" aria-label="Measured"><h2>Measured</h2><dl class="facts">${factMarkup('Scrolls sideways on a phone', mobile.horizontalOverflow ? 'Yes' : 'No')}${factMarkup('Scrolls sideways on a computer', desktop.horizontalOverflow ? 'Yes' : 'No')}${factMarkup('Images without a description', String(counts.imagesWithoutAlt))}${factMarkup('Fields without a label', String(counts.unlabeledFields))}${factMarkup('Buttons without a name', String(counts.unnamedButtons))}</dl></section>`;
+  const devices = requiredDevices(page);
+  const counts = page.scan.viewports[devices.at(-1)].accessibility;
+  const overflow = devices.map(device => factMarkup(`Scrolls sideways on a ${deviceName(device, page).toLowerCase()}`, page.scan.viewports[device].horizontalOverflow ? 'Yes' : 'No')).join('');
+  return `<section class="content-panel" aria-label="Measured"><h2>Measured</h2><dl class="facts">${overflow}${factMarkup('Images without a description', String(counts.imagesWithoutAlt))}${factMarkup('Fields without a label', String(counts.unlabeledFields))}${factMarkup('Buttons without a name', String(counts.unnamedButtons))}</dl></section>`;
 }
 
 function currentAnalysis() {
