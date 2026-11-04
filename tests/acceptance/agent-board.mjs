@@ -268,6 +268,8 @@ try {
     assert.equal(request.backend, 'claude');
     assert.equal(request.intent, 'qa'); assert.equal(request.queued, false); assert.equal(request.status, 'todo');
     assert.match(request.request, /every|required|complete/i);
+    assert.equal(page('document.querySelector(".board-full-brief")?.open'), false);
+    assert.ok(page('document.querySelector(".board-full-brief").textContent.length') > 800);
     click('[data-board-action="close"]');
     click(`.board-card[data-board-action="select"][data-card-id="${request.id}"]`);
     assert.equal(page('document.querySelector("#board-request-heading").textContent'), title);

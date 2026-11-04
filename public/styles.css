@@ -1097,3 +1097,8 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 }
 .board-work-queue[open] > summary { margin-bottom: 12px; }
 .has-selection #board-work-queue { display: none; }
+.board-full-brief { margin-top: 12px; font-size: 13px; }
+.board-full-brief summary { cursor: pointer; color: var(--secondary); }
+.board-full-brief[open] p { margin-top: 12px; font-size: 13px; }
+#board-request-heading { scroll-margin-top: 24px; }
+@media (max-width: 760px) { #board-request-heading { scroll-margin-top: 72px; } }

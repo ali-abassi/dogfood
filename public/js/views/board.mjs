@@ -36,7 +36,7 @@ function matchesSearch(card) {
   return text.toLowerCase().includes(board().search.toLowerCase().trim());
 }
 function cardPriority(card) { return card.delivery?.task?.priority ?? 2; }
-function byPriority(a, b) { return cardPriority(a) - cardPriority(b) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt); }
+function byPriority(a, b) { return cardPriority(a) - cardPriority(b) || Date.parse(a.createdAt) - Date.parse(b.createdAt); }
 function visibleCards() { return cards().filter(matchesFilter).filter(matchesSearch).sort(byPriority); }
 
 function executionSummary() {
@@ -250,8 +250,15 @@ function runDetailsMarkup(card) {
 }
 function cardErrorMarkup(card) { return card.error ? `<p class="board-error form-error" role="alert">${escapeHtml(card.error)}</p>` : ''; }
 function reviewNoteMarkup(card) { return card.status === 'review' ? '<p class="board-review-note">The agent finished its turn. Review its changes and checks before closing the conversation. Delivery verification above tracks the linked task and pages.</p>' : ''; }
+function requestMarkup(card) {
+  const text = requestText(card);
+  if (text.length < 800) return `<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(text)}</p></div>`;
+  const first = text.split('\n\n')[0];
+  const preview = first.length > 360 ? `${first.slice(0, 360)}…` : first;
+  return `<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(preview)}</p><details class="board-full-brief" data-detail-key="full-brief"><summary>Full agent brief</summary><p>${escapeHtml(text)}</p></details></div>`;
+}
 function detailContentMarkup(card) {
-  return `<div class="board-detail-top"><div>${statusMarkup(card)}<h2 id="board-request-heading" tabindex="-1">${escapeHtml(card.title)}</h2></div><button type="button" class="text-button" data-board-action="close" aria-label="Close request">Close</button></div>${contextMarkup(card)}${deliveryMarkup(card, Boolean(board().action))}<div class="board-request-text"><h3>Request</h3><p>${escapeHtml(requestText(card))}</p></div>${cardErrorMarkup(card)}<div class="board-detail-actions">${cardActions(card)}</div>${reviewNoteMarkup(card)}${outcomeMarkup(card)}${changedFilesMarkup(card)}${commentsMarkup(card)}`;
+  return `<div class="board-detail-top"><div>${statusMarkup(card)}<h2 id="board-request-heading" tabindex="-1">${escapeHtml(card.title)}</h2></div><button type="button" class="text-button" data-board-action="close" aria-label="Close request">Close</button></div>${contextMarkup(card)}${deliveryMarkup(card, Boolean(board().action))}${requestMarkup(card)}${cardErrorMarkup(card)}<div class="board-detail-actions">${cardActions(card)}</div>${reviewNoteMarkup(card)}${outcomeMarkup(card)}${changedFilesMarkup(card)}${commentsMarkup(card)}`;
 }
 function detailMarkup(card) {
   if (!card) return '';
@@ -600,7 +607,7 @@ function selectCard(button) {
   b.selected = button.dataset.cardId; b.formError = ''; b.queueOpen = false;
   rememberSelection(b.selected);
   render(); focus('board-request-heading');
-  document.getElementById('board-detail-host')?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  document.getElementById('board-request-heading')?.scrollIntoView({ block: 'start', behavior: 'instant' });
 }
 function closeCard() { board().selected = ''; rememberSelection(''); render(); }
 function cancelRequest() {
