@@ -638,7 +638,7 @@ textarea::placeholder, input::placeholder { color: var(--tertiary); }
 .doc-state p { max-width: 64ch; margin: 0 0 12px; color: var(--secondary); font-size: 14.5px; line-height: 1.55; overflow-wrap: anywhere; }
 .doc-state button { margin-top: 4px; }
 .doc-view .doc-body { width: 100%; max-width: 760px; padding: 28px 32px 32px; overflow-wrap: anywhere; }
-.doc-body [id] { scroll-margin-top: 80px; }
+.doc-body [id], #working-intent { scroll-margin-top: 80px; }
 .doc-body h2, .doc-body h3 { line-height: 1.3; }
 .doc-body h3 { font-size: 20px; }
 .doc-contents { max-width: 760px; margin-bottom: 16px; color: var(--secondary); font-size: 14px; }

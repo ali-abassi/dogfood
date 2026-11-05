@@ -11,6 +11,8 @@ Optional intent.md is visible under Vision and included in native task snapshots
 stay readable without dead local web links; Vision and intent headings use separate anchor IDs.
 34 targeted docs/context tests pass, and actual current Learn Quran documents were inspected in the
 rendered Vision/Working intent view at 1280 and 390 pixels without horizontal overflow or duplicate IDs.
+Final phone review caught the Working intent jump landing under the 52px toolbar. It now uses the
+existing document anchor offset: the heading lands at 98px on a 390px phone, fully visible.
 Portfolio document/source reconciliation retains old evidence and unverified gaps; it does not claim
 that updating project documentation clears downstream application QA.
 

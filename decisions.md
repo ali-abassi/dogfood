@@ -1,5 +1,9 @@
 # Decisions
 
+## 2026-11-04 — document jump visibility
+
+- Apply the existing 80px document anchor spacing to Working intent. A direct phone check put its title at 18px beneath the sticky toolbar; the corrected jump leaves the title visible at 98px without adding controls or layout.
+
 ## 2026-11-03 — agent requests in the project workbench
 
 - Ali authorized a kanban that sends work and feedback to Claude Code or Codex. Implement one complete request/conversation/review loop first; keep the broader discovery/map/annotation/goal work as later scope.
