@@ -30,7 +30,7 @@ function withFixture(action) {
 test('configured scanner session is reused without state injection, tracking or closing', () => withFixture(value => {
   value.env.DOGFOOD_BROWSER_SESSION = 'owned-shared-fixture'; value.env.DOGFOOD_BROWSER_STATE = '/fixture/existing-state.json';
   const calls = run(value, `const before=process.listenerCount('SIGINT');await withScanner('Default',async browser=>{assert.equal(browser.session,'owned-shared-fixture');assert.equal(process.listenerCount('SIGINT'),before);await browser.command(['snapshot']);});assert.equal(process.listenerCount('SIGINT'),before);`);
-  assert.deepEqual(commands(calls), [['--session', 'owned-shared-fixture', '--profile', 'Default', '--json', 'snapshot']]);
+  assert.deepEqual(commands(calls), [['--session', 'owned-shared-fixture', '--json', 'snapshot']]);
 }));
 test('configured scanner session is preserved when its action throws', () => withFixture(value => {
   value.env.DOGFOOD_BROWSER_SESSION = 'owned-shared-fixture';

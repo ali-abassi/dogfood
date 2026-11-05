@@ -6,6 +6,7 @@ export function draftImages(board, card) { return board.images?.[card] || []; }
 export function hasImageDrafts(board) { return Object.values(board.images || {}).some(images => images.length > 0); }
 export function firstImageDraft(board) { return Object.keys(board.images || {}).find(id => board.images[id].length) || ''; }
 function release(images) { images.forEach(image => URL.revokeObjectURL(image.preview)); }
+export function releaseImagePreviews(board) { Object.values(board.images || {}).forEach(release); }
 export function clearImages(board, card) {
   if (card) { release(draftImages(board, card)); delete board.images[card]; return; }
   Object.values(board.images || {}).forEach(release); board.images = {};

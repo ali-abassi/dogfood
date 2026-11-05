@@ -1,5 +1,29 @@
 # Progress
 
+## 2026-11-04 — Durable drafts and completed request recovery
+
+Unsent requests, replies, note choices and image Files now survive full reloads. IndexedDB uses
+project/datastore isolation, bounded storage, serialized writes and atomic revisions to protect
+against stale tabs. Save failures stay visible and retain typing. Fixed the initial-render race
+found by restoring a draft while board data was still loading. Saved requests have a direct
+Cancel action; closed requests retain historical errors without showing an active failure.
+
+Actual Claude and Codex sessions each completed image-backed requests, preserved decisions on
+follow-up, and recovered after intentional stops. Claude also recovered across a Dogfood server
+restart. The operator reviewed both tiny fixture changes, independently ran their checks, and
+accepted both fixture tasks. Claude used board Apply/Save; Codex's independently reviewed file
+was manually applied after the concurrent source commit. No active product source changed.
+The real Codex response exposed a generic JSON-fence edge case; strict final-result parsing now
+recovers the summary/checks while preserving agent-reported provenance and explicit packet priority.
+
+Evidence: syntax and lint pass; 320 native tests and 271 checks across all 20 acceptance suites
+pass locally. The new draft/cancellation browser suite covers eight grouped flows. Fresh actual
+Learn Quran Simulator evidence matches all 204 files of its retained source-built artifact.
+Final revision, current screen verdicts, native conversations and release receipts are recorded
+in data/reviews/final-readiness-20261104; those local evidence files are deliberately untracked.
+The release target remains the local app on port 4322; this does not certify downstream apps or
+hosted multi-user service readiness.
+
 ## 2026-11-03 — agent requests and feedback
 
 Implemented the project Agent board: five execution lanes, Claude Code/Codex selection,

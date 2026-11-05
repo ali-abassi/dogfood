@@ -50,7 +50,7 @@ async function freePort() {
   return new Promise(done => { const probe = createNetServer(); probe.listen(0, '127.0.0.1', () => { const { port } = probe.address(); probe.close(() => done(port)); }); });
 }
 
-const session = `dogfood-changes-proof-${process.pid}`;
+const session = process.env.DOGFOOD_BROWSER_SESSION || `dogfood-changes-proof-${process.pid}`;
 const browser = (...args) => execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 120_000 });
 function evaluate(expression) {
   const value = JSON.parse(browser('eval', `JSON.stringify(${expression})`).trim());
@@ -182,7 +182,7 @@ try {
   console.error(`FAILED after ${passed} passing checks:`, error.message);
   process.exitCode = 1;
 } finally {
-  try { browser('close'); } catch { /* closed */ }
+  if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* closed */ } }
   server?.kill();
   fixture.close();
   rmSync(data, { recursive: true, force: true });

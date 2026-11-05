@@ -111,7 +111,7 @@ try {
   const port = await new Promise(done => { const probe = createServer(); probe.listen(0, '127.0.0.1', () => { const { port: free } = probe.address(); probe.close(() => done(free)); }); });
   const url = `http://127.0.0.1:${port}`;
   const server = spawn(process.execPath, [join(repo, 'server.mjs')], { env: { ...process.env, DOGFOOD_PORT: String(port), DOGFOOD_DATA: data }, stdio: 'ignore' });
-  const session = `dogfood-ai2-proof-${process.pid}`;
+  const session = process.env.DOGFOOD_BROWSER_SESSION || `dogfood-ai2-proof-${process.pid}`;
   const browser = (...args) => execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 60_000 });
   const page = expression => { const value = JSON.parse(browser('eval', `JSON.stringify(${expression})`).trim()); return typeof value === 'string' ? JSON.parse(value) : value; };
   try {
@@ -163,7 +163,7 @@ try {
     const errors = browser('errors').trim();
     check('no page errors were thrown', () => assert.ok(!/error/i.test(errors) || /no errors/i.test(errors), errors));
   } finally {
-    try { browser('close'); } catch { /* closed */ }
+    if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* closed */ } }
     server.kill();
   }
 

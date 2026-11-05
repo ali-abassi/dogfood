@@ -55,7 +55,7 @@ mkdirSync(guideCheckout);
 writeFileSync(join(guideCheckout, 'design.html'), '<!doctype html><html lang="en"><head><title>Guide security fixture</title></head><body><main><h1>Guide fixture</h1><script>window.guideScriptRan=true</script><button onclick="window.guideEventRan=true">Example control</button></main></body></html>');
 store.createProject({ id: 'zz-guide-security', name: 'ZZ Guide security fixture', checkout: guideCheckout });
 
-const session = `dogfood-ui2-proof-${process.pid}`;
+const session = process.env.DOGFOOD_BROWSER_SESSION || `dogfood-ui2-proof-${process.pid}`;
 let passed = 0;
 const servers = [];
 // Synchronous browser commands block socket-close handling. Keep native fixture
@@ -281,7 +281,7 @@ try {
   console.error(`FAILED after ${passed} passing checks:`, error.message);
   process.exitCode = 1;
 } finally {
-  try { browser('close'); } catch { /* already closed */ }
+  if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* already closed */ } }
   servers.forEach(server => server.kill());
   rmSync(data, { recursive: true, force: true });
   rmSync(empty, { recursive: true, force: true });

@@ -148,3 +148,25 @@ Each turn now has a hashed immutable context manifest. The prompt carries fresh 
 Images belong beside the comment that explains them. Use one Attach images control and paste support, removable drafts, full-size originals and native CLI/MCP posting. Bound raster uploads, scope files to requests, verify integrity and deduplicate uncertain retries. Keep current-turn agent evidence visible with its final answer. Drafts survive polling and request switching, but remain in memory until posted; a full tab reload does not persist unsent files. No automatic QA acceptance comes from a screenshot.
 
 Background QA/suggestion responses must update their visible consumer instead of redrawing unrelated navigation. Fixed the sidebar-search race exposed by the broader acceptance run with targeted rendering, and added response-controlled checks rather than arbitrary waits or weaker assertions.
+
+## 2026-11-04 — Finish the request lifecycle
+
+Persist unsent request fields, reply text, note choices, image Files and retry identities in IndexedDB.
+Scope storage to browser origin, datastore identity and project; use atomic revisions to reject stale-tab
+writes instead of silently overwriting another tab. Show save failures and preserve typing. Restore before
+enabling forms, and keep initial data loading distinct from background polling so restored drafts remain visible.
+Successful sends and deliberate discards clear the durable draft. This supersedes the earlier in-memory-only limit.
+
+An unstarted request gets one Cancel request action. Queued feedback requires explicit discard wording;
+conversation history remains, and no provider, task acceptance or source action is triggered. Closing clears
+active errors while retaining their history. Keep Stop for an agent that actually started.
+
+Respect PAL quota gates: allow the installed lower-cost Codex Luna route through a bounded operator setting,
+record the selected route on first launch, and expose it in session details. No automatic premium override.
+Use actual Codex and Claude sessions on a disposable Git fixture to verify images, context, follow-ups and
+recovery. Keep those real-provider receipts distinct from deterministic browser and fault-injection tests.
+
+A real Codex result used a generic JSON fence despite following the expected result schema. Accept
+only a final strict-schema JSON result when no valid explicit dogfood-result is present; reject
+examples, unrelated JSON and malformed fields. Retain agent-reported provenance and independent
+acceptance gates. Reparse legacy unstructured results read-only and skip headings in fallback summaries.

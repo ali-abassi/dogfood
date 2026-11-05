@@ -42,7 +42,7 @@ function check(name, body) {
   passed += 1;
   console.log(`ok ${passed} - ${name}`);
 }
-const session = `dogfood-suggestions-proof-${process.pid}`;
+const session = process.env.DOGFOOD_BROWSER_SESSION || `dogfood-suggestions-proof-${process.pid}`;
 const browser = (...args) => execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 60_000 });
 function evaluate(expression) {
   const value = JSON.parse(browser('eval', `JSON.stringify(${expression})`).trim());
@@ -144,7 +144,7 @@ try {
   console.error(`FAILED after ${passed} passing checks:`, error.message);
   process.exitCode = 1;
 } finally {
-  try { browser('close'); } catch { /* closed */ }
+  if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* closed */ } }
   server.kill();
   rmSync(data, { recursive: true, force: true });
 }

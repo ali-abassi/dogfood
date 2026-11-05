@@ -46,7 +46,7 @@ globalThis.fetch = async (url, options) => {
   return new Response(JSON.stringify({ id: 'fixture', model: 'deepseek-flash', choices: [{ message: { content: JSON.stringify(analysis) } }], usage: { prompt_tokens: 900, completion_tokens: 200, cost: 0.004 } }), { status: 200 });
 };
 
-const session = `dogfood-onboard-ai-proof-${process.pid}`;
+const session = process.env.DOGFOOD_BROWSER_SESSION || `dogfood-onboard-ai-proof-${process.pid}`;
 const browser = (...args) => execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 60_000 });
 function evaluate(expression) {
   const value = JSON.parse(browser('eval', `JSON.stringify(${expression})`).trim());
@@ -119,7 +119,7 @@ try {
   console.error(`FAILED after ${passed} passing checks:`, error.message);
   process.exitCode = 1;
 } finally {
-  try { browser('close'); } catch { /* closed */ }
+  if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* closed */ } }
   server?.kill();
   fixture.close();
   rmSync(data, { recursive: true, force: true });

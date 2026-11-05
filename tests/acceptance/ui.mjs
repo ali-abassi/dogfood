@@ -17,7 +17,7 @@ const manifestFile = join(data, 'projects/tidepool.json');
 const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
 manifest.pages.find(item => item.id === 'admin').captures.desktop = { state: 'blocked', reason: 'Staff sign-in is not available to the capture account.' };
 writeFileSync(manifestFile, JSON.stringify(manifest, null, 2));
-const session = `dogfood-ui-proof-${process.pid}`;
+const session = process.env.DOGFOOD_BROWSER_SESSION || `dogfood-ui-proof-${process.pid}`;
 let passed = 0;
 
 const port = await new Promise(done => {
@@ -220,7 +220,7 @@ try {
   console.error(`FAILED after ${passed} passing checks:`, error.message);
   process.exitCode = 1;
 } finally {
-  try { browser('close'); } catch { /* already closed */ }
+  if (!process.env.DOGFOOD_BROWSER_SESSION) { try { browser('close'); } catch { /* already closed */ } }
   server.kill();
   rmSync(data, { recursive: true, force: true });
 }

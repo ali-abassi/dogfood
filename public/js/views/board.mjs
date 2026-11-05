@@ -2,7 +2,8 @@ import { readJson } from '../api.mjs';
 import { dateLabel, escapeHtml, markdownMarkup } from '../format.mjs';
 import { state } from '../state.mjs';
 import { render } from '../app.mjs';
-import { attachmentComposer, attachmentGallery, draftImages, hasImageDrafts, firstImageDraft, clearImages, addImages, removeImage, imagePayload, clipboardImages, commentIdentity } from './board-images.mjs';
+import { attachmentComposer, attachmentGallery, draftImages, hasImageDrafts, firstImageDraft, clearImages, releaseImagePreviews, addImages, removeImage, imagePayload, clipboardImages, commentIdentity } from './board-images.mjs';
+import { prepareBoardDrafts, waitForBoardDrafts, saveBoardDrafts, flushBoardDrafts, draftStorageLoading, draftStorageStatus, draftStorageError, protectPendingDraft } from './board-drafts.mjs';
 import { deliveryBadge, deliveryMarkup, readyWorkMarkup, queueMarkup, contractMarkup } from './board-work.mjs';
 
 // Requests are conversations about work; Done here does not accept a task or page's QA.
@@ -31,7 +32,8 @@ function selectedCard() { return cards().find(card => card.id === board().select
 function current(b) { return state.project?.id === b.key && state.board === b; }
 function active(b) { return current(b) && state.view === 'board'; }
 function agentName(backend) { return agentNames[backend] || backend; }
-function disabled() { return board().action ? 'disabled' : ''; }
+function draftBusy() { return Boolean(board().action) || draftStorageLoading(board()); }
+function disabled() { return draftBusy() ? 'disabled' : ''; }
 function count(status) { return cards().filter(card => card.status === status).length; }
 function matchesFilter(card) {
   const filter = board().filter;
@@ -84,7 +86,9 @@ function lanesMarkup() {
 }
 
 function statusLabel(status) { return lanes.find(([value]) => value === status)?.[1] || status; }
+function cancelledCard(card) { return card.status === 'done' && card.closure?.kind === 'cancelled'; }
 function cardStateLabel(card) {
+  if (cancelledCard(card)) return 'Cancelled';
   if (card.stopRequested) return 'Stopping';
   if (card.starting) return 'Starting';
   return observedStateLabel(card);
@@ -129,8 +133,15 @@ function queuedAction(card) { return actionButton('stop', card.starting ? 'Stop 
 function cardIntentName(card) { return intentNames[card.intent || 'build']; }
 function cardActions(card) {
   if (card.stopRequested) return '<span class="field-hint" role="status">Stopping the agent…</span>';
+  if (card.cancellable) return cancellableActions(card);
   if (waitingToStart(card)) return queuedAction(card);
-  return statusActions[card.status]?.(card) || '';
+  return idleActions(card);
+}
+function idleActions(card) { return statusActions[card.status]?.(card) || ''; }
+
+function cancellableActions(card) {
+  const start = card.queued ? '' : statusActions.todo(card);
+  return `${start}${actionButton('cancel-saved', 'Cancel request')}`;
 }
 
 function contextMarkup(card) {
@@ -181,7 +192,7 @@ function replyLabel(card, note) {
 }
 function queuedReplyHint(card) { return card.pendingCount ? `${card.pendingCount} follow-up${card.pendingCount === 1 ? '' : 's'} queued for the next turn.` : 'Follow-ups wait for the current turn to finish.'; }
 function unsavedIntegration(card) { return card.integration && !card.integration.sourceSaved; }
-function replyDisabled(card, note) { return Boolean(board().action || (!note && unsavedIntegration(card))); }
+function replyDisabled(card, note) { return draftBusy() || Boolean(!note && unsavedIntegration(card)); }
 function replyHint(card, note) {
   if (note) return 'Notes stay on this request without starting the agent.';
   if (unsavedIntegration(card)) return 'Save the applied changes above before sending another agent turn. Your reply stays here.';
@@ -198,7 +209,7 @@ function replyFormMarkup(card) {
   const value = board().replies[card.id] || '';
   const note = Boolean(board().note[card.id]);
   const label = card.status === 'done' ? 'Follow up on this request' : 'Your reply';
-  return `<form id="board-comment-form" class="board-comment-form" data-card-id="${escapeHtml(card.id)}" data-dirty="${replyHasDraft(card)}"><label for="board-reply">${label}</label><textarea id="board-reply" name="text" rows="3" maxlength="10000" ${disabled()} placeholder="Add feedback, answer a question, or ask for a change…">${escapeHtml(value)}</textarea>${attachmentComposer(draftImages(board(), card.id), Boolean(board().action))}<label class="board-note-choice"><input id="board-note" type="checkbox" name="note" ${disabled()} ${note ? 'checked' : ''}> Keep as a note; don’t send to the agent</label><p id="board-reply-hint" class="board-reply-hint">${replyHint(card, note)}</p>${formErrorMarkup('board-comment-error')}<div class="form-actions"><button id="board-reply-send" type="submit" class="save-button" ${replyDisabled(card, note) ? 'disabled' : ''}>${replyLabel(card, note)}</button></div></form>`;
+  return `<form id="board-comment-form" class="board-comment-form" data-card-id="${escapeHtml(card.id)}" data-dirty="${replyHasDraft(card)}"><label for="board-reply">${label}</label><textarea id="board-reply" name="text" rows="3" maxlength="10000" ${disabled()} placeholder="Add feedback, answer a question, or ask for a change…">${escapeHtml(value)}</textarea>${attachmentComposer(draftImages(board(), card.id), draftBusy())}<label class="board-note-choice"><input id="board-note" type="checkbox" name="note" ${disabled()} ${note ? 'checked' : ''}> Keep as a note; don’t send to the agent</label><p id="board-reply-hint" class="board-reply-hint">${replyHint(card, note)}</p>${formErrorMarkup('board-comment-error')}${draftStatusMarkup()}<div class="form-actions"><button id="board-reply-send" type="submit" class="save-button" ${replyDisabled(card, note) ? 'disabled' : ''}>${replyLabel(card, note)}</button></div></form>`;
 }
 
 function reviewedChanges(card) { const value = board().reviews[card.id]; return value?.turn === card.turn ? value : null; }
@@ -265,9 +276,10 @@ function contextReceiptMarkup(card) {
   if (!context) return '';
   return `<dt>Saved context · turn ${escapeHtml(context.turn)}</dt><dd>Task, sent decisions and image references are saved for this turn.<br><code>${escapeHtml(context.path)}</code></dd>`;
 }
+function routeMarkup(card) { return card.route ? `<dt>Model route</dt><dd><code>${escapeHtml(card.route)}</code></dd>` : ''; }
 function runDetailsMarkup(card) {
   if (!card.session && !card.checkout) return '';
-  return `<details class="board-run-details"><summary>Agent session & worktree</summary><dl>${card.session ? `<dt>Session</dt><dd><code>${escapeHtml(card.session)}</code></dd>` : ''}${card.checkout ? `<dt>Worktree</dt><dd><code>${escapeHtml(card.checkout)}</code></dd>` : ''}${contextReceiptMarkup(card)}</dl></details>`;
+  return `<details class="board-run-details"><summary>Agent session & worktree</summary><dl>${card.session ? `<dt>Session</dt><dd><code>${escapeHtml(card.session)}</code></dd>` : ''}${card.checkout ? `<dt>Worktree</dt><dd><code>${escapeHtml(card.checkout)}</code></dd>` : ''}${routeMarkup(card)}${contextReceiptMarkup(card)}</dl></details>`;
 }
 function cardErrorMarkup(card) { return card.error ? `<p class="board-error form-error" role="alert">${escapeHtml(card.error)}</p>` : ''; }
 function reviewNoteMarkup(card) { return card.status === 'review' ? '<p class="board-review-note">The agent finished its turn. Review its changes and checks before closing the conversation. Delivery verification above tracks the linked task and pages.</p>' : ''; }
@@ -303,18 +315,18 @@ function requestContextMarkup(data) {
   return `<section class="board-request-context" aria-label="Related work"><h3>Related work <span class="field-optional">optional</span></h3><div class="board-form-pair"><div>${featureOptions(data)}</div><div><label for="board-task">Planned task <span class="field-optional">optional</span></label><select id="board-task" name="taskId">${option('', 'No linked task', data.taskId)}${board().tasks.map(task => option(task.id, task.title, data.taskId)).join('')}</select></div></div></section>`;
 }
 function requestActionsMarkup(available) {
-  const busy = Boolean(board().action);
+  const busy = draftBusy();
   return `<div class="form-actions"><button type="submit" name="submitAction" value="start" class="save-button" ${!available || busy ? 'disabled' : ''}>${busy ? 'Saving…' : 'Create & start'}</button><button type="submit" name="submitAction" value="save" class="text-button" ${disabled()}>Save for later</button><button type="button" class="text-button" data-board-action="cancel" ${disabled()}>Cancel</button></div>`;
 }
 function requestFormMarkup() {
   if (!board().formOpen) return '';
   const data = draftValues();
   const available = runnerAvailable(data.backend);
-  return `<form id="board-request-form" class="board-request-form content-panel" data-dirty="${hasRequestDraft()}"><div class="panel-heading"><h2>New request</h2></div>${requestFieldsMarkup(data)}${requestContextMarkup(data)}${contractMarkup(board().tasks.find(task => task.id === data.taskId))}<p id="board-agent-unavailable" class="board-reply-hint" ${available ? 'hidden' : ''}>PAL is unavailable. Install PAL and sign in to your agent, then start this saved request.</p>${formErrorMarkup('board-request-error')}<p class="field-hint">Starting uses your local agent account and a separate checkout. You review the returned work before it enters project source.</p>${requestActionsMarkup(available)}</form>`;
+  return `<form id="board-request-form" class="board-request-form content-panel" data-dirty="${hasRequestDraft()}"><fieldset class="board-draft-fields" ${draftBusy() ? 'disabled' : ''}><div class="panel-heading"><h2>New request</h2></div>${requestFieldsMarkup(data)}${requestContextMarkup(data)}${contractMarkup(board().tasks.find(task => task.id === data.taskId))}<p id="board-agent-unavailable" class="board-reply-hint" ${available ? 'hidden' : ''}>PAL is unavailable. Install PAL and sign in to your agent, then start this saved request.</p>${formErrorMarkup('board-request-error')}${draftStatusMarkup()}<p class="field-hint">Starting uses your local agent account and a separate checkout. You review the returned work before it enters project source.</p>${requestActionsMarkup(available)}</fieldset></form>`;
 }
 function boardHeadingMarkup() {
   const buttonClass = board().selected ? 'text-button' : 'save-button';
-  const newButton = board().formOpen || board().section !== 'requests' ? '' : `<button type="button" class="${buttonClass}" data-board-action="new">New request</button>`;
+  const newButton = board().formOpen || board().section !== 'requests' ? '' : `<button type="button" class="${buttonClass}" data-board-action="new" ${disabled()}>New request</button>`;
   return `<div class="page-heading board-heading"><div><h1 id="board-heading" tabindex="-1">Agent board</h1><p id="board-summary" class="board-summary">${escapeHtml(summary())}</p></div><div class="board-heading-actions"><button type="button" class="link-button" data-project-view="help">How it works</button>${newButton}</div></div>`;
 }
 function loadErrorMarkup() {
@@ -471,9 +483,10 @@ function updateBoardDataNodes() {
   const summaryNode = document.querySelector('#board-summary');
   if (summaryNode) summaryNode.textContent = summary();
 }
+function needsBoardRender(b) { return !document.getElementById('board-detail-content') && (selectedCard() || !editingBoard(b)); }
 function updateSurface(b) {
   if (!active(b)) return;
-  if (!editingBoard(b) && !document.getElementById('board-detail-content')) { render(); return; }
+  if (needsBoardRender(b)) { render(); return; }
   updateBoardDataNodes();
 }
 async function loadTasks(b) {
@@ -519,10 +532,25 @@ function applyBoardDestination() {
   if (!state.boardDestination) return;
   Object.assign(board(), { selected: state.boardDestination, section: 'requests', formOpen: false, attempted: false });
 }
+function showDraftStatus() { return hasBoardDrafts() || draftStorageError(board()) || draftStorageLoading(board()); }
+function updateDraftStatus() {
+  document.querySelectorAll('[data-board-draft-status]').forEach(node => {
+    node.textContent = draftStorageStatus(board()); node.hidden = !showDraftStatus();
+    node.className = draftStorageError(board()) ? 'form-error' : 'field-hint';
+  });
+}
+function draftStatusMarkup() { return `<p data-board-draft-status role="status" class="${draftStorageError(board()) ? 'form-error' : 'field-hint'}" ${showDraftStatus() ? '' : 'hidden'}>${escapeHtml(draftStorageStatus(board()))}</p>`; }
+function draftStorageChanged(b) {
+  if (!active(b)) return;
+  if (!draftStorageLoading(b) && !b.draftHydrated) { b.draftHydrated = true; render(); return; }
+  updateDraftStatus();
+}
+function resetBoardProject() { releaseImagePreviews(board()); state.board = freshBoard(state.project.id, state.boardDestination || ''); }
 export function syncBoardState() {
-  if (board().key !== state.project.id) state.board = freshBoard(state.project.id, state.boardDestination || '');
+  if (board().key !== state.project.id) resetBoardProject();
   else applyBoardDestination();
   state.boardDestination = '';
+  const b = board(); prepareBoardDrafts(b, () => draftStorageChanged(b));
   if (state.view !== 'board') { clearTimeout(poll); return; }
   if (needsInitialLoad(board())) void loadBoard(board(), true);
   else schedulePoll(board());
@@ -535,6 +563,7 @@ export function discardBoardDrafts() {
   const b = board();
   closeBoardEditors();
   clearImages(b); b.draft = null; b.replies = {}; b.note = {}; b.commentAttempts = {};
+  saveBoardDrafts(b); return flushBoardDrafts(b);
 }
 export function reviewBoardDraft() {
   const b = board(); b.section = 'requests';
@@ -556,6 +585,7 @@ function rememberDraft(form) {
   if (form.id === 'board-request-form') board().draft = values;
   if (form.id === 'board-comment-form') rememberReply(form, values);
   form.dataset.dirty = String(draftHasText(values) || draftImages(board(), form.dataset.cardId).length > 0);
+  saveBoardDrafts(board());
 }
 
 function inlineError(id, message) {
@@ -566,12 +596,15 @@ function inlineError(id, message) {
 
 function focus(id) { document.getElementById(id)?.focus({ preventScroll: true }); }
 
-export function openBoardRequest(pageId = '', seed = {}) {
+export async function openBoardRequest(pageId = '', seed = {}) {
   const b = board();
+  await waitForBoardDrafts(b);
+  if (!current(b)) return;
   Object.assign(state, { view: 'board', browseOpen: false, message: '' });
   if (!hasRequestDraft()) b.draft = { pageId, ...seed };
   Object.assign(b, { formOpen: true, selected: '', section: 'requests', formError: '' });
   rememberSelection('');
+  saveBoardDrafts(b);
   render();
   focus('board-title');
 }
@@ -616,11 +649,17 @@ async function createRequest(form, submitter) {
   const input = requestInput(draft, submitter);
   if (input.request.length > 10000) return inlineError('board-request-error', 'Keep the complete brief under 10,000 characters.');
   await mutate('create', async b => {
+    await persistBeforeSend(b);
     const saved = await post(b, '/cards', input);
     if (!current(b)) return;
     savedRequest(b, saved);
+    saveBoardDrafts(b); await flushBoardDrafts(b);
     await refreshAfterMutation(b);
   }, { form: true, focusId: 'board-request-heading' });
+}
+async function persistBeforeSend(b) {
+  saveBoardDrafts(b);
+  if (!await flushBoardDrafts(b)) throw new Error('Could not save this draft safely. '+draftStorageStatus(b));
 }
 async function sendComment(form) {
   rememberDraft(form);
@@ -631,10 +670,12 @@ async function sendComment(form) {
   const input = { text, send: !board().note[id] };
   input.clientRequestId = commentIdentity(board(), id, input, images);
   await mutate('comment', async b => {
+    await persistBeforeSend(b);
     input.attachments = await imagePayload(images);
     await post(b, cardPath(id, 'comment'), input);
     if (!current(b)) return;
     b.replies[id] = ''; clearImages(b, id); delete b.commentAttempts[id];
+    saveBoardDrafts(b); await flushBoardDrafts(b);
     await refreshAfterMutation(b);
   }, { form: true, focusId: 'board-reply' });
 }
@@ -659,6 +700,7 @@ function closeCard() { board().selected = ''; rememberSelection(''); render(); }
 function cancelRequest() {
   if (hasRequestDraft() && !window.confirm('Discard this request draft?')) return;
   board().formOpen = false; board().draft = null; board().formError = '';
+  saveBoardDrafts(board()); void flushBoardDrafts(board());
   render(); focus('board-heading');
 }
 async function inspectChanges() {
@@ -680,6 +722,10 @@ async function releaseSourceIntegration() {
   if (!card?.integration || card.integration.sourceSaved) return;
   await mutate('release-integration', async b => { await post(b, cardPath(card.id, 'release-integration'), { integrationId: card.integration.id }); if (current(b)) await refreshAfterMutation(b); });
 }
+async function cancelSavedRequest() {
+  if (selectedCard()?.pendingCount && !window.confirm('Cancel this request and discard its queued feedback? The conversation and discarded feedback stay in its history.')) return;
+  await runAction('cancel');
+}
 function answerAgent() { const reply = document.getElementById('board-reply'); reply?.scrollIntoView({ block: 'center', behavior: 'instant' }); reply?.focus({ preventScroll: true }); }
 const boardActions = {
   'attach-images': () => document.getElementById('board-image-input')?.click(),
@@ -699,6 +745,7 @@ const boardActions = {
   select: selectCard,
   close: closeCard,
   cancel: cancelRequest,
+  'cancel-saved': cancelSavedRequest,
   ...Object.fromEntries(['run', 'stop', 'complete', 'reopen', 'discard-feedback', 'verify-task', 'accept-task', 'reopen-task'].map(action => [action, () => runAction(action)])),
 };
 function boardClick(button) { boardActions[button.dataset.boardAction]?.(button); }
@@ -723,7 +770,7 @@ function handleBoardChange(event) {
   const form = event.target.closest('#board-request-form, #board-comment-form');
   if (!form) return;
   rememberDraft(form);
-  if (event.target.id === 'board-page') board().draft.featureId = '';
+  if (event.target.id === 'board-page') { board().draft.featureId = ''; saveBoardDrafts(board()); }
   const id = event.target.id;
   if (['board-page', 'board-backend', 'board-note', 'board-intent', 'board-task'].includes(id)) { render(); focus(id); }
 }
@@ -737,12 +784,12 @@ function handleBoardSubmit(event) {
 
 function updateImageDraft() {
   const host = document.getElementById('board-image-drafts');
-  if (host) host.innerHTML = attachmentComposer(draftImages(board(), board().selected), Boolean(board().action), true);
+  if (host) host.innerHTML = attachmentComposer(draftImages(board(), board().selected), draftBusy(), true);
   const form = document.getElementById('board-comment-form');
   if (form) rememberDraft(form);
 }
 function acceptImages(files) {
-  if (board().action) return;
+  if (draftBusy()) return;
   try { addImages(board(), board().selected, [...files]); inlineError('board-comment-error', ''); }
   catch (error) { inlineError('board-comment-error', error.message); }
   updateImageDraft();
@@ -754,6 +801,7 @@ function pasteImages(event) {
   event.preventDefault(); acceptImages(files);
 }
 export function registerBoardEvents(app) {
+  window.addEventListener('beforeunload', protectPendingDraft);
   app.addEventListener('paste', pasteImages);
   app.addEventListener('click', event => {
     const button = event.target.closest('[data-board-action]');

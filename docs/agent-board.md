@@ -60,7 +60,7 @@ close the preview, change accounts or stop services.
 4. Run source task checks and page QA. Accept the task/page only when their own current gates pass.
 
 Applying, saving source, finishing a request, task acceptance, page acceptance, pushing and deploying
-are separate actions. **Mark reviewed & done** only closes the request. Native requests lack authority to
+are separate actions. **Close reviewed request** only closes the request. Native requests lack authority to
 apply/save source, create source documents through readiness tools, self-approve scope or commit a
 scope baseline; operator tools reject recognized native request contexts. An ordinary authorized operator can use the corresponding CLI/MCP actions.
 
@@ -145,8 +145,13 @@ Task links and required checks are visible in the relevant view. Disclosures hol
 Use **Attach images** under a reply, or paste a screenshot. PNG, JPEG and WebP are supported,
 up to four images per comment and 8 MiB per image. Remove a preview before sending if it is wrong.
 An image-only reply is allowed. **Keep as a note** stores the image without starting the agent.
-Draft images survive board refreshes and switching requests; leaving with unsent images prompts
-you to review or discard the draft. Drafts are held in this browser tab, not saved across a full reload.
+Request fields, reply text, note choices and unsent images are saved on this device and restored after
+a full reload. Storage is scoped to this browser origin, Dogfood data store and project; it is not a
+cross-device backup. The composer reports when saving finishes. If storage fails or another tab has
+changed the same project’s drafts, it keeps your typing visible and explains how to preserve it.
+Send or discard clears that saved draft. Leaving the board offers review or discard; leaving the
+browser while a write is pending warns before you lose it. Up to 50 unsent replies, 64 MiB of images
+and 1 MB of text are retained per project. Browser data removal also removes these unsent drafts.
 
 Posted images stay with their comment. Select a thumbnail to open the original. Images have
 request-scoped storage, validated type/dimensions, size limits and SHA-256 integrity checks.
@@ -182,3 +187,30 @@ Agents should read the snapshot when resuming, inspect relevant images, and repo
 source instead of assuming its contents. Project document excerpts are working-source snapshots;
 uncommitted drafts may differ from the isolated checkout. A final result is parsed before display
 text is shortened, so a long narrative cannot erase a blocker or its reported checks.
+
+
+## Cancel a saved request
+
+**Cancel request** closes a request before its agent has started, in one action. It does not invoke
+PAL or start/stop a provider. If feedback is queued, cancellation explicitly discards it and retains
+the comments with discard timestamps. Existing notes, images and history remain available.
+
+An active launch reservation, running agent or stop awaiting confirmation cannot be cancelled this
+way. Use **Stop agent**, wait for the observed stopped state, then review and close the request.
+Closing clears the active stopped/error banner and preserves that error in the closure record.
+Cancellation and closure do not accept tasks or page QA, change task ownership, or remove worktrees.
+An existing claim from a failed launch remains available for deliberate recovery in Plan.
+
+CLI: `dogfood board cancel CARD --project PROJECT`. MCP: `dogfood_agent_action` with
+`action: "cancel"`, `project` and `card`. Repeating cancellation on a closed request is harmless.
+Reopen restores the conversation for deliberate reuse; previously discarded feedback stays discarded.
+
+## Operator-selected model routes
+
+Dogfood uses PAL’s controlled native routes. Codex defaults to `gpt6.1-terra-xhigh`; an operator can
+set `DOGFOOD_CODEX_ROUTE=gpt6-luna-xhigh` on the server and CLI for a lower-cost run. Claude defaults
+to `sonnet-5.5-high`. Unsupported routes fail before launch. Run `pal routes --json` and
+`pal quota --refresh` to check current availability; route selection never overrides the quota gate.
+The chosen route is saved on first launch and shown under **Agent session & worktree**. Follow-ups
+continue that session; changing the server setting applies to new sessions. Existing requests from
+before this receipt was introduced may have no stored route.

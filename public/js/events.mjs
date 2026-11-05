@@ -146,10 +146,10 @@ function keepBoardEditing() {
   boardNavigation = null;
   document.getElementById('board-unsaved-prompt')?.remove();
 }
-function discardBoardAndNavigate() {
+async function discardBoardAndNavigate() {
+  if (!await discardBoardDrafts()) return;
   const next = boardNavigation;
   boardNavigation = null;
-  discardBoardDrafts();
   document.getElementById('board-unsaved-prompt')?.remove();
   render();
   next?.();

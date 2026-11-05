@@ -136,15 +136,18 @@ try {
       assert.ok(store.readProject('native-daily').pages.every(page => page.scan.environment === 'local'));
     });
   }, { explicitProfile: true });
-  let sessions;
+  let sessions, sessionText;
+  const sharedSession = process.env.DOGFOOD_BROWSER_SESSION?.trim();
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    sessions = scanSessions(execFileSync('agent-browser', ['session', 'list'], { encoding: 'utf8' }));
-    if (!sessions.has(ownedSession)) break;
+    sessionText = execFileSync('agent-browser', ['session', 'list'], { encoding: 'utf8' });
+    sessions = scanSessions(sessionText);
+    if (sharedSession || !sessions.has(ownedSession)) break;
     await new Promise(done => setTimeout(done, 100));
   }
-  check('the proof closes only its owned temporary browser session', () => {
+  check('the proof closes only owned sessions and preserves a designated shared browser', () => {
     assert.ok(ownedSession);
-    assert.equal(sessions.has(ownedSession), false);
+    if (sharedSession) { assert.equal(ownedSession, sharedSession); assert.ok(sessionText.includes(sharedSession)); }
+    else assert.equal(sessions.has(ownedSession), false);
   });
   console.log(`${checks} native scanner checks passed`);
 } finally {

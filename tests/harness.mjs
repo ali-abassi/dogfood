@@ -28,9 +28,12 @@ export async function startServer(dataDir) {
   throw new Error(`dogfood did not start on ${url}`);
 }
 
-export function browserSession(name, existingSession) {
+export function browserSession(name, existingSession = process.env.DOGFOOD_BROWSER_SESSION) {
   const session = existingSession || `${name}-${process.pid}`;
-  const browser = (...args) => execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 60_000 });
+  const browser = (...args) => {
+    if (existingSession && args[0] === 'close') return '';
+    return execFileSync('agent-browser', ['--session', session, ...args], { encoding: 'utf8', timeout: 60_000 });
+  };
   // Runs an expression in the page and returns its JSON value.
   const evaluate = expression => {
     const value = JSON.parse(browser('eval', `JSON.stringify(${expression})`).trim());
