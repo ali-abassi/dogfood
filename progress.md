@@ -1,5 +1,19 @@
 # Progress
 
+## 2026-11-04 — Current project navigation and usable intent
+
+The project picker now contains the configured active projects and Dogfood. Earlier records remain
+available through explicit saved URLs and APIs, with an honest outside-current-list label; remembered
+history no longer silently becomes the default project. The controlled portfolio browser suite passes
+all eight checks, including preserved history, direct links and ordinary-entry behavior.
+
+Optional intent.md is visible under Vision and included in native task snapshots. Source references
+stay readable without dead local web links; Vision and intent headings use separate anchor IDs.
+34 targeted docs/context tests pass, and actual current Learn Quran documents were inspected in the
+rendered Vision/Working intent view at 1280 and 390 pixels without horizontal overflow or duplicate IDs.
+Portfolio document/source reconciliation retains old evidence and unverified gaps; it does not claim
+that updating project documentation clears downstream application QA.
+
 ## 2026-11-04 — Durable drafts and completed request recovery
 
 Unsent requests, replies, note choices and image Files now survive full reloads. IndexedDB uses

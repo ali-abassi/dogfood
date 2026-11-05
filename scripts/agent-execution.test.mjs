@@ -361,6 +361,7 @@ test('legacy applied QA changes cannot be saved through the read-only audit requ
 test('turn snapshots retain working document provenance and image references without unsent or discarded notes', () => {
   const value = fixture();
   writeFileSync(join(value.source, 'vision.md'), '# Draft vision\nA current uncommitted decision.');
+  writeFileSync(join(value.source, 'INTENT.md'), '# Current intent\nKeep the integration read-only.');
   const screenshot = { id: 'image-1', name: 'before.png', mimeType: 'image/png', path: join(data, 'before.png'), url: '/api/images/before' };
   const sent = { id: 'sent-1', by: 'person', text: 'Match this spacing.', sent: true, deliveredAt: '2026-11-04T00:00:00Z', attachments: [screenshot] };
   Object.assign(value.card, { session: 'fixture-session', operation: { token: 'turn-snapshot', expectedTurn: 2 }, comments: [sent, { id: 'private', by: 'person', text: 'PRIVATE experiment', sent: false, attachments: [{ name: 'private.png' }] }, { id: 'discarded', by: 'person', text: 'DISCARDED experiment', sent: true, discardedAt: '2026-11-04T00:00:00Z' }] });
@@ -370,11 +371,16 @@ test('turn snapshots retain working document provenance and image references wit
   assert.match(saved.snapshot.context.documents.vision.content, /uncommitted decision/);
   assert.match(saved.snapshot.context.documents.vision.source, /including uncommitted drafts/);
   assert.equal(saved.context.documents.vision.content, undefined);
+  assert.equal(saved.snapshot.context.documents.intent.file, 'INTENT.md');
+  assert.match(saved.snapshot.context.documents.intent.content, /Keep the integration read-only/);
+  assert.equal(saved.context.documents.intent.content, undefined);
+  assert.equal(saved.snapshot.context.documents.intent.sha256, createHash('sha256').update('# Current intent\nKeep the integration read-only.').digest('hex'));
   assert.deepEqual(saved.snapshot.conversation.map(entry => entry.id), ['sent-1']);
   assert.doesNotMatch(bytes.toString(), /PRIVATE|DISCARDED|private.png/);
   assert.match(turnContextInstructions(saved), /Open each relevant attached image/);
   assert.ok(turnContextInstructions(saved).includes(screenshot.path));
   writeFileSync(join(value.source, 'vision.md'), '# Later changed document');
+  writeFileSync(join(value.source, 'INTENT.md'), '# Later changed intent');
   assert.equal(readFileSync(saved.descriptor.path).toString(), bytes.toString());
   assert.throws(() => saveTurnContext(value.id, value.card, []), /EEXIST/);
 });

@@ -103,7 +103,7 @@ an agent report is not an independent receipt. Use the same card for feedback or
 session and source are still valid. Start a fresh request from current source when its continuation
 receipt says the worktree cannot continue or source has moved. Preserve existing work.
 
-Keep intent in `vision.md`, visual direction in `design.html`/`design.md`, and milestones in `plan.md`. Dogfood's structured tasks are the task-status source of truth; don't maintain another checkbox ledger independently.
+Keep product purpose in `vision.md`, the current working outcome and boundaries in optional `intent.md`, visual direction in `design.html`/`design.md`, and milestones in `plan.md`. Dogfood shows Working intent on the Vision page and includes it in native task context. Dogfood's structured tasks are the task-status source of truth; don't maintain another checkbox ledger independently.
 
 Turn each outcome into a bounded task. Specify scope, dependencies, the native commands that prove it (optional `timeoutSeconds` from 1 to 1800, default 300), and related pages plus visible criteria for UI work. A task can describe a journey across several pages. Avoid tasks that just say “improve quality” or checks that merely exit 0.
 

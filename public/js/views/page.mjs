@@ -1,3 +1,4 @@
+import { projectGroups, projectChoices } from '../project-selection.mjs';
 import { isNative } from '../platform.mjs';
 import { escapeHtml, externalLinkMarkup, plainMessageMarkup, statusPill } from '../format.mjs';
 import { groupedPages, isProjectView, menuPages, state, statusNames } from '../state.mjs';
@@ -55,15 +56,18 @@ function projectNavMarkup() {
 
 function projectOptions(items) { return items.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === state.project.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join(''); }
 function projectOptionGroups() {
-  const active = state.portfolio?.data;
-  if (!active?.configured) return projectOptions(state.projects);
-  const ids = active.projects;
-  const groups = [['Current projects', state.projects.filter(p => ids.includes(p.id))], ['Workspace', state.projects.filter(p => p.id === 'dogfood' && !ids.includes(p.id))], ['History', state.projects.filter(p => p.id !== 'dogfood' && !ids.includes(p.id))]];
-  return groups.filter(([, items]) => items.length).map(([label, items]) => `<optgroup label="${label}">${projectOptions(items)}</optgroup>`).join('');
+  return projectGroups(state.projects, state.portfolio).map(([label, items]) => `<optgroup label="${label}">${projectOptions(items)}</optgroup>`).join('');
+}
+function pickerContext(choices) {
+  if (choices.some(project => project.id === state.project.id)) return '';
+  return `<span class="field-hint">Opened project: ${escapeHtml(state.project.name)}. It is outside the current project list.</span>`;
 }
 function projectPickerMarkup() {
-  const options = projectOptionGroups();
-  return `<label class="project-picker"><span class="sr-only">Project</span><select id="project-select">${options}</select></label>`;
+  const choices = projectChoices(state.projects, state.portfolio);
+  const context = pickerContext(choices);
+  const placeholder = context ? '<option value="" selected disabled>Choose a current project</option>' : '';
+  const unavailable = choices.length ? '' : '<span class="field-hint">Current projects are unavailable. Open Current projects to retry.</span>';
+  return `<label class="project-picker"><span class="sr-only">Project</span><select id="project-select" ${choices.length ? '' : 'disabled'}>${placeholder}${projectOptionGroups()}</select>${unavailable || context}</label>`;
 }
 
 function helpLinkMarkup() { return `<button type="button" class="link-button sidebar-help" data-project-view="help" ${state.view === 'help' ? 'aria-current="page"' : ''}>How Dogfood works</button>`; }

@@ -31,16 +31,24 @@ function designFrameMarkup() {
   return `<div class="doc-guide"><p class="doc-guide-loading muted" role="status">Opening brand guide…</p><iframe class="doc-frame" title="${escapeHtml(state.project.name)} brand guide" sandbox="allow-same-origin" src="${src}"></iframe></div>`;
 }
 
-function readingMarkup(markdown) {
+// Checkout files are source references, not routes on the Dogfood web server.
+function sourceReferences(markdown) {
+  return markdown.replace(/```[\s\S]*?```|`[^`]*`|\[([^\]]+)\]\(([A-Za-z0-9_./-]+\.(?:md|html|json)(?:#[\w-]+)?)\)/gi, (link, label, file) => {
+    if (!file) return link;
+    return label === file ? label : `${label} (\`${file}\`)`;
+  });
+}
+
+function readingMarkup(markdown, scope, nested = false) {
   const sections = [];
   let headingIndex = 0;
-  const body = markdownMarkup(withoutLeadHeading(markdown)).replace(/<h([2-6])>(.*?)<\/h\1>/g, (heading, level, text) => {
-    const id = `doc-section-${++headingIndex}`;
-    const headingLevel = Math.max(2, Number(level) - 1);
+  const body = markdownMarkup(sourceReferences(withoutLeadHeading(markdown))).replace(/<h([2-6])>(.*?)<\/h\1>/g, (heading, level, text) => {
+    const id = `doc-${scope}-section-${++headingIndex}`;
+    const headingLevel = Math.min(6, Math.max(2, Number(level) - 1) + Number(nested));
     if (headingLevel <= 2) sections.push({ id, text: text.replace(/<[^>]*>/g, '') });
     return `<h${headingLevel} id="${id}">${text}</h${headingLevel}>`;
   });
-  const contents = sections.length >= 3
+  const contents = !nested && sections.length >= 3
     ? `<details class="doc-contents"><summary>In this document</summary><nav aria-label="Document sections">${sections.map(section => `<a href="#${section.id}">${section.text}</a>`).join('')}</nav></details>`
     : '';
   return `${contents}<article class="doc-body content-panel">${body}</article>`;
@@ -49,7 +57,7 @@ function readingMarkup(markdown) {
 function docMarkup(doc, view) {
   if (doc.html) return designFrameMarkup();
   if (!doc.markdown?.trim()) return emptyMarkup(view);
-  return readingMarkup(doc.markdown);
+  return readingMarkup(doc.markdown, view.doc);
 }
 
 function docBodyMarkup(view) {
@@ -71,9 +79,21 @@ function designFullPageLink(doc) {
   return doc.html ? ` · <a href="/api/projects/${encodeURIComponent(state.project.id)}/design" target="_blank" rel="noopener noreferrer">Open full page ↗</a>` : '';
 }
 
+function workingIntent() {
+  const doc = state.docs.data?.intent;
+  if (state.view !== 'vision' || !doc) return null;
+  return doc.markdown.trim() ? doc : null;
+}
+function intentMarkup() {
+  const doc = workingIntent();
+  if (!doc) return '';
+  return `<section id="working-intent" aria-labelledby="working-intent-heading"><header class="overview-heading"><div><h2 id="working-intent-heading">Working intent</h2><p>The current outcome, boundaries and acceptance.</p>${fileMarkup({ doc: 'intent' })}</div></header>${readingMarkup(doc.markdown, 'intent', true)}</section>`;
+}
+function intentJumpLink() { return workingIntent() ? '<a class="text-button" href="#working-intent">Working intent ↓</a>' : ''; }
+
 export function docsMarkup() {
   const view = docViews[state.view];
-  return `<section class="overview-content doc-view" aria-label="${escapeHtml(view.title)}"><header class="overview-heading"><div><h1>${escapeHtml(view.title)}</h1><p>${escapeHtml(view.lede)}</p>${fileMarkup(view)}</div><div class="doc-actions"><button type="button" class="text-button" data-project-view="plan">Open Plan</button></div></header>${docBodyMarkup(view)}</section>`;
+  return `<section class="overview-content doc-view" aria-label="${escapeHtml(view.title)}"><header class="overview-heading"><div><h1>${escapeHtml(view.title)}</h1><p>${escapeHtml(view.lede)}</p>${fileMarkup(view)}</div><div class="doc-actions">${intentJumpLink()}<button type="button" class="text-button" data-project-view="plan">Open Plan</button></div></header>${docBodyMarkup(view)}${intentMarkup()}</section>`;
 }
 
 export function planDocumentMarkup() {

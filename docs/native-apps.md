@@ -165,5 +165,7 @@ dogfood tool dogfood_set_active_projects --input portfolio.json
 Later saves require the latest portfolio response's `revision` as `input.expectedRevision`.
 Stale writes conflict; reread and review before saving again. This is an operator action;
 recognized native request contexts cannot change the list. Current projects get dashboard cards.
-The picker groups Current projects, Workspace and History when each group has entries. Omitted
-projects retain their pages, evidence and conversations.
+The picker shows Current projects and the Dogfood workspace. Omitted projects retain their pages,
+evidence and conversations through saved URLs, CLI and API access, without cluttering the picker.
+A saved URL can still open an earlier project; an ordinary app entry ignores a remembered project
+outside the current list. A failed portfolio load does not silently repopulate old projects.

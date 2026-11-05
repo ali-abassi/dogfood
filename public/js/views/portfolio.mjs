@@ -16,7 +16,7 @@ function projectMarkup(project) {
   const noun = project.platform === 'ios' ? 'screens' : 'pages';
   return `<article class="content-panel portfolio-card"><header><span class="eyebrow">${platform(project)}</span><span class="portfolio-status">${status(project)}</span></header><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.description)}</p><p class="portfolio-coverage">${coverage(project, noun)}</p><p class="field-hint">${escapeHtml(project.environment)}</p><button type="button" class="text-button" data-portfolio-project="${escapeHtml(project.id)}">Open project</button></article>`;
 }
-function activeMarkup(data) { return data.active.length ? data.active.map(projectMarkup).join('') : '<section class="content-panel portfolio-card"><h2>Choose the work you are doing now</h2><p>Ask your agent to select the projects you are working on. Earlier projects and their evidence stay in History.</p></section>'; }
+function activeMarkup(data) { return data.active.length ? data.active.map(projectMarkup).join('') : '<section class="content-panel portfolio-card"><h2>Choose the work you are doing now</h2><p>Ask your agent to select the projects you are working on. Earlier projects and their evidence are preserved.</p></section>'; }
 export function portfolioMarkup() {
   const info = state.portfolio;
   const heading = '<header class="overview-heading"><div><h1>Current projects</h1><p>See what has been checked, what needs work, and where to go next.</p></div></header>';
@@ -24,7 +24,7 @@ export function portfolioMarkup() {
   if (!info?.data) return `<section class="overview-content">${heading}<p role="status">Reading the project portfolio…</p></section>`;
   const data = info.data;
   const content = activeMarkup(data);
-  return `<section class="overview-content portfolio-view">${heading}<div class="portfolio-grid">${content}</div><p class="field-hint">Coverage comes from each project’s recorded checks. Earlier projects remain available in History.</p></section>`;
+  return `<section class="overview-content portfolio-view">${heading}<div class="portfolio-grid">${content}</div><p class="field-hint">Coverage comes from each project’s recorded checks. The picker shows current projects and the Dogfood workspace. Earlier records are preserved and remain accessible from saved links or the CLI.</p></section>`;
 }
 export async function loadPortfolio() {
   if (pending) return pending;

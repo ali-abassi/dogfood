@@ -1,3 +1,4 @@
+import { projectChoices } from './project-selection.mjs';
 import { helpMarkup } from './views/help.mjs';
 import { portfolioMarkup, syncPortfolio, loadPortfolio } from './views/portfolio.mjs';
 import { readJson } from './api.mjs';
@@ -155,7 +156,8 @@ export async function loadProject(id, destination = {}) {
 function initialDestination() {
   const query = new URLSearchParams(window.location.search);
   const linkedProject = state.projects.find(project => project.id === query.get('project'));
-  const projectId = linkedProject?.id ?? rememberedProjectId() ?? state.projects[0].id;
+  const choices = projectChoices(state.projects, state.portfolio);
+  const projectId = linkedProject?.id ?? defaultProjectId(choices);
   const destination = linkedProject ? { view: query.get('view'), pageId: query.get('page'), cardId: query.get('card') } : {};
   return { projectId, destination };
 }
@@ -176,10 +178,15 @@ export async function start() {
 }
 
 // The last project opened in this browser; storage can be unavailable (private windows), so it is only a convenience.
-function rememberedProjectId() {
+function defaultProjectId(choices) {
+  const id = rememberedProjectId(choices) ?? choices[0]?.id;
+  if (!id) throw new Error('Current projects could not be loaded. Reload to try again.');
+  return id;
+}
+function rememberedProjectId(choices) {
   try {
     const id = localStorage.getItem('dogfood:project');
-    return state.projects.some(project => project.id === id) ? id : null;
+    return choices.some(project => project.id === id) ? id : null;
   } catch { return null; }
 }
 

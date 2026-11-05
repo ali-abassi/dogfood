@@ -170,3 +170,17 @@ A real Codex result used a generic JSON fence despite following the expected res
 only a final strict-schema JSON result when no valid explicit dogfood-result is present; reject
 examples, unrelated JSON and malformed fields. Retain agent-reported provenance and independent
 acceptance gates. Reparse legacy unstructured results read-only and skip headings in fallback summaries.
+
+## 2026-11-04 — Current projects and working intent
+
+Ali asked for old projects to leave the dropdown and for project Vision/intent to reflect current
+reality. Show only the configured current projects, in their chosen order, plus Dogfood. Preserve
+all earlier data and explicit URLs; do not reopen a remembered historical project on ordinary entry.
+When a saved URL opens a project outside the current list, label that context without pretending
+a different current project is selected. Failed portfolio loading must not expose the full old list.
+
+Read optional intent.md beside Vision and include it in immutable native task context. Keep it
+visible in the existing Vision view with a jump link and source filename, not another navigation
+level. Render local document references as filenames rather than broken web routes. Reconcile
+project documents from current source and dated decisions, preserving unresolved QA and historical
+records. Documentation updates are not evidence that app code, providers or release gates passed.
