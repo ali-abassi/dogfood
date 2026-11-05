@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -54,3 +54,23 @@ test('shutdown tracking closes only owned sessions while a shared session is in 
   const closed = commands(calls).filter(args => args.at(-1) === 'close');
   assert.equal(closed.length, 2); closed.forEach(args => assert.match(args[1], /^dogfood-scan-[a-f0-9]{8}$/));
 }));
+test('scans sharing the designated session take turns: a live holder makes the next one wait, then refuse', () => withFixture(value => {
+  value.env.DOGFOOD_BROWSER_SESSION = 'owned-shared-fixture'; value.env.DOGFOOD_SESSION_WAIT_MS = '300';
+  mkdirSync(join(value.directory, '.locks'), { recursive: true });
+  const lock = join(value.directory, '.locks', 'browser-session-owned-shared-fixture.lock');
+  writeFileSync(lock, JSON.stringify({ pid: process.pid, session: 'owned-shared-fixture' }));
+  writeFileSync(value.env.DOGFOOD_SCANNER_TEST_LOG, '');
+  run(value, `await assert.rejects(withScanner('Default',async browser=>{await browser.command(['snapshot']);}),/Another scan is using the shared browser session owned-shared-fixture/);`);
+  assert.equal(readFileSync(value.env.DOGFOOD_SCANNER_TEST_LOG, 'utf8').includes('snapshot'), false);
+  assert.equal(existsSync(lock), true);
+}));
+test('a turn left by an exited scan is taken over and released afterwards', () => withFixture(value => {
+  value.env.DOGFOOD_BROWSER_SESSION = 'owned-shared-fixture';
+  mkdirSync(join(value.directory, '.locks'), { recursive: true });
+  const lock = join(value.directory, '.locks', 'browser-session-owned-shared-fixture.lock');
+  writeFileSync(lock, JSON.stringify({ pid: 2 ** 22 + 12345, session: 'owned-shared-fixture' }));
+  const calls = run(value, `await withScanner('Default',async browser=>{await withScanner('Default',async inner=>{await inner.command(['snapshot']);});await browser.command(['snapshot']);});`);
+  assert.equal(commands(calls).length, 2);
+  assert.equal(existsSync(lock), false);
+}));
+

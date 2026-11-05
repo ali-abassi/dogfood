@@ -32,6 +32,10 @@ For browser checks, set `DOGFOOD_BROWSER_SESSION` to reuse a designated existing
 `agent-browser` session. Dogfood preserves that session after success, failure and shutdown;
 it does not load `DOGFOOD_BROWSER_STATE` into it. The selected browser profile still applies. Scans navigate and resize this session, leaving it
 on the last checked page at that page’s final device size.
+Every project and process that scans shares that one session, so scans take turns: a scan waits
+while another holds `data/.locks/browser-session-<name>.lock`, gives up after 20 minutes
+(`DOGFOOD_SESSION_WAIT_MS`), and takes over a lock whose process has exited. Pages the session
+must be signed in to still need that sign-in done once in the session itself.
 Without a named session, Dogfood creates and closes its own temporary scan session, including
 on failure; saved-state setup applies only to that owned session.
 
